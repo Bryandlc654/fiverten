@@ -27,12 +27,14 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<'success' | 'error' | null>(null);
+  const [closing, setClosing] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
+    if (!isLoading && isAuthenticated && feedback !== 'success') {
       router.replace('/dashboard');
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isLoading, isAuthenticated, router, feedback]);
 
   function update(field: keyof typeof form, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -49,6 +51,8 @@ export default function RegisterPage() {
     }
 
     setSubmitting(true);
+    setFeedback(null);
+    setClosing(false);
     try {
       const response = await register({
         email: form.email,
@@ -58,17 +62,29 @@ export default function RegisterPage() {
         lastName: form.lastName || undefined,
         username: form.username || undefined,
       });
+      setFeedback('success');
       if (response.requiresEmailVerification) {
-        setNotice(
-          'Cuenta creada. Revisa tu correo electrónico para verificarla e iniciar sesión.',
-        );
+        // Muestra la animación de éxito y luego deja el aviso para verificar el correo.
+        window.setTimeout(() => {
+          setFeedback(null);
+          setSubmitting(false);
+          setNotice(
+            'Cuenta creada. Revisa tu correo electrónico para verificarla e iniciar sesión.',
+          );
+        }, 1300);
         return;
       }
-      router.replace('/dashboard');
+      // Espera a que se vea la animación de éxito antes de entrar al panel.
+      window.setTimeout(() => router.replace('/dashboard'), 1100);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo completar el registro');
-    } finally {
       setSubmitting(false);
+      setFeedback('error');
+      window.setTimeout(() => setClosing(true), 1000);
+      window.setTimeout(() => {
+        setFeedback(null);
+        setClosing(false);
+      }, 1350);
     }
   }
 
@@ -80,7 +96,7 @@ export default function RegisterPage() {
   return (
     <>
       <main className="flex-1 flex flex-col items-center justify-center bg-background px-gutter py-space-xl">
-        <div className="w-full max-w-sm">
+        <div className={`w-full max-w-sm ${feedback === 'error' && !closing ? 'auth-shake' : ''}`}>
           <div className="flex justify-center mb-space-lg">
             <Image
               src="/logo-fiverten.png"
@@ -252,6 +268,61 @@ export default function RegisterPage() {
           </div>
         </div>
       </main>
+
+      {feedback && (
+        <div
+          data-testid={feedback === 'success' ? 'auth-success' : 'auth-feedback-error'}
+          role="status"
+          aria-live="polite"
+          className={`auth-overlay fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm ${
+            closing ? 'is-closing' : ''
+          }`}
+        >
+          <div className="auth-pop flex flex-col items-center gap-space-md">
+            {feedback === 'success' ? (
+              <>
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-secondary/15 ring-1 ring-secondary/40">
+                  <svg
+                    viewBox="0 0 52 52"
+                    className="h-11 w-11 text-secondary"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path className="auth-draw" d="M14 27l8 8 16-18" />
+                  </svg>
+                </div>
+                <p className="font-label-md text-label-md font-semibold text-secondary">
+                  Registro correcto
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-error/15 ring-1 ring-error/40">
+                  <svg
+                    viewBox="0 0 52 52"
+                    className="h-11 w-11 text-error"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={5}
+                    strokeLinecap="round"
+                    aria-hidden="true"
+                  >
+                    <path className="auth-draw" d="M16 16l20 20" />
+                    <path className="auth-draw" d="M36 16L16 36" />
+                  </svg>
+                </div>
+                <p className="font-label-md text-label-md font-semibold text-error">
+                  No se pudo registrar
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       <footer className="w-full bg-background py-space-md">
         <p className="text-center font-body-sm text-[12px] text-outline">
