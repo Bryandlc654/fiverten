@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { validateEnvironment } from './config/env.validation';
 import { HealthController } from './health/health.controller';
 import { MailModule } from './mail/mail.module';
+import { MediaModule } from './media/media.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { PrismaModule } from './prisma/prisma.module';
 
@@ -25,6 +26,7 @@ import { PrismaModule } from './prisma/prisma.module';
     MailModule,
     AuthModule,
     OrganizationsModule,
+    MediaModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

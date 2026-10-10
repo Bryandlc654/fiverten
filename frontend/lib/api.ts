@@ -33,6 +33,7 @@ export interface OrganizationDetail {
   website: string | null;
   email: string | null;
   phone: string | null;
+  coverUrl: string | null;
   locale: string;
   billingCurrency: string;
   status: string;
@@ -189,6 +190,29 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return data as T;
 }
 
+async function requestForm<T>(path: string, body: FormData): Promise<T> {
+  const headers = new Headers();
+  if (accessToken) {
+    headers.set('Authorization', `Bearer ${accessToken}`);
+  }
+
+  const response = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers,
+    body,
+    credentials: 'include',
+    cache: 'no-store',
+  });
+
+  const text = await response.text();
+  const data = text ? (JSON.parse(text) as unknown) : null;
+
+  if (!response.ok) {
+    throw new ApiError(response.status, extractMessage(data, response.status));
+  }
+  return data as T;
+}
+
 function extractMessage(data: unknown, status: number): string {
   if (data && typeof data === 'object' && 'message' in data) {
     const message = (data as { message: unknown }).message;
@@ -266,6 +290,11 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(payload),
     });
+  },
+  uploadOrganizationCover(file: File): Promise<{ url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return requestForm<{ url: string }>('/media/organization-cover', formData);
   },
   listMembers(): Promise<{ members: Member[] }> {
     return request<{ members: Member[] }>('/organizations/me/members');

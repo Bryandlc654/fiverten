@@ -9,6 +9,11 @@ export class UpdateOrganizationDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(500)
+  coverUrl?: string | null;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(255)
   legalName?: string;
 

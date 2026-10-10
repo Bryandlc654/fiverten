@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import DashboardShell from '../../../components/DashboardShell';
 import { ApiError, api, type OrganizationDetail } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
@@ -14,6 +14,7 @@ interface FormState {
   phone: string;
   website: string;
   description: string;
+  coverUrl: string;
   isPublic: boolean;
   allowContact: boolean;
 }
@@ -27,9 +28,45 @@ function toForm(org: OrganizationDetail): FormState {
     phone: org.phone ?? '',
     website: org.website ?? '',
     description: org.description ?? '',
+    coverUrl: org.coverUrl ?? '',
     isPublic: org.isPublic,
     allowContact: org.allowContact,
   };
+}
+
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+
+async function prepareCoverImage(file: File): Promise<File> {
+  // Los GIF conservan su animacion; el resto se redimensiona/comprime para no
+  // superar el limite del servidor (5 MB).
+  if (file.type === 'image/gif' || file.size <= 600 * 1024) {
+    return file;
+  }
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 1920 / bitmap.width);
+    const width = Math.round(bitmap.width * scale);
+    const height = Math.round(bitmap.height * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      bitmap.close();
+      return file;
+    }
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, 'image/jpeg', 0.85),
+    );
+    if (!blob) {
+      return file;
+    }
+    return new File([blob], 'cover.jpg', { type: 'image/jpeg' });
+  } catch {
+    return file;
+  }
 }
 
 const INPUT_CLASS =
@@ -41,8 +78,10 @@ export default function CompanyPage() {
   const [form, setForm] = useState<FormState | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   const canEdit = isSuperAdmin || roleAtLeast(role, 'admin');
@@ -90,6 +129,7 @@ export default function CompanyPage() {
       if (form.phone.trim()) payload.phone = form.phone.trim();
       if (form.website.trim()) payload.website = form.website.trim();
       payload.description = form.description.trim();
+      payload.coverUrl = form.coverUrl ? form.coverUrl : null;
       payload.isPublic = form.isPublic;
       payload.allowContact = form.allowContact;
 
@@ -101,6 +141,35 @@ export default function CompanyPage() {
       setError(err instanceof ApiError ? err.message : 'No se pudo guardar');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function onCoverChange(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.target;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || !form) {
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      setUploadError('El archivo debe ser una imagen');
+      return;
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setUploadError('La imagen supera el máximo de 5 MB');
+      return;
+    }
+
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const prepared = await prepareCoverImage(file);
+      const { url } = await api.uploadOrganizationCover(prepared);
+      setForm((prev) => (prev ? { ...prev, coverUrl: url } : prev));
+    } catch (err) {
+      setUploadError(err instanceof ApiError ? err.message : 'No se pudo subir la imagen');
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -146,6 +215,72 @@ export default function CompanyPage() {
             )}
 
             <form onSubmit={onSubmit} className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <span className="mb-1 block text-xs font-semibold text-slate-600">
+                  Imagen de portada
+                </span>
+                <div className="overflow-hidden rounded-xl border border-slate-200">
+                  <div className="relative aspect-[3/1] w-full bg-slate-100">
+                    {form.coverUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={form.coverUrl}
+                        alt="Portada de la empresa"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-slate-400">
+                        <span className="material-symbols-outlined text-[32px]">image</span>
+                        <span className="text-xs">Sin portada</span>
+                      </div>
+                    )}
+                    {uploading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-white/70 text-sm text-slate-600">
+                        <span className="material-symbols-outlined mr-2 animate-spin">
+                          progress_activity
+                        </span>
+                        Subiendo…
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <label
+                    className={`inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 ${
+                      !canEdit || uploading ? 'pointer-events-none opacity-60' : 'cursor-pointer'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">upload</span>
+                    {form.coverUrl ? 'Cambiar portada' : 'Subir portada'}
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
+                      className="hidden"
+                      onChange={onCoverChange}
+                      disabled={!canEdit || uploading}
+                    />
+                  </label>
+                  {form.coverUrl && canEdit && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUploadError(null);
+                        setForm((prev) => (prev ? { ...prev, coverUrl: '' } : prev));
+                      }}
+                      className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">delete</span>
+                      Quitar
+                    </button>
+                  )}
+                </div>
+                {uploadError && <p className="mt-1 text-xs text-red-600">{uploadError}</p>}
+                <p className="mt-1 text-xs text-slate-400">
+                  Recomendado 3:1. JPG, PNG, WEBP, GIF o AVIF, hasta 5 MB. Se guarda al pulsar
+                  &quot;Guardar cambios&quot;.
+                </p>
+              </div>
+
               <label className="sm:col-span-2">
                 <span className="mb-1 block text-xs font-semibold text-slate-600">
                   Nombre comercial

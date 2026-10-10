@@ -22,6 +22,7 @@ model Organization {
   taxId                  String?   @map("tax_id") @db.VarChar(50)
   description            String?   @db.Text
   logoUrl                String?   @map("logo_url") @db.VarChar(500)
+  coverUrl               String?   @map("cover_url") @db.VarChar(500)
   website                String?   @db.VarChar(255)
   email                  String?   @db.VarChar(255)
   phone                  String?   @db.VarChar(50)

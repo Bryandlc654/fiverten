@@ -559,7 +559,8 @@ export class OrganizationsService {
 
   private toDetail(org: {
     id: string; publicId: string; tradeName: string; legalName: string | null; slug: string;
-    taxId: string | null; description: string | null; logoUrl: string | null; website: string | null;
+    taxId: string | null; description: string | null; logoUrl: string | null; coverUrl: string | null;
+    website: string | null;
     email: string | null; phone: string | null; locale: string; billingCurrency: string;
     status: string; verificationStatus: string; isActive: boolean; isPublic: boolean;
     allowContact: boolean; createdAt: Date; verifiedAt: Date | null;
@@ -573,6 +574,7 @@ export class OrganizationsService {
       taxId: org.taxId,
       description: org.description,
       logoUrl: org.logoUrl,
+      coverUrl: org.coverUrl,
       website: org.website,
       email: org.email,
       phone: org.phone,
