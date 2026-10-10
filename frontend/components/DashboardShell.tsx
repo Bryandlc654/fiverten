@@ -49,7 +49,6 @@ const ADMIN_NAV: NavItem[] = [
     href: '/admin?tab=organizations',
   },
   { key: 'adminUsers', label: 'Usuarios', icon: 'group', href: '/admin?tab=users' },
-  { key: 'company', label: 'Empresa', icon: 'business', href: '/dashboard/company' },
 ];
 
 export default function DashboardShell({
