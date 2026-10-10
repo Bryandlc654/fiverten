@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Get,
   Param,
   ParseIntPipe,
@@ -31,10 +32,10 @@ export class AdminController {
 
   @Get('organizations')
   listOrganizations(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
     @Query('search') search?: string,
     @Query('status') status?: string,
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('pageSize', new ParseIntPipe({ optional: true })) pageSize?: number,
   ) {
     return this.organizations.listOrganizations({ search, status, page, pageSize });
   }
@@ -63,9 +64,9 @@ export class AdminController {
 
   @Get('users')
   listUsers(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
     @Query('search') search?: string,
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('pageSize', new ParseIntPipe({ optional: true })) pageSize?: number,
   ) {
     return this.organizations.listUsers({ search, page, pageSize });
   }
