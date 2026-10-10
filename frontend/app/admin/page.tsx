@@ -1,7 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import DashboardShell from '../../components/DashboardShell';
 import {
   ApiError,
@@ -32,7 +32,25 @@ const VERIFICATION_TONE: Record<string, string> = {
 const PAGE_SIZE = 20;
 
 export default function AdminPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex-1 flex items-center justify-center bg-slate-50">
+          <div className="flex items-center gap-3 text-sm text-slate-500">
+            <span className="material-symbols-outlined animate-spin">progress_activity</span>
+            Cargando panel…
+          </div>
+        </div>
+      }
+    >
+      <AdminContent />
+    </Suspense>
+  );
+}
+
+function AdminContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isSuperAdmin, isLoading } = useAuth();
   const [tab, setTab] = useState<Tab>('organizations');
   const [stats, setStats] = useState<PlatformStats | null>(null);
@@ -50,6 +68,10 @@ export default function AdminPage() {
   const [userSearch, setUserSearch] = useState('');
   const [userLoading, setUserLoading] = useState(true);
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setTab(searchParams.get('tab') === 'users' ? 'users' : 'organizations');
+  }, [searchParams]);
 
   useEffect(() => {
     if (!isLoading && !isSuperAdmin) {
@@ -115,7 +137,7 @@ export default function AdminPage() {
 
   return (
     <DashboardShell
-      active="admin"
+      active={tab === 'users' ? 'adminUsers' : 'adminOrgs'}
       title="Panel general"
       subtitle="Administración de empresas y usuarios de la plataforma"
       userInitials="FG"

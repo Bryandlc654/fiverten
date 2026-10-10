@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import PlatformDashboard from '../../components/PlatformDashboard';
 import { ApiError, api } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
 import { roleLabel } from '../../lib/roles';
@@ -189,6 +190,10 @@ export default function DashboardPage() {
         </div>
       </div>
     );
+  }
+
+  if (isSuperAdmin) {
+    return <PlatformDashboard />;
   }
 
   const completedTasks = tasks.filter((task) => task.done).length;

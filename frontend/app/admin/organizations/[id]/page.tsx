@@ -175,7 +175,7 @@ export default function AdminOrganizationPage() {
   if (isNew) {
     return (
       <DashboardShell
-        active="admin"
+        active="adminOrgs"
         title="Nueva empresa"
         subtitle="Crea una empresa y, opcionalmente, su propietario"
       >
@@ -322,7 +322,7 @@ export default function AdminOrganizationPage() {
 
   return (
     <DashboardShell
-      active="admin"
+      active="adminOrgs"
       title={edit?.tradeName ?? 'Empresa'}
       subtitle="Edición de empresa como administrador general"
     >

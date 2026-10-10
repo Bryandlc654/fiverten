@@ -6,7 +6,14 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useAuth } from '../lib/auth-context';
 import { ROLE_LABELS } from '../lib/roles';
 
-export type NavKey = 'overview' | 'company' | 'users' | 'admin' | 'profile' | 'reviews';
+export type NavKey =
+  | 'overview'
+  | 'company'
+  | 'users'
+  | 'profile'
+  | 'reviews'
+  | 'adminOrgs'
+  | 'adminUsers';
 
 interface DashboardShellProps {
   active: NavKey;
@@ -23,22 +30,26 @@ interface NavItem {
   label: string;
   icon: string;
   href: string;
-  superAdminOnly?: boolean;
 }
 
-const NAV_ITEMS: NavItem[] = [
+const TENANT_NAV: NavItem[] = [
   { key: 'overview', label: 'Resumen', icon: 'dashboard', href: '/dashboard' },
   { key: 'company', label: 'Empresa', icon: 'storefront', href: '/dashboard/company' },
   { key: 'users', label: 'Usuarios', icon: 'group', href: '/dashboard/users' },
   { key: 'reviews', label: 'Opiniones', icon: 'reviews', href: '/dashboard' },
   { key: 'profile', label: 'Perfil público', icon: 'verified', href: '/dashboard' },
+];
+
+const ADMIN_NAV: NavItem[] = [
+  { key: 'overview', label: 'Resumen', icon: 'dashboard', href: '/dashboard' },
   {
-    key: 'admin',
-    label: 'Panel general',
-    icon: 'admin_panel_settings',
-    href: '/admin',
-    superAdminOnly: true,
+    key: 'adminOrgs',
+    label: 'Empresas',
+    icon: 'storefront',
+    href: '/admin?tab=organizations',
   },
+  { key: 'adminUsers', label: 'Usuarios', icon: 'group', href: '/admin?tab=users' },
+  { key: 'company', label: 'Empresa', icon: 'business', href: '/dashboard/company' },
 ];
 
 export default function DashboardShell({
@@ -111,7 +122,7 @@ export default function DashboardShell({
     );
   }
 
-  const visibleNav = NAV_ITEMS.filter((item) => !item.superAdminOnly || isSuperAdmin);
+  const visibleNav = isSuperAdmin ? ADMIN_NAV : TENANT_NAV;
 
   return (
     <div className="flex-1 flex min-h-screen bg-slate-50 text-slate-900">

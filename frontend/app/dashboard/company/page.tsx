@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ChangeEvent } from 'react';
 import DashboardShell from '../../../components/DashboardShell';
 import { ApiError, api, type OrganizationDetail } from '../../../lib/api';
@@ -73,6 +74,7 @@ const INPUT_CLASS =
   'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500';
 
 export default function CompanyPage() {
+  const router = useRouter();
   const { role, isSuperAdmin } = useAuth();
   const [org, setOrg] = useState<OrganizationDetail | null>(null);
   const [form, setForm] = useState<FormState | null>(null);
@@ -186,9 +188,30 @@ export default function CompanyPage() {
             Cargando empresa…
           </div>
         ) : loadError ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {loadError}
-          </div>
+          isSuperAdmin ? (
+            <div className="rounded-xl border border-slate-200 bg-white p-6 text-center">
+              <span className="material-symbols-outlined text-[32px] text-slate-400">storefront</span>
+              <p className="mt-2 text-sm font-semibold text-slate-900">
+                Esta sección pertenece a las empresas
+              </p>
+              <p className="mt-1 text-sm text-slate-500">
+                Como administrador general no tienes una empresa asignada. Gestiona las empresas
+                desde el panel general.
+              </p>
+              <button
+                type="button"
+                onClick={() => router.push('/admin?tab=organizations')}
+                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600"
+              >
+                <span className="material-symbols-outlined text-[18px]">storefront</span>
+                Ir a Empresas
+              </button>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {loadError}
+            </div>
+          )
         ) : form ? (
           <section className="rounded-xl border border-slate-200 bg-white p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
