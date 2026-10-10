@@ -1,0 +1,71 @@
+# ============================================================================
+# FIVERTEN - .gitignore raiz (monorepo: backend NestJS + frontend Next.js)
+# ============================================================================
+
+# Dependencias
+node_modules/
+.pnp
+.pnp.js
+.yarn/
+.yarnrc.yml
+
+# Entorno (secretos) - conservar las plantillas
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Build / salidas
+dist/
+build/
+out/
+backend/dist/
+frontend/.next/
+frontend/out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Prisma
+backend/prisma/*.db
+backend/prisma/*.db-journal
+
+# Tests / cobertura
+coverage/
+.nyc_output/
+frontend/test-results/
+frontend/playwright-report/
+frontend/.playwright/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editores / IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+
+# Temporales
+tmp/
+temp/
+*.tmp

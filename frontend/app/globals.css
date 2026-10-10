@@ -1,0 +1,372 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    overscroll-behavior: none;
+  }
+
+  ::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+:root {
+  --background: #0b1220;
+  --foreground: #e6edf7;
+  --muted: #8aa0bd;
+  --card: #131c2e;
+  --border: #24324c;
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --danger: #ef4444;
+  --success: #22c55e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  min-height: 100%;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.auth-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+}
+
+.card h1 {
+  margin: 0 0 4px;
+  font-size: 1.6rem;
+}
+
+.card p.subtitle {
+  margin: 0 0 24px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.field label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.field input {
+  padding: 11px 13px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #0d1524;
+  color: var(--foreground);
+  font-size: 0.95rem;
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.auth-shell button,
+.auth-shell .btn,
+.dashboard button,
+.dashboard .btn {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: var(--primary);
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+}
+
+.auth-shell button:hover:not(:disabled),
+.auth-shell .btn:hover,
+.dashboard button:hover:not(:disabled),
+.dashboard .btn:hover {
+  background: var(--primary-hover);
+  text-decoration: none;
+}
+
+.auth-shell button:disabled,
+.dashboard button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+
+.footer-link {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.dashboard {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+.dashboard header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.dashboard header h1 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.dashboard .logout {
+  width: auto;
+  padding: 9px 16px;
+  background: transparent;
+  border: 1px solid var(--border);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.info-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.info-card h2 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+
+.info-card p {
+  margin: 0;
+  font-size: 1.05rem;
+  word-break: break-word;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--success);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.sessions {
+  margin-top: 32px;
+}
+
+.sessions-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.sessions-head h2 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.session-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.session-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+.session-agent {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+}
+
+.session-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.session-item .logout {
+  width: auto;
+  padding: 8px 14px;
+  flex-shrink: 0;
+}
+
+.badge.current {
+  margin-left: 10px;
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+/* Feedback de autenticación (login) */
+@keyframes auth-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes auth-overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes auth-pop-in {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes auth-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes auth-shake {
+  10%,
+  90% {
+    transform: translateX(-1px);
+  }
+  20%,
+  80% {
+    transform: translateX(2px);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translateX(-4px);
+  }
+  40%,
+  60% {
+    transform: translateX(4px);
+  }
+}
+
+.auth-overlay {
+  animation: auth-overlay-in 0.18s ease-out both;
+}
+
+.auth-overlay.is-closing {
+  animation: auth-overlay-out 0.3s ease-in both;
+}
+
+.auth-pop {
+  animation: auth-pop-in 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+}
+
+.auth-draw {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  animation: auth-draw 0.4s ease-out 0.18s forwards;
+}
+
+.auth-shake {
+  animation: auth-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.auth-shake {
+  animation: auth-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}

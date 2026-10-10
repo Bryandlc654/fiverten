@@ -1,0 +1,608 @@
+﻿erDiagram
+  %% ==========================================================================
+  %% MODELO DE BASE DE DATOS - FIVERTEN (REVISIÓN 2)
+  %% Plataforma de reputación verificable (CLAIM -> PROOF)
+  %% ERD Mermaid  |  57 entidades  |  PostgreSQL 13+
+  %% ==========================================================================
+
+  organizations {
+    uuid id PK
+    varchar public_id UK
+    varchar trade_name
+    varchar slug UK
+    uuid sector_id FK
+    uuid country_id FK
+    varchar status
+    varchar verification_status
+    char billing_currency
+    boolean is_active
+    boolean is_public
+    timestamptz deleted_at
+  }
+
+  organization_locations {
+    uuid id PK
+    uuid organization_id FK
+    varchar city
+    uuid country_id FK
+    numeric latitude
+    numeric longitude
+  }
+
+  users {
+    uuid id PK
+    varchar email UK
+    varchar username UK
+    varchar password_hash
+    uuid default_organization_id FK
+    boolean is_fiverten_staff
+    boolean is_super_admin
+    int failed_login_count
+    timestamptz locked_until
+    varchar mfa_secret_encrypted
+  }
+
+  roles {
+    uuid id PK
+    uuid organization_id FK
+    varchar slug
+    varchar base_role
+    varchar scope
+    boolean is_system
+  }
+
+  permissions {
+    uuid id PK
+    varchar resource
+    varchar action
+    varchar scope
+  }
+
+  role_permissions {
+    uuid id PK
+    uuid role_id FK
+    uuid permission_id FK
+    uuid created_by FK
+  }
+
+  organization_memberships {
+    uuid id PK
+    uuid organization_id FK
+    uuid user_id FK
+    uuid role_id FK
+    boolean is_owner
+    boolean is_active
+  }
+
+  sessions {
+    uuid id PK
+    uuid user_id FK
+    uuid organization_id FK
+    varchar session_token_hash UK
+    timestamptz compromised_at
+    boolean is_active
+  }
+
+  refresh_tokens {
+    uuid id PK
+    uuid user_id FK
+    uuid session_id FK
+    varchar token_hash UK
+    uuid family_id
+    uuid replaced_by_token_id FK
+  }
+
+  password_reset_tokens {
+    uuid id PK
+    uuid user_id FK
+    varchar token_hash UK
+  }
+
+  email_verifications {
+    uuid id PK
+    uuid user_id FK
+    varchar token_hash UK
+  }
+
+  auth_providers {
+    uuid id PK
+    varchar name UK
+    boolean is_enabled
+  }
+
+  auth_attempts {
+    uuid id PK
+    uuid user_id FK
+    varchar email
+    varchar ip_address
+    varchar attempt_type
+    boolean success
+  }
+
+  api_keys {
+    uuid id PK
+    uuid organization_id FK
+    varchar prefix UK
+    varchar key_hash UK
+    timestamptz revoked_at
+  }
+
+  system_settings {
+    uuid id PK
+    uuid organization_id FK
+    varchar setting_key
+    varchar scope
+  }
+
+  audit_logs {
+    uuid id PK
+    uuid organization_id FK
+    uuid user_id FK
+    varchar action
+    varchar entity_type
+    uuid entity_id
+    timestamptz created_at
+  }
+
+  methodology_versions {
+    uuid id PK
+    varchar version UK
+    timestamptz published_at
+  }
+
+  countries {
+    uuid id PK
+    char iso2 UK
+    varchar name
+    char default_currency
+  }
+
+  languages {
+    uuid id PK
+    varchar code UK
+    varchar name
+  }
+
+  sectors {
+    uuid id PK
+    uuid parent_id FK
+    varchar slug UK
+  }
+
+  verification_scopes {
+    uuid id PK
+    varchar code UK
+    boolean is_required
+  }
+
+  report_reasons {
+    uuid id PK
+    varchar code UK
+    varchar label
+  }
+
+  review_policies {
+    uuid id PK
+    varchar version
+    smallint min_rating_for_resolution
+  }
+
+  state_transitions {
+    uuid id PK
+    varchar entity_type
+    varchar field
+    varchar from_value
+    varchar to_value
+    varchar required_permission
+  }
+
+  evidence {
+    uuid id PK
+    uuid organization_id FK
+    uuid project_id FK
+    uuid claim_id FK
+    varchar type
+    varchar owner_type
+    varchar status
+    date expiry_date
+    char hash
+  }
+
+  documents {
+    uuid id PK
+    uuid organization_id FK
+    uuid evidence_id FK
+    varchar category
+    varchar document_number
+    varchar status
+    uuid reviewed_by FK
+  }
+
+  verification_claims {
+    uuid id PK
+    varchar public_id UK
+    uuid organization_id FK
+    uuid scope_id FK
+    uuid project_id FK
+    uuid review_id FK
+    varchar status
+    uuid current_decision_id FK
+  }
+
+  claim_evidence {
+    uuid id PK
+    uuid claim_id FK
+    uuid evidence_id FK
+    uuid added_by FK
+  }
+
+  verification_decisions {
+    uuid id PK
+    uuid claim_id FK
+    uuid reviewer_id FK
+    uuid methodology_version_id FK
+    varchar decision
+    text justification
+    uuid previous_decision_id FK
+    timestamptz valid_until
+  }
+
+  decision_evidence {
+    uuid id PK
+    uuid decision_id FK
+    uuid evidence_id FK
+    text evaluation_notes
+  }
+
+  organization_verifications {
+    uuid id PK
+    uuid organization_id FK
+    uuid scope_id FK
+    varchar scope_code
+    varchar status
+    uuid methodology_version_id FK
+    uuid reviewer_id FK
+    uuid current_decision_id FK
+    timestamptz expires_at
+  }
+
+  verification_events {
+    uuid id PK
+    uuid organization_id FK
+    varchar entity_type
+    uuid entity_id
+    uuid claim_id FK
+    uuid decision_id FK
+    uuid evidence_id FK
+    uuid actor_id FK
+    varchar from_status
+    varchar to_status
+  }
+
+  projects {
+    uuid id PK
+    uuid organization_id FK
+    varchar title
+    varchar lifecycle_status
+    varchar verification_status
+    varchar visibility
+    uuid created_by FK
+  }
+
+  project_verifications {
+    uuid id PK
+    uuid project_id FK
+    varchar client_status
+    varchar status
+    uuid reviewer_id FK
+  }
+
+  client_relations {
+    uuid id PK
+    uuid organization_id FK
+    uuid project_id FK
+    uuid client_user_id FK
+    varchar client_email
+    varchar verification_level
+  }
+
+  client_invites {
+    uuid id PK
+    uuid organization_id FK
+    uuid project_id FK
+    uuid client_relation_id FK
+    varchar email
+    varchar channel
+    varchar token_hash UK
+    varchar status
+  }
+
+  reviews {
+    uuid id PK
+    uuid organization_id FK
+    uuid project_id FK
+    uuid client_relation_id FK
+    uuid client_invite_id FK
+    smallint rating
+    varchar lifecycle_status
+    varchar verification_status
+    varchar visibility
+    varchar moderation_status
+    timestamptz published_at
+  }
+
+  review_responses {
+    uuid id PK
+    uuid review_id FK
+    uuid organization_id FK
+    uuid author_user_id FK
+  }
+
+  review_disputes {
+    uuid id PK
+    uuid review_id FK
+    uuid organization_id FK
+    uuid raised_by FK
+    varchar status
+  }
+
+  review_resolutions {
+    uuid id PK
+    uuid review_id FK
+    uuid organization_id FK
+    uuid initiated_by FK
+    varchar status
+    varchar outcome
+  }
+
+  resolution_messages {
+    uuid id PK
+    uuid resolution_id FK
+    varchar sender_type
+    uuid sender_user_id FK
+  }
+
+  review_reports {
+    uuid id PK
+    uuid review_id FK
+    uuid reason_id FK
+    uuid reporter_user_id FK
+    uuid reporter_organization_id FK
+    varchar status
+  }
+
+  moderation_actions {
+    uuid id PK
+    uuid review_id FK
+    uuid moderator_id FK
+    varchar action
+  }
+
+  antifraud_signals {
+    uuid id PK
+    uuid review_id FK
+    uuid organization_id FK
+    varchar signal_type
+    numeric score
+  }
+
+  campaigns {
+    uuid id PK
+    uuid organization_id FK
+    varchar name
+    varchar status
+    int total_sent
+    int total_reviews
+  }
+
+  review_requests {
+    uuid id PK
+    uuid organization_id FK
+    uuid campaign_id FK
+    uuid project_id FK
+    uuid review_id FK
+    varchar token_hash UK
+    varchar status
+  }
+
+  public_badges {
+    uuid id PK
+    uuid organization_id FK
+    varchar state
+    varchar embed_token UK
+  }
+
+  plans {
+    uuid id PK
+    varchar code UK
+    numeric price
+    char currency
+    varchar billing_interval
+  }
+
+  plan_limits {
+    uuid id PK
+    uuid plan_id FK
+    varchar feature_key
+    int limit_value
+  }
+
+  subscriptions {
+    uuid id PK
+    uuid organization_id FK
+    uuid plan_id FK
+    varchar status
+    timestamptz current_period_end
+  }
+
+  invoices {
+    uuid id PK
+    uuid organization_id FK
+    uuid subscription_id FK
+    varchar number UK
+    varchar status
+    numeric total
+  }
+
+  invoice_items {
+    uuid id PK
+    uuid invoice_id FK
+    numeric quantity
+    numeric unit_price
+  }
+
+  payments {
+    uuid id PK
+    uuid invoice_id FK
+    uuid organization_id FK
+    numeric amount
+    varchar status
+  }
+
+  notification_templates {
+    uuid id PK
+    varchar code
+    varchar channel
+    varchar locale
+    text html_body
+  }
+
+  notifications {
+    uuid id PK
+    uuid organization_id FK
+    varchar type
+    varchar channel
+    varchar notifiable_type
+    uuid notifiable_id
+  }
+
+  user_notifications {
+    uuid id PK
+    uuid notification_id FK
+    uuid user_id FK
+    boolean is_read
+    boolean is_archived
+  }
+
+  analytics_events {
+    uuid id PK
+    uuid organization_id FK
+    uuid user_id FK
+    varchar event_name
+  }
+
+  %% ================== RELACIONES ==================
+
+  organizations ||--o{ organization_locations : "tiene"
+  sectors ||--o{ organizations : "clasifica"
+  sectors ||--o{ sectors : "subcategorias"
+  countries ||--o{ organizations : "ubica"
+  countries ||--o{ organization_locations : "ubica"
+
+  organizations ||--o{ users : "org por defecto"
+  users ||--o{ users : "creado/actualizado por"
+  organizations ||--o{ roles : "define"
+  roles ||--o{ role_permissions : "contiene"
+  permissions ||--o{ role_permissions : "asignado"
+  organizations ||--o{ organization_memberships : "miembros"
+  users ||--o{ organization_memberships : "pertenece"
+  roles ||--o{ organization_memberships : "rol"
+
+  users ||--o{ sessions : "abre"
+  organizations ||--o{ sessions : "contexto"
+  users ||--o{ refresh_tokens : "posee"
+  sessions ||--o{ refresh_tokens : "renueva"
+  refresh_tokens ||--o| refresh_tokens : "rota a"
+  users ||--o{ password_reset_tokens : "solicita"
+  users ||--o{ email_verifications : "verifica"
+  users ||--o{ auth_attempts : "intenta"
+  organizations ||--o{ api_keys : "emite"
+  users ||--o{ api_keys : "crea"
+
+  organizations ||--o{ system_settings : "configura"
+  organizations ||--o{ audit_logs : "registra"
+  users ||--o{ audit_logs : "actua"
+
+  organizations ||--o{ evidence : "aporta"
+  projects ||--o{ evidence : "respalda"
+  verification_claims ||--o{ evidence : "referenciada"
+  users ||--o{ evidence : "sube"
+  organizations ||--o{ documents : "presenta"
+  evidence ||--o{ documents : "adjunta"
+  users ||--o{ documents : "revisa"
+
+  organizations ||--o{ verification_claims : "afirma"
+  verification_scopes ||--o{ verification_claims : "tipo"
+  projects ||--o{ verification_claims : "sobre"
+  reviews ||--o{ verification_claims : "sobre"
+  users ||--o{ verification_claims : "envia"
+  verification_claims ||--o{ claim_evidence : "respaldada por"
+  evidence ||--o{ claim_evidence : "respalda"
+  verification_claims ||--o{ verification_decisions : "decidida en"
+  users ||--o{ verification_decisions : "revisa"
+  methodology_versions ||--o{ verification_decisions : "según"
+  verification_decisions ||--o| verification_decisions : "reevalua"
+  verification_decisions ||--o{ decision_evidence : "evaluó"
+  evidence ||--o{ decision_evidence : "evaluada"
+  organizations ||--o{ organization_verifications : "estado actual"
+  verification_scopes ||--o{ organization_verifications : "tipo"
+  verification_decisions ||--o{ organization_verifications : "sustenta"
+  organizations ||--o{ verification_events : "trazabilidad"
+  verification_claims ||--o{ verification_events : "evento"
+  verification_decisions ||--o{ verification_events : "evento"
+  evidence ||--o{ verification_events : "evento"
+  documents ||--o{ verification_events : "evento"
+  projects ||--o{ verification_events : "evento"
+  reviews ||--o{ verification_events : "evento"
+  users ||--o{ verification_events : "actor"
+
+  organizations ||--o{ projects : "ejecuta"
+  users ||--o{ projects : "crea"
+  projects ||--o{ project_verifications : "verificado"
+  users ||--o{ project_verifications : "revisa"
+  organizations ||--o{ client_relations : "relaciona"
+  projects ||--o{ client_relations : "involucra"
+  users ||--o{ client_relations : "cliente"
+  organizations ||--o{ client_invites : "invita"
+  projects ||--o{ client_invites : "pertenece"
+  client_relations ||--o{ client_invites : "invitado"
+
+  organizations ||--o{ reviews : "recibe"
+  projects ||--o{ reviews : "genera"
+  client_relations ||--o{ reviews : "escribe"
+  client_invites ||--o{ reviews : "origina"
+  reviews ||--o| review_responses : "responde"
+  organizations ||--o{ review_responses : "publica"
+  reviews ||--o{ review_disputes : "disputa"
+  reviews ||--o{ review_resolutions : "resuelve"
+  review_resolutions ||--o{ resolution_messages : "conversa"
+  reviews ||--o{ review_reports : "reporta"
+  report_reasons ||--o{ review_reports : "motivo"
+  reviews ||--o{ moderation_actions : "modera"
+  reviews ||--o{ antifraud_signals : "analiza"
+
+  organizations ||--o{ campaigns : "lanza"
+  campaigns ||--o{ review_requests : "agrupa"
+  organizations ||--o{ review_requests : "solicita"
+  projects ||--o{ review_requests : "referencia"
+  reviews ||--o{ review_requests : "resulta"
+
+  organizations ||--o{ public_badges : "muestra"
+
+  plans ||--o{ plan_limits : "limita"
+  organizations ||--o{ subscriptions : "suscribe"
+  plans ||--o{ subscriptions : "plan"
+  organizations ||--o{ invoices : "factura"
+  subscriptions ||--o{ invoices : "genera"
+  invoices ||--o{ invoice_items : "detalla"
+  invoices ||--o{ payments : "paga"
+  organizations ||--o{ payments : "realiza"
+
+  organizations ||--o{ notifications : "emite"
+  notifications ||--o{ user_notifications : "destina"
+  users ||--o{ user_notifications : "recibe"
+
+  organizations ||--o{ analytics_events : "analiza"
+  users ||--o{ analytics_events : "provoca"
+
+  %% state_transitions es catálogo de apoyo (sin relaciones FK)

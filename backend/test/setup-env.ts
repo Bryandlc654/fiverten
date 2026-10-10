@@ -1,0 +1,24 @@
+process.env.NODE_ENV = 'test';
+process.env.DATABASE_URL =
+  process.env.TEST_DATABASE_URL ??
+  'postgresql://postgres:postgres@localhost:5432/fiverten_test?schema=public';
+process.env.PORT = '4001';
+process.env.CORS_ORIGIN = 'http://localhost:3000';
+process.env.JWT_ACCESS_SECRET = 'test-access-secret';
+process.env.JWT_ACCESS_TTL = '15m';
+process.env.JWT_REFRESH_TTL_DAYS = '30';
+process.env.REFRESH_COOKIE_NAME = 'fiverten_refresh';
+process.env.COOKIE_SECURE = 'false';
+process.env.COOKIE_SAMESITE = 'lax';
+process.env.BCRYPT_ROUNDS = '4';
+process.env.MAX_FAILED_LOGINS = '5';
+process.env.LOCK_MINUTES = '15';
+process.env.FRONTEND_URL = 'http://localhost:3000';
+process.env.MAIL_FROM = 'no-reply@fiverten.test';
+process.env.EMAIL_VERIFICATION_TTL_HOURS = '24';
+process.env.PASSWORD_RESET_TTL_MINUTES = '60';
+process.env.MAIL_TRANSPORT = 'json';
+process.env.DB_RLS_ENABLED = 'false';
+process.env.REQUIRE_EMAIL_VERIFICATION = 'false';
+process.env.APP_DATABASE_URL =
+  'postgresql://fiverten_app:fiverten_app@localhost:5432/fiverten_test?schema=public';

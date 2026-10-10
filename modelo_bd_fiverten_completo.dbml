@@ -1,0 +1,1323 @@
+﻿// ============================================================================
+// MODELO DE BASE DE DATOS - FIVERTEN (REVISIÓN 2)
+// Plataforma de reputación verificable (CLAIM -> PROOF)
+// DBML para dbdiagram.io  |  PostgreSQL 13+  |  57 tablas
+// RLS multi-tenant, máquina de estados, trazabilidad claim->evidence->decision
+// ============================================================================
+
+//// PARTE 1: ORGANIZACIONES (TENANT) Y UBICACIONES ////
+
+Table organizations {
+  id uuid [pk, default: `gen_random_uuid()`]
+  public_id varchar(32) [not null, unique, note: 'ID público opaco ej. FT-8K4M2-X9P']
+  legal_name varchar(255)
+  trade_name varchar(200) [not null]
+  slug varchar(180) [not null, unique]
+  tax_id varchar(50)
+  description text
+  logo_url varchar(500)
+  website varchar(255)
+  email varchar(255)
+  phone varchar(50)
+  sector_id uuid
+  country_id uuid
+  locale varchar(10) [not null, default: 'es']
+  billing_currency char(3) [not null, default: 'EUR']
+  status varchar(20) [not null, default: 'pending', note: 'pending|active|suspended|inactive']
+  verification_status varchar(20) [not null, default: 'not_verified', note: 'CACHÉ derivada de organization_verifications']
+  verification_computed_at timestamptz
+  verified_at timestamptz
+  verification_expires_at timestamptz
+  is_active boolean [not null, default: true]
+  is_public boolean [not null, default: false]
+  allow_contact boolean [not null, default: false]
+  metadata jsonb [not null, default: `'{}'::jsonb`]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  deleted_at timestamptz
+  created_by uuid
+  updated_by uuid
+  deleted_by uuid
+
+  Indexes {
+    slug
+    (status, is_active, deleted_at)
+    verification_status
+    sector_id
+    country_id
+    (is_public, deleted_at)
+  }
+
+  Note: 'RLS: USING (id = app_current_org() OR app_is_platform_admin()). Fuente de verdad de verificación = organization_verifications.'
+}
+
+Table organization_locations {
+  id uuid [pk]
+  organization_id uuid [not null]
+  label varchar(100)
+  address_line1 varchar(255)
+  city varchar(120)
+  province varchar(120)
+  postal_code varchar(20)
+  country_id uuid
+  latitude numeric(10,7) [note: '-90..90']
+  longitude numeric(10,7) [note: '-180..180']
+  is_primary boolean [not null, default: false]
+  is_public boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    organization_id
+  }
+}
+
+//// PARTE 2: USUARIOS, RBAC Y MEMBRESÍAS ////
+
+Table users {
+  id uuid [pk]
+  email varchar(255) [not null, unique]
+  username varchar(100) [not null, unique]
+  password_hash varchar(255) [not null]
+  first_name varchar(100)
+  last_name varchar(100)
+  phone varchar(50)
+  avatar_url varchar(500)
+  default_organization_id uuid
+  is_active boolean [not null, default: true]
+  is_verified boolean [not null, default: false]
+  is_fiverten_staff boolean [not null, default: false]
+  is_super_admin boolean [not null, default: false]
+  last_login_at timestamptz
+  password_changed_at timestamptz
+  email_verified_at timestamptz
+  failed_login_count int [not null, default: 0]
+  locked_until timestamptz
+  blocked_at timestamptz
+  block_reason varchar(255)
+  mfa_enabled boolean [not null, default: false]
+  mfa_secret_encrypted varchar(512) [note: 'CIFRADO a nivel app (KMS), NO hash: debe recuperarse para TOTP']
+  metadata jsonb [not null, default: `'{}'::jsonb`]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  deleted_at timestamptz
+  created_by uuid
+  updated_by uuid
+  deleted_by uuid
+
+  Indexes {
+    (is_active, deleted_at)
+    is_fiverten_staff
+    created_at
+  }
+}
+
+Table roles {
+  id uuid [pk]
+  organization_id uuid [note: 'NULL = rol de plataforma']
+  name varchar(100) [not null]
+  slug varchar(120) [not null]
+  base_role varchar(20) [note: 'admin|editor|viewer (rol de negocio subyacente)']
+  description text
+  scope varchar(20) [not null, default: 'organization', note: 'platform|organization']
+  is_active boolean [not null, default: true]
+  is_system boolean [not null, default: false]
+  priority int [not null, default: 0]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  deleted_at timestamptz
+
+  Indexes {
+    (organization_id)
+    (organization_id, slug) [unique]
+  }
+}
+
+Table permissions {
+  id uuid [pk]
+  resource varchar(100) [not null]
+  action varchar(50) [not null, note: 'create|read|update|delete|manage|export|import|verify|moderate']
+  scope varchar(50) [not null, default: 'organization', note: 'platform|organization|own']
+  description varchar(255)
+  is_active boolean [not null, default: true]
+  is_system boolean [not null, default: false]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (resource, action, scope) [unique]
+    is_active
+  }
+}
+
+Table role_permissions {
+  id uuid [pk]
+  role_id uuid [not null]
+  permission_id uuid [not null]
+  created_at timestamptz [not null, default: `now()`]
+  created_by uuid
+
+  Indexes {
+    (role_id, permission_id) [unique]
+    role_id
+    permission_id
+  }
+}
+
+Table organization_memberships {
+  id uuid [pk]
+  organization_id uuid [not null]
+  user_id uuid [not null]
+  role_id uuid [not null, note: 'Autoridad única de autorización (RBAC)']
+  is_owner boolean [not null, default: false]
+  is_active boolean [not null, default: true]
+  invited_by uuid
+  joined_at timestamptz [not null, default: `now()`]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (organization_id, user_id) [unique]
+    (organization_id, is_active)
+    (user_id, is_active)
+    role_id
+  }
+
+  Note: 'Modelo de autorización ÚNICO vía role_id. Sin permisos JSONB duplicados.'
+}
+
+//// PARTE 3: SESIONES, TOKENS Y AUTENTICACIÓN ////
+
+Table sessions {
+  id uuid [pk]
+  user_id uuid [not null]
+  organization_id uuid
+  session_token_hash varchar(255) [not null, unique, note: 'HASH del token, nunca en claro']
+  ip_address varchar(45)
+  user_agent varchar(500)
+  device_id varchar(255)
+  platform varchar(100)
+  country varchar(50)
+  expires_at timestamptz [not null]
+  revoked_at timestamptz
+  revoke_reason varchar(255)
+  compromised_at timestamptz [note: 'refresh token reutilizado detectado']
+  last_activity_at timestamptz [not null, default: `now()`]
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (user_id, is_active)
+    expires_at
+  }
+}
+
+Table refresh_tokens {
+  id uuid [pk]
+  user_id uuid [not null]
+  session_id uuid
+  token_hash varchar(255) [not null, unique]
+  family_id uuid [note: 'familia para rotación y detección de reuso']
+  replaced_by_token_id uuid
+  expires_at timestamptz [not null]
+  revoked_at timestamptz
+  revoke_reason varchar(255)
+  is_used boolean [not null, default: false]
+  used_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (user_id, is_used, revoked_at)
+    family_id
+  }
+}
+
+Table password_reset_tokens {
+  id uuid [pk]
+  user_id uuid [not null]
+  token_hash varchar(255) [not null, unique]
+  expires_at timestamptz [not null]
+  used_at timestamptz
+  ip_address varchar(45)
+  user_agent varchar(500)
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (user_id, is_active)
+  }
+}
+
+Table email_verifications {
+  id uuid [pk]
+  user_id uuid [not null]
+  token_hash varchar(255) [not null, unique]
+  expires_at timestamptz [not null]
+  verified_at timestamptz
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (user_id, is_active)
+  }
+}
+
+Table auth_providers {
+  id uuid [pk]
+  name varchar(50) [not null, unique]
+  display_name varchar(100) [not null]
+  is_active boolean [not null, default: true]
+  is_enabled boolean [not null, default: false]
+  config jsonb [not null, default: `'{}'::jsonb`]
+  priority int [not null, default: 0]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (is_enabled, is_active)
+  }
+}
+
+Table auth_attempts {
+  id uuid [pk]
+  user_id uuid
+  email varchar(255)
+  ip_address varchar(45)
+  user_agent varchar(500)
+  attempt_type varchar(30) [not null, default: 'login', note: 'login|refresh|password_reset|email_verify|mfa|api_key']
+  success boolean [not null, default: false]
+  failure_reason varchar(100)
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (email, created_at)
+    (ip_address, created_at)
+    (user_id, created_at)
+  }
+
+  Note: 'Rate limiting y bloqueo por intentos.'
+}
+
+Table api_keys {
+  id uuid [pk]
+  organization_id uuid
+  created_by uuid
+  name varchar(150) [not null]
+  prefix varchar(20) [not null, unique]
+  key_hash varchar(255) [not null, unique]
+  scopes jsonb [not null, default: `'[]'::jsonb`]
+  last_used_at timestamptz
+  expires_at timestamptz
+  revoked_at timestamptz
+  revoked_by uuid
+  revoke_reason varchar(255)
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (organization_id, revoked_at)
+  }
+}
+
+//// PARTE 4: CONFIGURACIÓN, AUDITORÍA Y METODOLOGÍA ////
+
+Table system_settings {
+  id uuid [pk]
+  organization_id uuid
+  setting_key varchar(150) [not null]
+  setting_value text
+  setting_type varchar(20) [not null, default: 'string', note: 'string|bool|int|float|json|array']
+  scope varchar(20) [not null, default: 'organization', note: 'platform|organization']
+  is_encrypted boolean [not null, default: false]
+  is_readonly boolean [not null, default: false]
+  description text
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  created_by uuid
+  updated_by uuid
+
+  Indexes {
+    (organization_id, setting_key) [unique]
+    (scope, is_readonly)
+  }
+}
+
+Table audit_logs {
+  id uuid [pk]
+  organization_id uuid
+  user_id uuid
+  action varchar(50) [not null, note: 'CREATE|READ|UPDATE|DELETE|LOGIN|LOGOUT|APPROVE|REJECT|VERIFY|EXPIRE|REVOKE|MODERATE|PUBLISH|HIDE|ROTATE']
+  entity_type varchar(100) [not null]
+  entity_id uuid
+  old_values jsonb
+  new_values jsonb
+  ip_address varchar(45)
+  user_agent varchar(500)
+  trace_id varchar(100)
+  request_id varchar(100)
+  metadata jsonb [not null, default: `'{}'::jsonb`]
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (organization_id, entity_type, created_at)
+    (entity_type, entity_id)
+    (user_id, created_at)
+    created_at
+    trace_id
+  }
+
+  Note: 'Append-only. Retención y acceso restringido (ver documentación).'
+}
+
+Table methodology_versions {
+  id uuid [pk]
+  version varchar(30) [not null, unique]
+  title varchar(200)
+  description text
+  scope jsonb [not null, default: `'[]'::jsonb`]
+  sources jsonb [not null, default: `'[]'::jsonb`]
+  published_at timestamptz
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+}
+
+//// PARTE 5: CATÁLOGOS ////
+
+Table countries {
+  id uuid [pk]
+  iso2 char(2) [not null, unique]
+  iso3 char(3) [unique]
+  name varchar(120) [not null]
+  dial_code varchar(10)
+  default_currency char(3)
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+}
+
+Table languages {
+  id uuid [pk]
+  code varchar(10) [not null, unique]
+  name varchar(80) [not null]
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+}
+
+Table sectors {
+  id uuid [pk]
+  parent_id uuid
+  name varchar(150) [not null]
+  slug varchar(150) [not null, unique]
+  description text
+  sort_order int [not null, default: 0]
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    parent_id
+  }
+}
+
+Table verification_scopes {
+  id uuid [pk]
+  code varchar(50) [not null, unique, note: 'identity|activity|documentation|projects|reviews']
+  name varchar(120) [not null]
+  description text
+  is_required boolean [not null, default: false, note: 'usado para el estado global']
+  sort_order int [not null, default: 0]
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+}
+
+Table report_reasons {
+  id uuid [pk]
+  code varchar(50) [not null, unique]
+  label varchar(150) [not null]
+  description text
+  is_active boolean [not null, default: true]
+  sort_order int [not null, default: 0]
+  created_at timestamptz [not null, default: `now()`]
+}
+
+Table review_policies {
+  id uuid [pk]
+  version varchar(30) [not null]
+  title varchar(200) [not null]
+  body text [not null]
+  allow_resolution_flow boolean [not null, default: true]
+  min_rating_for_resolution smallint [not null, default: 2, note: '1..5']
+  is_active boolean [not null, default: true]
+  published_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+}
+
+Table state_transitions {
+  id uuid [pk]
+  entity_type varchar(60) [not null]
+  field varchar(60) [not null]
+  from_value varchar(40) [not null]
+  to_value varchar(40) [not null]
+  required_permission varchar(100)
+  description varchar(255)
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (entity_type, field, from_value, to_value) [unique]
+    (entity_type, field, from_value, is_active)
+  }
+
+  Note: 'Catálogo de la máquina de estados; validado por trigger enforce_state_transition().'
+}
+
+//// PARTE 6: EVIDENCIA Y DOCUMENTOS (CLAIM -> PROOF) ////
+
+Table evidence {
+  id uuid [pk]
+  organization_id uuid [not null]
+  project_id uuid
+  claim_id uuid
+  type varchar(50) [not null, note: 'contrato|presupuesto|factura|foto|certificado|acta']
+  title varchar(255)
+  owner_type varchar(40) [note: 'company_submitted|fiverten_verified|source_derived|system_calculated']
+  file_ref varchar(1000)
+  source_ref varchar(1000)
+  visibility varchar(20) [not null, default: 'private', note: 'private|restricted|public']
+  issue_date date
+  expiry_date date
+  status varchar(20) [not null, default: 'pending', note: 'pending|verified|rejected|expired']
+  hash char(64)
+  uploaded_by uuid
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  deleted_at timestamptz
+
+  Indexes {
+    (organization_id, deleted_at)
+    project_id
+    claim_id
+    expiry_date
+  }
+
+  Note: 'PROOF: artefacto de prueba. expiry_date >= issue_date.'
+}
+
+Table documents {
+  id uuid [pk]
+  organization_id uuid [not null]
+  evidence_id uuid [note: 'archivo original (proof)']
+  category varchar(50) [not null, note: 'RC|licencia|seguro|certificación']
+  issuer varchar(200)
+  document_number varchar(100)
+  version varchar(30)
+  title varchar(255)
+  issue_date date
+  expiry_date date
+  status varchar(20) [not null, default: 'pending', note: 'pending|verified|rejected|expired']
+  visibility varchar(20) [not null, default: 'private', note: 'private|restricted|public']
+  review_notes text
+  reviewed_by uuid
+  reviewed_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  deleted_at timestamptz
+
+  Indexes {
+    (organization_id, deleted_at)
+    (category, status)
+    expiry_date
+  }
+
+  Note: 'DOCUMENTO LEGAL gestionado. expiry_date >= issue_date.'
+}
+
+//// PARTE 7: VERIFICACIÓN (CLAIM -> EVIDENCE -> DECISION) ////
+
+Table verification_claims {
+  id uuid [pk]
+  public_id varchar(32) [not null, unique]
+  organization_id uuid [not null]
+  scope_id uuid
+  scope_code varchar(50) [not null]
+  project_id uuid
+  review_id uuid
+  statement text
+  status varchar(20) [not null, default: 'draft', note: 'draft|submitted|under_review|approved|rejected|expired|revoked']
+  submitted_by uuid
+  submitted_at timestamptz
+  current_decision_id uuid
+  created_by uuid
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (organization_id, scope_code, status)
+    project_id
+    review_id
+  }
+}
+
+Table claim_evidence {
+  id uuid [pk]
+  claim_id uuid [not null]
+  evidence_id uuid [not null]
+  added_by uuid
+  added_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (claim_id, evidence_id) [unique]
+    claim_id
+    evidence_id
+  }
+}
+
+Table verification_decisions {
+  id uuid [pk]
+  claim_id uuid [not null]
+  reviewer_id uuid
+  methodology_version_id uuid
+  decision varchar(20) [not null, note: 'approved|rejected|revoked|expired|re_evaluated']
+  justification text
+  previous_decision_id uuid [note: 'encadena reevaluaciones sin perder historial']
+  valid_from timestamptz [not null, default: `now()`]
+  valid_until timestamptz
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (claim_id, created_at)
+    reviewer_id
+  }
+
+  Note: 'Append-only. valid_until > valid_from.'
+}
+
+Table decision_evidence {
+  id uuid [pk]
+  decision_id uuid [not null]
+  evidence_id uuid [not null]
+  evaluation_notes text
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (decision_id, evidence_id) [unique]
+    decision_id
+  }
+
+  Note: 'Qué evidencias concretas se evaluaron en la decisión.'
+}
+
+Table organization_verifications {
+  id uuid [pk]
+  organization_id uuid [not null]
+  scope_id uuid
+  scope_code varchar(50) [not null, note: 'identity|activity|documentation|projects|reviews']
+  status varchar(20) [not null, default: 'not_verified', note: 'not_verified|pending|verified|expired|rejected']
+  verified_at timestamptz
+  expires_at timestamptz
+  methodology_version_id uuid
+  reviewer_id uuid
+  current_decision_id uuid
+  reason text
+  source varchar(255)
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (organization_id, scope_code) [unique]
+    (organization_id, status)
+    expires_at
+  }
+
+  Note: 'FUENTE DE VERDAD del estado de verificación por scope.'
+}
+
+Table verification_events {
+  id uuid [pk]
+  organization_id uuid
+  entity_type varchar(60) [not null, note: 'organization|document|project|review|evidence|claim|decision']
+  entity_id uuid [not null]
+  claim_id uuid
+  decision_id uuid
+  evidence_id uuid
+  document_id uuid
+  project_id uuid
+  review_id uuid
+  actor_id uuid
+  from_status varchar(30)
+  to_status varchar(30)
+  reason text
+  source varchar(255)
+  methodology_version_id uuid
+  expires_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (entity_type, entity_id, created_at)
+    (organization_id, created_at)
+    claim_id
+    actor_id
+  }
+
+  Note: 'Bitácora inmutable con FKs TIPADAS reales (además de entity_type/entity_id).'
+}
+
+//// PARTE 8: PROYECTOS, VERIFICACIÓN Y CLIENTES ////
+
+Table projects {
+  id uuid [pk]
+  organization_id uuid [not null]
+  title varchar(255) [not null]
+  type varchar(80)
+  description text
+  location varchar(200)
+  year smallint
+  start_date date
+  end_date date
+  lifecycle_status varchar(20) [not null, default: 'draft', note: 'draft|submitted|published|archived']
+  verification_status varchar(20) [not null, default: 'not_verified', note: 'not_verified|pending|verified|expired|rejected']
+  visibility varchar(20) [not null, default: 'private', note: 'private|restricted|public']
+  verified_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  deleted_at timestamptz
+  created_by uuid
+  updated_by uuid
+
+  Indexes {
+    (organization_id, deleted_at)
+    verification_status
+    visibility
+  }
+
+  Note: 'end_date >= start_date.'
+}
+
+Table project_verifications {
+  id uuid [pk]
+  project_id uuid [not null]
+  evidence_types jsonb [not null, default: `'[]'::jsonb`]
+  client_status varchar(20) [not null, default: 'identified', note: 'identified|confirmed|verified']
+  status varchar(20) [not null, default: 'pending', note: 'pending|verified|rejected|expired']
+  verified_at timestamptz
+  reviewer_id uuid
+  methodology_version_id uuid
+  notes text
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (project_id, status)
+  }
+}
+
+Table client_relations {
+  id uuid [pk]
+  organization_id uuid [not null]
+  project_id uuid
+  client_user_id uuid
+  client_name varchar(200)
+  client_email varchar(255)
+  status varchar(20) [not null, default: 'identified', note: 'identified|confirmed|verified|rejected']
+  verification_level varchar(20) [not null, default: 'identified', note: 'identified|confirmed|verified']
+  consent boolean [not null, default: false]
+  consent_at timestamptz
+  verified_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    organization_id
+    project_id
+    (organization_id, client_email)
+  }
+}
+
+Table client_invites {
+  id uuid [pk]
+  organization_id uuid [not null]
+  project_id uuid
+  client_relation_id uuid
+  invited_by uuid
+  client_name varchar(200)
+  email varchar(255) [not null]
+  channel varchar(20) [not null, default: 'email', note: 'email|sms|link|qr']
+  token_hash varchar(255) [not null, unique]
+  status varchar(20) [not null, default: 'pending', note: 'pending|sent|opened|responded|expired|cancelled']
+  sent_at timestamptz
+  opened_at timestamptz
+  responded_at timestamptz
+  expires_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (organization_id, status)
+    project_id
+  }
+}
+
+//// PARTE 9: RESEÑAS / OPINIONES ////
+
+Table reviews {
+  id uuid [pk]
+  organization_id uuid [not null]
+  project_id uuid
+  client_relation_id uuid
+  client_invite_id uuid
+  reviewer_name varchar(200)
+  reviewer_email varchar(255)
+  rating smallint [not null, note: '1..5']
+  title varchar(255)
+  body text
+  experience_date date
+  order_reference varchar(100)
+  image_url varchar(1000)
+  consent boolean [not null, default: false]
+  lifecycle_status varchar(20) [not null, default: 'submitted', note: 'draft|submitted|published|archived']
+  verification_status varchar(20) [not null, default: 'not_verified', note: 'not_verified|pending|verified|expired|rejected']
+  visibility varchar(20) [not null, default: 'private', note: 'private|restricted|public']
+  moderation_status varchar(20) [not null, default: 'none', note: 'none|reported|under_review|resolved|rejected|hidden']
+  published_at timestamptz
+  resolved_at timestamptz
+  ip_address varchar(45)
+  user_agent varchar(500)
+  metadata jsonb [not null, default: `'{}'::jsonb`]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  deleted_at timestamptz
+
+  Indexes {
+    (organization_id, deleted_at)
+    (organization_id, lifecycle_status, moderation_status)
+    project_id
+    (organization_id, rating)
+    published_at
+    ip_address
+  }
+
+  Note: 'Restricciones: hidden no puede ser public; published exige published_at. La verificación NO depende de la moderación.'
+}
+
+Table review_responses {
+  id uuid [pk]
+  review_id uuid [not null, unique]
+  organization_id uuid [not null]
+  author_user_id uuid
+  body text [not null]
+  is_public boolean [not null, default: true]
+  edited_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    review_id
+  }
+}
+
+Table review_disputes {
+  id uuid [pk]
+  review_id uuid [not null]
+  organization_id uuid [not null]
+  raised_by uuid
+  reason text [not null]
+  status varchar(20) [not null, default: 'open', note: 'open|under_review|accepted|rejected|closed']
+  resolution_notes text
+  resolved_by uuid
+  resolved_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    review_id
+  }
+}
+
+Table review_resolutions {
+  id uuid [pk]
+  review_id uuid [not null]
+  organization_id uuid [not null]
+  initiated_by uuid
+  status varchar(20) [not null, default: 'open', note: 'open|in_progress|accepted|rejected|closed']
+  proposal text
+  outcome varchar(20) [note: 'resolved|unresolved|withdrawn']
+  closed_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (review_id, status)
+  }
+}
+
+Table resolution_messages {
+  id uuid [pk]
+  resolution_id uuid [not null]
+  sender_type varchar(20) [not null, note: 'company|client|system']
+  sender_user_id uuid
+  body text [not null]
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (resolution_id, created_at)
+  }
+}
+
+Table review_reports {
+  id uuid [pk]
+  review_id uuid [not null]
+  reason_id uuid
+  reporter_user_id uuid
+  reporter_organization_id uuid
+  comment text
+  status varchar(20) [not null, default: 'open', note: 'open|reviewing|accepted|rejected|closed']
+  handled_by uuid
+  handled_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    review_id
+    (status, created_at)
+  }
+}
+
+Table moderation_actions {
+  id uuid [pk]
+  review_id uuid [not null]
+  moderator_id uuid
+  action varchar(30) [not null, note: 'hide|publish|restore|reject|flag|unflag|delete']
+  from_status varchar(20)
+  to_status varchar(20)
+  reason text
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (review_id, created_at)
+    moderator_id
+  }
+}
+
+Table antifraud_signals {
+  id uuid [pk]
+  review_id uuid
+  organization_id uuid
+  signal_type varchar(50) [not null]
+  score numeric(5,2) [note: '0..100']
+  details jsonb [not null, default: `'{}'::jsonb`]
+  ip_address varchar(45)
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    review_id
+    (signal_type, created_at)
+  }
+}
+
+//// PARTE 10: SOLICITUDES DE RESEÑA Y CAMPAÑAS ////
+
+Table campaigns {
+  id uuid [pk]
+  organization_id uuid [not null]
+  name varchar(200) [not null]
+  channel varchar(20) [not null, default: 'email', note: 'email|sms|link|qr']
+  status varchar(20) [not null, default: 'draft', note: 'draft|scheduled|running|paused|finished|cancelled']
+  total_sent int [not null, default: 0, note: 'CACHÉ recalculable; ver v_campaign_stats']
+  total_opened int [not null, default: 0]
+  total_reviews int [not null, default: 0]
+  started_at timestamptz
+  finished_at timestamptz
+  created_by uuid
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (organization_id, status)
+  }
+}
+
+Table review_requests {
+  id uuid [pk]
+  organization_id uuid [not null]
+  campaign_id uuid
+  project_id uuid
+  client_relation_id uuid
+  review_id uuid
+  client_name varchar(200)
+  email varchar(255)
+  channel varchar(20) [not null, default: 'email', note: 'email|sms|link|qr']
+  token_hash varchar(255) [not null, unique]
+  status varchar(20) [not null, default: 'pending', note: 'pending|sent|opened|clicked|reviewed|bounced|cancelled']
+  sent_at timestamptz
+  opened_at timestamptz
+  clicked_at timestamptz
+  reviewed_at timestamptz
+  created_by uuid
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (organization_id, status)
+    campaign_id
+  }
+}
+
+//// PARTE 11: SELLO PÚBLICO / EMBEDS ////
+
+Table public_badges {
+  id uuid [pk]
+  organization_id uuid [not null]
+  state varchar(20) [not null, default: 'pending', note: 'verified|pending|expired|revoked']
+  embed_token varchar(64) [not null, unique]
+  current_url varchar(500)
+  issued_at timestamptz [not null, default: `now()`]
+  expires_at timestamptz
+  downloaded_at timestamptz
+  embed_copied_at timestamptz
+  revoked_at timestamptz
+  revoked_reason varchar(255)
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (organization_id, state)
+    embed_token
+  }
+}
+
+//// PARTE 12: PLANES, SUSCRIPCIONES Y FACTURACIÓN ////
+
+Table plans {
+  id uuid [pk]
+  code varchar(50) [not null, unique]
+  name varchar(120) [not null]
+  description text
+  price numeric(12,2) [not null, default: 0, note: '>= 0']
+  currency char(3) [not null, default: 'EUR']
+  billing_interval varchar(20) [not null, default: 'monthly', note: 'monthly|yearly|custom']
+  is_custom_pricing boolean [not null, default: false]
+  is_active boolean [not null, default: true]
+  sort_order int [not null, default: 0]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+}
+
+Table plan_limits {
+  id uuid [pk]
+  plan_id uuid [not null]
+  feature_key varchar(80) [not null]
+  limit_value int [note: 'NULL = ilimitado']
+  is_boolean boolean [not null, default: false]
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (plan_id, feature_key) [unique]
+    plan_id
+  }
+}
+
+Table subscriptions {
+  id uuid [pk]
+  organization_id uuid [not null]
+  plan_id uuid [not null]
+  status varchar(20) [not null, default: 'trial', note: 'active|trial|past_due|cancelled|expired']
+  trial_ends_at timestamptz
+  current_period_start timestamptz
+  current_period_end timestamptz
+  cancel_at_period_end boolean [not null, default: false]
+  cancelled_at timestamptz
+  provider varchar(50)
+  provider_subscription_ref varchar(255)
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (organization_id, status)
+    current_period_end
+  }
+
+  Note: 'current_period_end > current_period_start.'
+}
+
+Table invoices {
+  id uuid [pk]
+  organization_id uuid [not null]
+  subscription_id uuid
+  number varchar(50) [not null, unique]
+  status varchar(20) [not null, default: 'draft', note: 'draft|open|paid|void|uncollectible']
+  subtotal numeric(12,2) [not null, default: 0]
+  tax numeric(12,2) [not null, default: 0]
+  total numeric(12,2) [not null, default: 0]
+  currency char(3) [not null, default: 'EUR']
+  issued_at timestamptz
+  due_at timestamptz
+  paid_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (organization_id, status)
+  }
+}
+
+Table invoice_items {
+  id uuid [pk]
+  invoice_id uuid [not null]
+  description varchar(255) [not null]
+  quantity numeric(10,2) [not null, default: 1, note: '> 0']
+  unit_price numeric(12,2) [not null, default: 0, note: '>= 0']
+  amount numeric(12,2) [not null, default: 0, note: '>= 0']
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    invoice_id
+  }
+}
+
+Table payments {
+  id uuid [pk]
+  invoice_id uuid
+  organization_id uuid [not null]
+  provider varchar(50)
+  provider_payment_ref varchar(255)
+  amount numeric(12,2) [not null, default: 0]
+  currency char(3) [not null, default: 'EUR']
+  status varchar(20) [not null, default: 'pending', note: 'pending|succeeded|failed|refunded']
+  paid_at timestamptz
+  failure_reason varchar(255)
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (organization_id, status)
+  }
+}
+
+//// PARTE 13: NOTIFICACIONES Y PLANTILLAS ////
+
+Table notification_templates {
+  id uuid [pk]
+  code varchar(100) [not null]
+  name varchar(150)
+  channel varchar(20) [not null, note: 'email|in_app|sms|push']
+  locale varchar(10) [not null, default: 'es']
+  subject varchar(255)
+  body text [not null]
+  html_body text
+  text_body text
+  variables jsonb [not null, default: `'[]'::jsonb`]
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (code, channel, locale) [unique]
+    (code, is_active)
+  }
+
+  Note: 'Plantilla ÚNICA para todos los canales; reemplaza email_templates.'
+}
+
+Table notifications {
+  id uuid [pk]
+  organization_id uuid
+  template_code varchar(100)
+  type varchar(50) [not null]
+  channel varchar(20) [not null, default: 'in_app', note: 'email|in_app|sms|push']
+  priority varchar(20) [not null, default: 'normal', note: 'low|normal|high|urgent']
+  title varchar(255) [not null]
+  body text
+  data jsonb [not null, default: `'{}'::jsonb`]
+  notifiable_type varchar(50)
+  notifiable_id uuid
+  created_by uuid
+  expires_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (organization_id, created_at)
+    (notifiable_type, notifiable_id)
+  }
+}
+
+Table user_notifications {
+  id uuid [pk]
+  notification_id uuid [not null]
+  user_id uuid [not null]
+  is_read boolean [not null, default: false]
+  read_at timestamptz
+  is_archived boolean [not null, default: false]
+  delivered_at timestamptz
+  channel varchar(20) [not null, default: 'in_app']
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (notification_id, user_id) [unique]
+    (user_id, is_read, is_archived)
+  }
+
+  Note: 'RLS por usuario.'
+}
+
+//// PARTE 14: ANALÍTICA DE EVENTOS ////
+
+Table analytics_events {
+  id uuid [pk]
+  organization_id uuid
+  user_id uuid
+  event_name varchar(80) [not null]
+  properties jsonb [not null, default: `'{}'::jsonb`]
+  ip_address varchar(45)
+  user_agent varchar(500)
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (event_name, created_at)
+    (organization_id, created_at)
+  }
+}
+
+//// ==================== RELACIONES ==================== ////
+
+Ref: organization_locations.organization_id > organizations.id
+Ref: organizations.sector_id > sectors.id
+Ref: organizations.country_id > countries.id
+Ref: organizations.created_by > users.id
+Ref: organizations.updated_by > users.id
+Ref: organizations.deleted_by > users.id
+Ref: organization_locations.country_id > countries.id
+
+Ref: users.default_organization_id > organizations.id
+Ref: users.created_by > users.id
+Ref: users.updated_by > users.id
+Ref: users.deleted_by > users.id
+Ref: roles.organization_id > organizations.id
+Ref: role_permissions.role_id > roles.id
+Ref: role_permissions.permission_id > permissions.id
+Ref: role_permissions.created_by > users.id
+Ref: organization_memberships.organization_id > organizations.id
+Ref: organization_memberships.user_id > users.id
+Ref: organization_memberships.role_id > roles.id
+Ref: organization_memberships.invited_by > users.id
+
+Ref: sessions.user_id > users.id
+Ref: sessions.organization_id > organizations.id
+Ref: refresh_tokens.user_id > users.id
+Ref: refresh_tokens.session_id > sessions.id
+Ref: refresh_tokens.replaced_by_token_id > refresh_tokens.id
+Ref: password_reset_tokens.user_id > users.id
+Ref: email_verifications.user_id > users.id
+Ref: auth_attempts.user_id > users.id
+Ref: api_keys.organization_id > organizations.id
+Ref: api_keys.created_by > users.id
+Ref: api_keys.revoked_by > users.id
+
+Ref: system_settings.organization_id > organizations.id
+Ref: system_settings.created_by > users.id
+Ref: system_settings.updated_by > users.id
+Ref: audit_logs.organization_id > organizations.id
+Ref: audit_logs.user_id > users.id
+Ref: sectors.parent_id > sectors.id
+
+Ref: evidence.organization_id > organizations.id
+Ref: evidence.project_id > projects.id
+Ref: evidence.claim_id > verification_claims.id
+Ref: evidence.uploaded_by > users.id
+Ref: documents.organization_id > organizations.id
+Ref: documents.evidence_id > evidence.id
+Ref: documents.reviewed_by > users.id
+
+Ref: verification_claims.organization_id > organizations.id
+Ref: verification_claims.scope_id > verification_scopes.id
+Ref: verification_claims.project_id > projects.id
+Ref: verification_claims.review_id > reviews.id
+Ref: verification_claims.submitted_by > users.id
+Ref: verification_claims.current_decision_id > verification_decisions.id
+Ref: verification_claims.created_by > users.id
+Ref: claim_evidence.claim_id > verification_claims.id
+Ref: claim_evidence.evidence_id > evidence.id
+Ref: claim_evidence.added_by > users.id
+Ref: verification_decisions.claim_id > verification_claims.id
+Ref: verification_decisions.reviewer_id > users.id
+Ref: verification_decisions.methodology_version_id > methodology_versions.id
+Ref: verification_decisions.previous_decision_id > verification_decisions.id
+Ref: decision_evidence.decision_id > verification_decisions.id
+Ref: decision_evidence.evidence_id > evidence.id
+Ref: organization_verifications.organization_id > organizations.id
+Ref: organization_verifications.scope_id > verification_scopes.id
+Ref: organization_verifications.methodology_version_id > methodology_versions.id
+Ref: organization_verifications.reviewer_id > users.id
+Ref: organization_verifications.current_decision_id > verification_decisions.id
+Ref: verification_events.organization_id > organizations.id
+Ref: verification_events.claim_id > verification_claims.id
+Ref: verification_events.decision_id > verification_decisions.id
+Ref: verification_events.evidence_id > evidence.id
+Ref: verification_events.document_id > documents.id
+Ref: verification_events.project_id > projects.id
+Ref: verification_events.review_id > reviews.id
+Ref: verification_events.actor_id > users.id
+Ref: verification_events.methodology_version_id > methodology_versions.id
+
+Ref: projects.organization_id > organizations.id
+Ref: projects.created_by > users.id
+Ref: projects.updated_by > users.id
+Ref: project_verifications.project_id > projects.id
+Ref: project_verifications.reviewer_id > users.id
+Ref: project_verifications.methodology_version_id > methodology_versions.id
+Ref: client_relations.organization_id > organizations.id
+Ref: client_relations.project_id > projects.id
+Ref: client_relations.client_user_id > users.id
+Ref: client_invites.organization_id > organizations.id
+Ref: client_invites.project_id > projects.id
+Ref: client_invites.client_relation_id > client_relations.id
+Ref: client_invites.invited_by > users.id
+
+Ref: reviews.organization_id > organizations.id
+Ref: reviews.project_id > projects.id
+Ref: reviews.client_relation_id > client_relations.id
+Ref: reviews.client_invite_id > client_invites.id
+Ref: review_responses.review_id > reviews.id
+Ref: review_responses.organization_id > organizations.id
+Ref: review_responses.author_user_id > users.id
+Ref: review_disputes.review_id > reviews.id
+Ref: review_disputes.organization_id > organizations.id
+Ref: review_disputes.raised_by > users.id
+Ref: review_disputes.resolved_by > users.id
+Ref: review_resolutions.review_id > reviews.id
+Ref: review_resolutions.organization_id > organizations.id
+Ref: review_resolutions.initiated_by > users.id
+Ref: resolution_messages.resolution_id > review_resolutions.id
+Ref: resolution_messages.sender_user_id > users.id
+Ref: review_reports.review_id > reviews.id
+Ref: review_reports.reason_id > report_reasons.id
+Ref: review_reports.reporter_user_id > users.id
+Ref: review_reports.reporter_organization_id > organizations.id
+Ref: review_reports.handled_by > users.id
+Ref: moderation_actions.review_id > reviews.id
+Ref: moderation_actions.moderator_id > users.id
+Ref: antifraud_signals.review_id > reviews.id
+Ref: antifraud_signals.organization_id > organizations.id
+
+Ref: campaigns.organization_id > organizations.id
+Ref: campaigns.created_by > users.id
+Ref: review_requests.organization_id > organizations.id
+Ref: review_requests.campaign_id > campaigns.id
+Ref: review_requests.project_id > projects.id
+Ref: review_requests.client_relation_id > client_relations.id
+Ref: review_requests.review_id > reviews.id
+Ref: review_requests.created_by > users.id
+
+Ref: public_badges.organization_id > organizations.id
+
+Ref: plan_limits.plan_id > plans.id
+Ref: subscriptions.organization_id > organizations.id
+Ref: subscriptions.plan_id > plans.id
+Ref: invoices.organization_id > organizations.id
+Ref: invoices.subscription_id > subscriptions.id
+Ref: invoice_items.invoice_id > invoices.id
+Ref: payments.invoice_id > invoices.id
+Ref: payments.organization_id > organizations.id
+
+Ref: notifications.organization_id > organizations.id
+Ref: notifications.created_by > users.id
+Ref: user_notifications.notification_id > notifications.id
+Ref: user_notifications.user_id > users.id
+
+Ref: analytics_events.organization_id > organizations.id
+Ref: analytics_events.user_id > users.id

@@ -1,0 +1,359 @@
+Documento de alcance — Plataforma de reseñas y reputación
+1. Nombre provisional
+Plataforma de Gestión de Reputación y Reseñas
+SaaS multitenant para que empresas recopilen, gestionen, respondan y analicen reseñas de sus clientes.
+2. Objetivo del proyecto
+Desarrollar una plataforma similar en concepto a Trustpilot que permita a empresas:
+Crear su perfil empresarial.
+Recibir reseñas de clientes.
+Generar enlaces personalizados para solicitar reseñas.
+Gestionar y responder reseñas.
+Detectar y gestionar reseñas potencialmente problemáticas.
+Solicitar al cliente que resuelva un problema antes de publicar una reseña negativa, cuando las reglas de la plataforma lo permitan.
+Analizar su reputación.
+Mostrar un perfil público con sus reseñas y puntuación.
+Gestionar múltiples usuarios dentro de su empresa.
+Contratar diferentes planes de membresía.
+La plataforma estará construida bajo una arquitectura multitenant, donde cada empresa tendrá sus propios datos, usuarios, configuraciones y reseñas.
+
+3. Roles del sistema
+3.1 Super Admin
+Administrador global de toda la plataforma.
+Funciones
+Dashboard
+Empresas registradas.
+Empresas activas/inactivas.
+Nuevas reseñas.
+Reseñas pendientes.
+Reseñas reportadas.
+Usuarios registrados.
+Suscripciones.
+Ingresos.
+Estadísticas generales.
+Gestión de empresas
+Crear empresa.
+Editar empresa.
+Suspender empresa.
+Activar empresa.
+Ver información de la empresa.
+Ver estadísticas.
+Ver reseñas.
+Gestionar usuarios del tenant.
+Gestión de reseñas
+Ver todas las reseñas.
+Filtrar por empresa.
+Filtrar por puntuación.
+Filtrar por estado.
+Revisar reportes.
+Moderar contenido.
+Ocultar/eliminar contenido que incumpla las políticas.
+Restaurar reseñas moderadas.
+Gestión de membresías
+Crear planes.
+Editar planes.
+Definir límites.
+Ver suscripciones.
+Cambiar estado de suscripciones.
+Ver pagos.
+Moderación
+Sistema de reportes.
+Revisión de contenido.
+Historial de acciones.
+Motivos de moderación.
+Configuración
+Categorías.
+Países.
+Idiomas.
+Políticas de reseñas.
+Configuración general.
+Email templates.
+Configuración de notificaciones.
+
+4. Admin Tenant / Cliente
+Cada empresa tendrá un administrador independiente.
+Ejemplo:
+Empresa: Clínica ABC
+Tenant ID: tenant_123
+El administrador solamente podrá acceder a la información de su propia empresa.
+Dashboard
+Indicadores:
+Puntuación promedio.
+Total de reseñas.
+Reseñas nuevas.
+Reseñas pendientes.
+Reseñas negativas.
+Reseñas respondidas.
+Tasa de respuesta.
+Evolución de reputación.
+Solicitudes de reseñas enviadas.
+Tasa de conversión.
+5. Perfil público de empresa
+Cada empresa tendrá una página pública.
+Ejemplo:
+plataforma.com/empresa/clinica-abc
+Contenido:
+Logo.
+Nombre.
+Descripción.
+Categoría.
+Ubicación.
+Página web.
+Redes sociales.
+Puntuación.
+Total de reseñas.
+Distribución de estrellas.
+Reseñas.
+Fecha de las reseñas.
+Respuestas de la empresa.
+Verificación de empresa.
+Filtros
+Todas.
+5 estrellas.
+4 estrellas.
+3 estrellas.
+2 estrellas.
+1 estrella.
+Más recientes.
+Más antiguas.
+6. Sistema de reseñas
+El cliente podrá dejar una reseña mediante un enlace.
+Ejemplo:
+plataforma.com/review/clinica-abc
+Formulario:
+Nombre.
+Email.
+Puntuación.
+Comentario.
+Fecha de experiencia.
+Opcional: número de pedido/reserva.
+Opcional: imagen.
+Consentimiento.
+7. Sistema de reseñas negativas
+Esta sería una de las funcionalidades diferenciales de la plataforma.
+En lugar de simplemente ocultar una reseña negativa porque la empresa paga, se puede implementar un flujo de resolución.
+Ejemplo
+Cliente:
+⭐⭐
+ "Tuve problemas con mi pedido y nadie me respondió."
+El sistema detecta una valoración baja.
+Se puede activar:
+Reseña negativa detectada
+
+[ Resolver problema ]
+
+[ Publicar reseña ]
+
+8. Estado de las reseñas
+Cada reseña puede tener estados:
+PENDING
+PUBLISHED
+UNDER_REVIEW
+RESOLUTION
+RESOLVED
+REJECTED
+REPORTED
+HIDDEN
+Ejemplo:
+Pendiente
+La reseña todavía está siendo procesada.
+Publicada
+La reseña es visible públicamente.
+En resolución
+Existe una incidencia entre cliente y empresa.
+Resuelta
+El cliente y la empresa han finalizado el proceso.
+Reportada
+Alguien ha reportado la reseña.
+Oculta
+Un moderador la ha retirado por incumplimiento de las políticas.
+
+9. Sistema de resolución
+Una empresa podrá iniciar una conversación relacionada con una reseña.
+Ejemplo:
+Reseña #82931
+
+Cliente:
+"El pedido llegó incompleto."
+
+Empresa:
+"Hola Juan, lamentamos lo ocurrido.
+Queremos solucionarlo."
+
+[ Iniciar resolución ]
+El cliente podrá:
+Aceptar solución.
+Rechazar solución.
+Responder.
+Actualizar reseña.
+Marcar problema como solucionado.
+10. Respuesta de empresas
+Las empresas podrán responder públicamente.
+Ejemplo:
+Empresa ABC
+ "Lamentamos lo ocurrido. Nos comunicamos contigo y realizamos la devolución correspondiente."
+La respuesta aparecerá debajo de la reseña.
+
+11. Solicitud automática de reseñas
+Una funcionalidad muy importante para monetización.
+La empresa podrá generar solicitudes:
+Solicitar reseña
+
+Nombre: Juan Pérez
+Email: juan@email.com
+
+[Enviar solicitud]
+También:
+Link universal
+plataforma.com/review/empresa-x
+QR
+Generación automática de:
+[ QR ]
+
+Escanea para dejar tu reseña
+Campañas
+Ejemplo:
+Campaña:
+Clientes septiembre
+
+Total enviados: 500
+Abiertos: 372
+Reseñas: 128
+Conversión: 34.4%
+
+12. Automatizaciones
+Para un MVP completo se puede incluir:
+Email
+Después de una compra:
+Gracias por confiar en nosotros.
+
+¿Cómo fue tu experiencia?
+
+⭐ ⭐ ⭐ ⭐ ⭐
+
+[ Dejar reseña ]
+
+13. Sistema de membresías
+Modelo SaaS.
+Plan Free
+Ejemplo:
+Perfil público.
+Hasta 50 reseñas.
+1 usuario.
+Estadísticas básicas.
+Plan Starter
+Ejemplo:
+500 reseñas.
+3 usuarios.
+Solicitudes de reseñas.
+QR.
+Estadísticas.
+Respuestas.
+Resolución de incidencias.
+Plan Business
+Ejemplo:
+2,000 reseñas.
+10 usuarios.
+Automatizaciones.
+Analytics avanzado.
+Integraciones.
+Personalización del perfil.
+Plan Enterprise
+Precio personalizado.
+Empresas grandes.
+API.
+Multiusuarios.
+Integraciones.
+Soporte prioritario.
+Los precios son ejemplos iniciales y deberían definirse después de validar costos y mercado.
+14. Gestión de suscripciones
+Integración con pasarela de pagos.
+Funciones:
+Suscribirse.
+Cambiar plan.
+Cancelar.
+Renovación automática.
+Historial de pagos.
+Facturación.
+Estado de suscripción.
+Estados:
+ACTIVE
+TRIAL
+PAST_DUE
+CANCELLED
+EXPIRED
+15. Sistema de verificación
+Para aumentar la confianza:
+Empresa verificada
+La empresa puede verificar:
+Email corporativo.
+Dominio.
+Teléfono.
+Identidad empresarial.
+Documentación, si corresponde.
+Mostrar:
+✓ Empresa verificada
+Reseña verificada
+Opcionalmente:
+✓ Experiencia verificada
+Esto podría significar que la reseña proviene de una solicitud generada por la plataforma o que existe una referencia de transacción.
+16. Sistema antifraude
+Para el MVP:
+Rate limiting.
+CAPTCHA.
+Validación de email.
+Detección de IP.
+Detección de duplicados.
+Detección de múltiples reseñas desde la misma IP.
+Bloqueo de spam.
+Detección de contenido sospechoso.
+Sistema de reportes.
+En una segunda etapa:
+Machine Learning.
+Detección de patrones.
+Análisis semántico.
+Detección de reseñas generadas automáticamente.
+17. Reportar reseña
+Una empresa o usuario puede reportar una reseña.
+Motivos:
+Spam.
+Contenido ofensivo.
+Información personal.
+Conflicto de intereses.
+No corresponde a una experiencia real.
+Publicidad.
+Contenido ilegal.
+Otro.
+El reporte pasa al sistema de moderación.
+18. Widgets
+Una funcionalidad comercial importante sería permitir que las empresas inserten sus reseñas en su propia web.
+Ejemplo:
+<script src="platform.com/widget.js"></script>
+Resultado:
+4.8 / 5
+ Basado en 235 reseñas
+También:
+Carrusel.
+Rating badge.
+Últimas reseñas.
+Testimonios.
+Botón "Dejar reseña".
+Esto permite que la plataforma sea visible en las webs de los clientes.
+19. Notificaciones
+Empresa
+Nueva reseña.
+Nueva reseña negativa.
+Nueva respuesta.
+Nuevo reporte.
+Resolución iniciada.
+Suscripción próxima a vencer.
+Cliente
+Reseña publicada.
+Empresa respondió.
+Empresa inició resolución.
+Solicitud de actualizar reseña.
+Resolución finalizada.
+Canales:
+Email.
+Dentro de la plataforma.
+
+

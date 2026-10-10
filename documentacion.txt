@@ -1,0 +1,743 @@
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+FIVERTEN - Confidential working specification - 02 October 2026
+WEB DEVELOPMENT HANDOFF
+Especificación funcional, UX/UI y técnica
+Para el equipo responsable de diseño y desarrollo de FIVERTEN
+Documento FIVERTEN Web Development Handoff
+Versión 1.0
+Fecha 02/10/2026
+Estado Base para desarrollo / MVP
+Uso de este documento
+Este documento es la referencia de producto y diseño para construir la primera versión de FIVERTEN. Los 
+mockups sirven como dirección visual. Los datos, métricas y nombres de empresa que aparecen en ellos son 
+demostrativos salvo que se carguen expresamente desde base de datos.
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+FIVERTEN - Confidential working specification - 02 October 2026
+00 · MAPA DEL DOCUMENTO
+Qué debe construir el equipo
+FIVERTEN debe funcionar como una plataforma de reputación verificable: una capa de confianza 
+que relaciona empresas, identidad, documentación, proyectos, clientes y opiniones con 
+evidencias y trazabilidad.
+Bloque Contenido Prioridad
+01 Objetivo de producto y principios P0
+02 Arquitectura de información y rutas P0
+03 Roles y permisos P0
+04 Web pública P0
+05 Perfil de empresa verificada P0
+06 Proyectos y opiniones verificadas P0
+07 Trust Center y metodología P0
+08 Área privada / Dashboard P0
+09 Sistema visual y componentes P0
+10 Datos, estados y reglas de negocio P0
+11 Responsive, accesibilidad, SEO y 
+rendimiento
+P0
+12 Seguridad, privacidad y legal P0
+13 Analítica y eventos P1
+14 Backlog MVP y criterios de aceptación P0
+15 Entregables y decisiones abiertas P0
+Principio rector
+Cada afirmación relevante debe poder responder a la pregunta “¿cómo lo sabes?”. El patrón de producto es CLAIM -> PROOF: una afirmación abre la evidencia, la fuente o el alcance de la verificación que la respalda.
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+FIVERTEN - Confidential working specification - 02 October 2026
+01 · PRODUCTO
+Objetivo y principios de FIVERTEN
+Posicionamiento
+FIVERTEN no se presenta como “otra web de reseñas”. La propuesta es verificar hechos y relaciones 
+que permiten construir reputación demostrable.
+Producto principal: perfil público de empresa con identidad, documentación, proyectos, clientes y opiniones 
+verificadas.
+Valor para usuario: entender qué se ha comprobado y cuándo, sin depender únicamente de una puntuación.
+Valor para empresa: convertir evidencias reales en un activo de confianza reutilizable en web, propuestas, 
+firmas, certificados y procesos comerciales.
+Valor de marca: FIVERTEN debe actuar como tercero verificante, con metodología clara, trazabilidad y lenguaje 
+prudente.
+Principios de producto
+# Principio Implicación de diseño/desarrollo
+1 Claim -> Proof Todo badge, estado o cifra verificable 
+debe llevar a detalle/fuente/alcance.
+2 Scope before absolutes No usar afirmaciones absolutas si solo se 
+han consultado fuentes concretas.
+3 Time matters Toda verificación relevante debe mostrar 
+fecha de última comprobación o vigencia.
+4 Company editable ≠ verified La empresa puede proponer datos; 
+FIVERTEN decide y registra el estado 
+verificado.
+5 Evidence privacy Mostrar que existe evidencia sin publicar 
+documentos privados salvo autorización 
+explícita.
+6 Blue means FIVERTEN El azul identifica 
+sistema/acción/verificación; el verde 
+expresa estado comprobado.
+7 Mobile first clarity En móvil priorizar estado, identidad, 
+proyectos, opiniones y evidencias 
+esenciales.
+Importante para desarrollo
+Los conteos y métricas que aparecen en los mockups (12.000 empresas, 85.000 experiencias, 127 opiniones, etc.) 
+son placeholders de diseño. No deben aparecer en producción hasta existir datos reales y auditables.
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+FIVERTEN - Confidential working specification - 02 October 2026
+02 · ARQUITECTURA
+Arquitectura de información y rutas
+Web pública
+Ruta Pantalla Objetivo
+/ Home Explicar la propuesta, permitir búsqueda y 
+captar empresas.
+/empresas Directorio Buscar y filtrar empresas verificadas.
+/empresa/{slug} Perfil público Resumen verificable de una empresa.
+/empresa/{slug}/documentacion Documentación Estados y categorías comprobadas, sin 
+exponer documentos privados.
+/empresa/{slug}/proyectos Proyectos Listado de proyectos con evidencias y 
+estado.
+/empresa/{slug}/opiniones Opiniones Experiencias vinculadas a 
+clientes/proyectos comprobados.
+/empresa/{slug}/certificaciones Certificaciones Certificaciones o credenciales validadas.
+/verificar-empresa Captación Proceso, planes y formulario de solicitud.
+/como-funciona Educación Explicar proceso de verificación de 
+extremo a extremo.
+/trust-center Confianza Metodología, estados, fuentes, seguridad, 
+transparencia.
+/metodologia Detalle Criterios y políticas de verificación.
+/soluciones Negocio Casos de uso por tipo de cliente.
+/recursos Contenido Guías, recursos y contenidos 
+institucionales.
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+Área privada
+Recomendación: separar el área autenticada como app.fiverten.com o, como mínimo, bajo /app. La navegación 
+pública no debe mezclarse con la gestión interna de la empresa.
+Ruta privada
+Módulo
+/app
+Resumen
+/app/perfil
+Perfil
+/app/documentos
+Documentos
+/app/proyectos
+Proyectos
+/app/clientes
+Clientes / invitaciones
+/app/opiniones
+Opiniones
+/app/sello
+Sello / embeds
+/app/analytics
+Analítica
+/app/facturacion
+Plan y facturación
+/app/configuracion
+Equipo y configuración
+FIVERTEN - Confidential working specification - 02 October 2026
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+03 · ACCESO
+Roles, permisos y propiedad del dato
+Rol
+Puede hacer
+No puede hacer
+Visitante
+Buscar empresas, consultar perfiles y 
+evidencias públicas.
+Editar información o ver documentos 
+privados.
+Empresa - Admin
+Editar datos propuestos, subir 
+documentación, crear proyectos, invitar 
+clientes, gestionar equipo y sello.
+Autoverificar datos o alterar historial de 
+verificación.
+Empresa - Editor
+Gestionar perfil, documentos, proyectos y 
+clientes según permisos.
+Cambiar plan, propietarios o criterios 
+FIVERTEN.
+Empresa - Viewer
+Consultar dashboard y estados.
+Modificar información.
+Verificador FIVERTEN
+Revisar evidencias, aprobar/rechazar, 
+documentar fuentes, cambiar estados.
+Borrar trazabilidad histórica sin registro.
+Admin FIVERTEN
+Administración global, metodología, 
+moderación y soporte.
+Modificar evidencias sin auditoría/log.
+Regla de propiedad del dato
+company_submitted: dato propuesto por la empresa; editable por ella.
+fiverten_verified: dato validado por FIVERTEN; solo cambia mediante una nueva revisión.
+source_derived: dato obtenido de una fuente externa/registro; conservar fuente y fecha.
+system_calculated: métrica calculada por plataforma; no editable manualmente salvo override auditado.
+Auditoría obligatoria
+Cualquier cambio de estado de verificación debe generar un evento con actor, fecha/hora, estado anterior, estado 
+nuevo, motivo, fuente/evidencia y, cuando proceda, fecha de caducidad.
+FIVERTEN - Confidential working specification - 02 October 2026
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+04 · WEB PÚBLICA
+Home y directorio de empresas
+Home - contenido mínimo
+Hero: “Reputation should be provable.” / mensaje equivalente en español, buscador y CTA “Verificar empresa”.
+Cómo funciona: Identidad -> Documentación -> Proyectos -> Reputación.
+Empresa ejemplo: mostrar una ficha real solo cuando exista una empresa publicada y autorizada.
+Sello: explicar qué significa FIVERTEN VERIFIED y cómo se consulta.
+Prueba social: solo métricas reales provenientes de base de datos; ocultar el bloque mientras no existan.
+Mockup de referencia - Home. Dirección visual, no contenido definitivo.
+Directorio /empresas
+Función
+Requisito
+Búsqueda
+Nombre comercial, razón social, sector, ubicación y palabras 
+clave.
+Filtros
+Sector, ubicación, estado de verificación, proyectos verificados, 
+opiniones verificadas.
+Ordenación
+Relevancia por defecto. No vender ranking como “mejor 
+empresa” salvo criterios transparentes.
+Tarjeta
+Nombre, badge, sector, ubicación, contadores reales, última 
+verificación, ID y acceso al perfil.
+Paginación
+Preferible paginación indexable o carga incremental con URLs 
+estables.
+Sin resultados
+Explicar y ofrecer limpiar filtros / solicitar alta de empresa.
+FIVERTEN - Confidential working specification - 02 October 2026
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+Mockup de referencia - Directorio de empresas verificadas.
+FIVERTEN - Confidential working specification - 02 October 2026
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+FIVERTEN - Confidential working specification - 02 October 2026
+05 · PERFIL PÚBLICO
+Perfil de empresa verificada
+Esta es la pantalla principal del producto. Debe comunicar estado, alcance, fecha y evidencia sin obligar al 
+usuario a confiar en una puntuación opaca.
+Cabecera
+Campo Origen Regla
+Nombre comercial Empresa + revisión Mostrar junto a razón social en detalle.
+Badge VERIFIED Sistema Solo si estado global cumple criterios 
+vigentes.
+Sector / servicios Empresa + taxonomía No usar texto libre como única 
+clasificación.
+Ubicación Empresa / fuente Mostrar ciudad/provincia; evitar dirección 
+precisa si no es necesaria.
+Verification ID Sistema ID público estable. Recomendado: opaco 
+y no secuencial.
+Última verificación Sistema Fecha del último ciclo de revisión 
+completo.
+CTA Sistema Contactar / web solo si la empresa lo 
+habilita.
+Pestañas
+Resumen · Documentación · Proyectos · Opiniones · Certificaciones
+Estado de verificación
+Categoría Ejemplos de comprobación Salida pública
+Identidad Razón social, NIF/CIF, administradores, 
+registro.
+Identidad verificada + fecha/detalle.
+Actividad CNAE/actividad, estado operativo, 
+antigüedad cuando proceda.
+Actividad comprobada, con alcance.
+Documentación RC, licencias, seguros, certificaciones. Categoría + vigente/expira; no documento 
+completo.
+Proyectos Contrato/presupuesto/factura, 
+evidencias, cliente.
+Proyecto verificado + tipos de evidencia.
+Opiniones Cliente identificado + relación/proyecto 
+confirmado.
+Opinión verificada + qué se comprobó.
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+Mockup de referencia - Perfil público de empresa. La información de ejemplo no constituye verificación real.
+FIVERTEN - Confidential working specification - 02 October 2026
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+06 · EVIDENCIA
+Proyectos y opiniones verificadas
+Proyecto verificado - estructura
+Identidad del proyecto: título, tipo, ciudad/área, año, estado y empresa.
+Evidencia: tipos disponibles (contrato, presupuesto, factura, fotografías, certificado, acta, etc.).
+Cliente: estado identificado/confirmado/verificado, respetando privacidad.
+Opinión asociada: si existe, enlazarla al proyecto para aportar contexto.
+Verificación: fecha, alcance y metodología aplicable.
+Opinión verificada - regla de negocio
+Estado
+Significado
+Requisito mínimo
+IDENTIFIED
+Sabemos quién emite la opinión.
+Identidad o canal de contacto confirmado.
+CONFIRMED
+Existe relación/experiencia comprobable.
+Proyecto, contrato, factura u otra 
+evidencia suficiente.
+VERIFIED
+Moderación
+La opinión se vincula a una experiencia 
+revisada bajo metodología FIVERTEN.
+Identidad + relación + revisión + 
+trazabilidad.
+No incentivar reseñas: prohibir regalos, descuentos o contraprestaciones a cambio de una opinión.
+Conflictos: permitir disputa por la empresa sin borrar automáticamente la opinión.
+Contenido ilícito o personal: canal de denuncia y proceso documentado.
+Ediciones: conservar historial si una opinión publicada se modifica tras la revisión.
+Valoración media: solo calcular sobre opiniones que cumplan criterios publicados y mostrar el tamaño de 
+muestra.
+FIVERTEN - Confidential working specification - 02 October 2026
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+Mockup de referencia - Opiniones verificadas. Ratings y testimonios son demostrativos.
+FIVERTEN - Confidential working specification - 02 October 2026
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+FIVERTEN - Confidential working specification - 02 October 2026
+07 · CONFIANZA
+Trust Center y metodología
+El Trust Center debe ser una parte sustantiva del producto, no una página de marketing. Su función es 
+explicar qué se verifica, con qué fuentes, qué limitaciones existen y cómo se actualiza la información.
+Cinco pilares
+Pilar Debe explicar
+01 Identidad Qué datos legales se consultan, qué fuentes se aceptan y qué 
+significa “identidad verificada”.
+02 Documentación Qué documentos pueden revisarse, si se valida vigencia/emisor 
+y qué no implica la validación.
+03 Proyectos Qué evidencia mínima vincula empresa, proyecto y cliente.
+04 Opiniones Cómo se identifica al cliente, cómo se confirma la relación y 
+cómo se modera.
+05 Actualización Frecuencia de revisión, expiraciones, cambios y estados 
+desactualizados.
+Estados públicos
+Estado Color Uso
+VERIFIED 16A765 Información revisada y vigente dentro del 
+alcance publicado.
+PENDING E7A61A Revisión iniciada o actualización en curso. 
+No mostrar como verificado.
+EXPIRED E5484D Verificación caducada o evidencia fuera 
+de vigencia.
+NOT VERIFIED Neutral Sin revisión suficiente. Evitar que parezca 
+negativo por defecto.
+Lenguaje seguro
+Evitar “sin incidencias” como afirmación absoluta. Preferir: “No se han detectado incidencias en las fuentes 
+consultadas a fecha DD/MM/AAAA”, acompañando el listado de fuentes y su alcance.
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+Mockup de referencia - Trust Center.
+FIVERTEN - Confidential working specification - 02 October 2026
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+08 · ÁREA EMPRESA
+Captación y Dashboard de empresa
+/verificar-empresa
+Bloque
+Requisito
+Hero
+Qué obtiene la empresa y CTA para iniciar solicitud.
+Proceso
+5 pasos: registro, identidad, documentación, 
+proyectos/evidencias, activación.
+Beneficios
+Visibilidad, credibilidad, sello, opiniones verificadas. Sin 
+promesas de negocio no demostrables.
+Planes
+Los precios de mockup son placeholders hasta decisión 
+comercial.
+Formulario
+Nombre, NIF opcional en primera captura, sector, contacto, 
+web, país, aceptación de privacidad.
+Conversión
+Crear lead y enviar confirmación. No dar estado VERIFIED hasta 
+revisión real.
+Mockup de referencia - Landing de verificación empresarial.
+Dashboard
+Resumen: estado global, porcentaje de perfil, documentos pendientes, visitas, opiniones y próximas acciones.
+Perfil: datos públicos propuestos y estado de revisión.
+Documentos: subida, categoría, versión, vigencia, revisión y comentarios.
+Proyectos: crear, adjuntar evidencia, invitar cliente, solicitar verificación.
+Clientes: gestionar invitaciones y estado; nunca mostrar datos de otros clientes públicamente.
+FIVERTEN - Confidential working specification - 02 October 2026
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+Opiniones: estado de invitación, revisión, publicación, disputa y respuesta.
+Sello: descarga PNG/SVG y embed seguro con enlace al perfil/estado vigente.
+Analytics: visitas, clics, descargas y conversiones con periodo y fuente.
+Configuración: usuarios, permisos, organización, privacidad y notificaciones.
+Mockup de referencia - Dashboard. Las métricas son de demostración.
+FIVERTEN - Confidential working specification - 02 October 2026
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+FIVERTEN - Confidential working specification - 02 October 2026
+09 · UI SYSTEM
+Sistema visual y componentes
+Tokens
+Token Valor Uso
+color.midnight #10161C Navegación, hero, titulares oscuros.
+color.signalBlue #356CFF Acción, FIVERTEN, links, foco y badges 
+de sistema.
+color.mineralWhite #F4F3EF Fondos editoriales.
+color.steel #A8AFB5 Información secundaria.
+state.verified #16A765 Estado comprobado.
+state.pending #E7A61A En revisión.
+state.expired #E5484D Caducado / requiere acción.
+radius.button 6px Botones e inputs.
+radius.card 8px Tarjetas.
+radius.modal 12px Modales y overlays.
+grid.max 1280px Ancho máximo del contenido desktop.
+grid.columns 12 Grid desktop; gutter 24px.
+Tipografía
+Preferencia de marca: Söhne / Neue Haas Grotesk. Para implementación web sin licencia específica: Instrument 
+Sans o Inter. Datos/códigos: IBM Plex Mono o equivalente monoespaciado.
+Nivel Desktop Mobile Uso
+Display XL 72/76 44/48 Hero excepcional.
+Display 56/60 40/44 Hero normal.
+H1 48/52 34/40 Título página.
+H2 36/42 28/34 Sección.
+H3 26/32 21/28 Subsección.
+Body L 18/28 17/26 Entradillas.
+Body 16/24 16/24 Texto.
+Small 14/20 14/20 Secundario.
+Micro/Data 11-12 11-12 IDs, labels, metadata.
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+Componentes P0
+Componente
+Estados obligatorios
+Button
+default, hover, focus, disabled, loading
+Input / Select
+default, focus, error, disabled, filled
+Badge verification
+verified, pending, expired, neutral
+Company card
+default, hover, bookmarked (si se implementa)
+Evidence item
+public summary, restricted, expired
+Upload
+empty, uploading, success, error
+Toast / alert
+info, success, warning, error
+Tabs
+default, active, overflow mobile
+Modal / drawer
+desktop modal + mobile sheet
+Skeleton
+directorios, perfil y dashboard
+Accesibilidad visual
+No comunicar estados solo mediante color. Todos los estados deben incluir texto y/o icono. Focus visible en todos 
+los controles interactivos.
+FIVERTEN - Confidential working specification - 02 October 2026
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+FIVERTEN - Confidential working specification - 02 October 2026
+10 · DATOS
+Modelo de datos y reglas de negocio
+Entidades mínimas
+Entidad Campos clave / relaciones
+Organization id, legal_name, trade_name, tax_id, country, sector, locations, 
+status, public_slug
+OrganizationVerification organization_id, scope, status, verified_at, expires_at, 
+methodology_version, reviewer_id
+Evidence type, owner, file_ref, source_ref, visibility, issue_date, 
+expiry_date, status, hash
+Document category, issuer, document_number, version, issue/expiry, 
+evidence_id
+Project organization_id, title, type, location, dates, status, 
+public_visibility
+ProjectVerification project_id, evidence_types, client_status, verified_at, reviewer_id
+ClientRelation project_id, client_user/contact, status, consent, verification_level
+Review organization_id, project_id, client_relation_id, rating, body, 
+status, published_at
+VerificationEvent entity_type/id, actor, from_status, to_status, reason, source, 
+timestamp
+UserMembership user_id, organization_id, role, permissions
+PublicBadge organization_id, state, embed_token, current_url, revoked_at
+Estados recomendados
+No reutilizar un único “status” para todo. Separar lifecycle (draft/submitted/published), verification 
+(not_verified/pending/verified/expired/rejected) y visibility (private/public/restricted).
+ID público
+Recomendación técnica
+Los ejemplos FT-28471-MAD son visuales. En producción conviene usar un ID público estable, opaco y no 
+fácilmente enumerable, separado del UUID interno. Ejemplo: FT-8K4M2-X9P. Nunca usar el NIF/CIF como 
+identificador en URL.
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+11 · CALIDAD WEB
+Responsive, accesibilidad, SEO y 
+rendimiento
+Breakpoints orientativos
+Viewport
+Comportamiento
+>= 1280
+Grid 12 columnas, max-width 1280.
+768-1279
+Grid 8 columnas; reducir sidebars; cards adaptativas.
+< 768
+Una columna; filtros en drawer; tabs con scroll; CTA críticos 
+visibles.
+< 390
+Validar textos largos, IDs, badges y nombres empresariales 
+extensos.
+Accesibilidad
+WCAG: objetivo mínimo AA.
+Teclado: 100% de flujos esenciales utilizables sin ratón.
+Focus: visible y consistente.
+Contraste: validar texto, badges y estados.
+Formularios: labels reales, errores asociados, instrucciones persistentes.
+Imágenes: alt contextual; decorativas vacías.
+Motion: respetar prefers-reduced-motion.
+Semántica: H1 único, landmarks y tablas solo para datos tabulares.
+SEO público
+Indexar: Home, directorio paginado, perfiles públicos, Trust Center, metodología y recursos.
+No indexar: dashboard, estados privados, uploads, URLs temporales.
+Structured data: Organization/LocalBusiness cuando corresponda; Review solo si cumple políticas y representa 
+datos reales visibles.
+Canonical: obligatorio en perfiles y filtros.
+Sitemap: generado solo con perfiles publicados y páginas indexables.
+Rendimiento
+Objetivo de producto: LCP < 2,5 s, INP < 200 ms y CLS < 0,1 en páginas públicas razonablemente equipadas. 
+Imágenes responsive, lazy-load bajo fold, fuentes optimizadas y JS mínimo en páginas de lectura.
+FIVERTEN - Confidential working specification - 02 October 2026
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+FIVERTEN - Confidential working specification - 02 October 2026
+12 · SEGURIDAD
+Seguridad, privacidad y controles legales
+Controles P0
+Área Requisito
+Autenticación MFA recomendable para admins/verificadores; sesiones 
+seguras; rate limiting.
+Autorización RBAC por organización; aislamiento estricto multi-tenant.
+Uploads Antivirus/malware scanning, MIME validation, límites, storage 
+privado, URLs firmadas.
+Datos sensibles No publicar documentos fuente por defecto; minimizar PII.
+Audit log Inmutable o append-only para eventos de verificación y 
+administración.
+Encryption TLS en tránsito y cifrado en reposo para datos/documentos.
+Backups Política documentada, restauración probada y retención 
+definida.
+Abuse Rate limits, anti-bot en formularios/invitaciones, protección 
+contra enumeración.
+Consentimiento Registro de bases/consentimiento cuando aplique a clientes e 
+invitaciones.
+Derechos GDPR Flujos para acceso, rectificación, supresión y oposición según el 
+tipo de dato y obligaciones aplicables.
+Privacidad por diseño
+La UI pública debe comunicar la existencia y categoría de una evidencia, no exponer el documento fuente. 
+Ejemplo: “Seguro RC vigente - comprobado 12/09/2026”, sin mostrar póliza, número completo o datos personales 
+salvo decisión expresa y base legítima.
+Disclaimer de verificación
+El equipo legal deberá validar la redacción definitiva. La interfaz debe distinguir entre “FIVERTEN ha 
+comprobado X con estas fuentes a esta fecha” y cualquier conclusión general sobre calidad, solvencia, legalidad 
+futura o ausencia absoluta de incidencias.
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+13 · MEDICIÓN
+Analítica y eventos
+Eventos recomendados
+Evento
+Propiedades
+search_submitted
+query, filters, result_count
+company_profile_viewed
+organization_id, source
+verification_detail_opened
+entity_type, entity_id, category
+company_contact_clicked
+organization_id, channel
+verification_lead_started
+source, plan
+verification_lead_submitted
+sector, country, plan
+document_uploaded
+category, size_bucket
+project_submitted
+project_type, evidence_count
+client_invite_sent
+project_id, channel
+review_submitted
+project_id, rating
+badge_downloaded
+format, organization_id
+badge_embed_copied
+organization_id
+dashboard_task_completed
+Reglas
+task_type
+No PII en analytics: no enviar NIF, emails, nombres de clientes o texto de opiniones como propiedades.
+Consentimiento: configurar medición y cookies conforme a la política aplicable.
+Fuentes: diferenciar datos de producto de métricas de marketing.
+Dashboard: solo mostrar métricas calculadas de eventos reales; sin valores ficticios.
+FIVERTEN - Confidential working specification - 02 October 2026
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+FIVERTEN - Confidential working specification - 02 October 2026
+14 · IMPLEMENTACIÓN
+Arquitectura técnica recomendada
+Esta sección es una recomendación de arquitectura, no una imposición de stack. El responsable técnico puede 
+mantener su tecnología si cumple los requisitos funcionales, de seguridad, rendimiento y trazabilidad.
+Separación lógica
+Capa Responsabilidad
+Public web SSR/SSG cuando sea posible para SEO, perfiles, directorio, 
+metodología.
+Authenticated app Dashboard, uploads, workflows, roles, tareas y analytics.
+API / backend Autorización, negocio, verificación, audit log, search, 
+notificaciones.
+Database Entidades, relaciones, estados, historial y configuraciones.
+Object storage Documentación/evidencias privadas con acceso firmado.
+Search index Directorio y búsqueda por texto/facetas cuando el volumen lo 
+justifique.
+Queue/jobs Emails, expiraciones, análisis de documentos, indexado, 
+generación de badges.
+Admin console Revisión FIVERTEN, disputas, moderación, metodología, 
+soporte.
+API mínima - ejemplos
+Método Endpoint Uso
+GET /api/public/organizations Directorio público.
+GET /api/public/organizations/{slug} Perfil publicado.
+GET /api/public/organizations/{slug}/reviews Opiniones públicas.
+POST /api/leads/verification Solicitud de verificación.
+GET /api/app/organization Datos de empresa autenticada.
+POST /api/app/documents Crear metadata/upload session.
+POST /api/app/projects Crear proyecto.
+POST /api/app/client-invites Invitar cliente.
+POST /api/app/reviews Enviar opinión.
+POST /api/admin/verifications/{id}/decision Decisión de verificación.
+GET /api/public/badge/{token} Estado vigente para embed/sello.
+Badge embebible
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+El sello no debería ser una imagen estática descargada como única prueba. El embed web debe enlazar al 
+perfil público y consultar/representar el estado vigente. Si la verificación expira o se revoca, el componente 
+debe reflejarlo.
+FIVERTEN - Confidential working specification - 02 October 2026
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+15 · BACKLOG
+MVP, prioridades y criterios de 
+aceptación
+P0 - lanzamiento
+Epic
+Incluye
+Done cuando...
+Brand/UI system
+Tokens, layout, componentes base, 
+responsive.
+Existe librería consistente y estados de 
+componentes.
+Public home
+Hero, búsqueda, proceso, sello, CTA.
+Sin datos ficticios y 100% responsive.
+Directory
+Search, filters, cards, URLs estables.
+Resultados reales desde DB y estados 
+vacíos.
+Public profile
+Resumen, verificación, tabs.
+Cada claim navega a su detalle/alcance.
+Projects
+Listado/detalle y evidencias públicas 
+resumidas.
+Proyecto puede pasar draft -> pending -> 
+verified.
+Reviews
+Invitación, envío, revisión, publicación.
+La relación con cliente/proyecto queda 
+trazada.
+Trust Center
+Metodología, estados, fuentes, limitaciones.
+Contenido legal/metodológico aprobado.
+Business app
+Perfil, documentos, proyectos, clientes, 
+sello, tareas.
+Roles y aislamiento multi-tenant validados.
+Admin verification
+Cola de revisión, evidencia, decisión, 
+historial.
+Toda decisión genera audit event.
+Security/privacy
+Auth, RBAC, private storage, logs, consent.
+Checklist de seguridad y privacidad 
+aprobado.
+P1 - después del MVP
+Analytics avanzado y comparativas temporales.
+Facturación/planes automatizados.
+Notificaciones de caducidad y renovaciones.
+Respuestas de empresa a opiniones.
+Certificados PDF con QR al estado vigente.
+Search index dedicado si la base crece.
+Integraciones con fuentes/registries mediante APIs cuando sean legales y fiables.
+P2 - expansión
+FIVERTEN Professional.
+FIVERTEN Project / Property / Product.
+API para terceros y partners.
+Widgets/SDK avanzados.
+Verificación internacional por país.
+FIVERTEN - Confidential working specification - 02 October 2026
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+FIVERTEN - Confidential working specification - 02 October 2026
+16 · QA
+Criterios de aceptación y QA
+Área Criterio mínimo
+Visual Implementación coherente con brandbook y mockups; no 
+inventar nuevos estilos sin aprobación.
+Responsive Sin overflow horizontal a 320 px; navegación y filtros utilizables.
+Accessibility Teclado, focus, contraste AA, labels/errores de formularios.
+Data integrity Nunca mostrar VERIFIED por defecto o por presencia de 
+documentación no revisada.
+Security RBAC probado, archivos privados, URLs firmadas, logs, rate 
+limiting.
+Privacy No exponer PII de clientes ni documentos fuente sin 
+autorización.
+SEO SSR/indexación correcta de páginas públicas y noindex en 
+privadas.
+Performance Core Web Vitals razonables, imágenes optimizadas, carga 
+diferida.
+Auditability Toda decisión de verificación recuperable con actor, motivo y 
+tiempo.
+Content Sin cifras ficticias, lorem ipsum ni testimonios de mockup en 
+producción.
+Browser Últimas versiones de Chrome, Safari, Edge y Firefox; validación 
+móvil iOS/Android.
+Recovery Errores de API, uploads fallidos y sesiones caducadas tienen 
+estados recuperables.
+Smoke test de lanzamiento
+Crear organización -> completar perfil -> subir documento -> enviar a revisión -> aprobar -> comprobar cambio 
+público.
+Crear proyecto -> adjuntar evidencia -> invitar cliente -> cliente confirma -> enviar opinión -> revisar -> publicar.
+Expirar un documento -> comprobar que el estado público/privado cambia según regla y queda auditado.
+Revocar VERIFIED -> comprobar badge embed, perfil y búsquedas.
+Intentar acceder a documentación de otra organización -> debe ser bloqueado y registrado.
+Probar perfil público sin JS crítico -> contenido esencial debe seguir disponible si la arquitectura lo permite.
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+FIVERTEN - Confidential working specification - 02 October 2026
+17 · HANDOFF
+Activos entregados y decisiones abiertas
+Activos
+Archivo / carpeta Uso
+FIVERTEN_Brand_Book_v1.pdf Reglas completas de identidad visual.
+FIVERTEN_Brand_Kit_v1.zip Logos, V, sello, badges y tokens.
+fiverten_design_tokens.css Tokens CSS base.
+fiverten_design_tokens.json Tokens para sistemas de diseño / frontend.
+Mockups web Home, directorio, perfil, verificación, opiniones, Trust Center y 
+dashboard.
+Este documento Especificación de producto y desarrollo.
+Decisiones que deben cerrarse antes de producción
+Decisión Responsable sugerido Impacto
+Dominio y estructura /app vs app. Producto + técnico Arquitectura y cookies/auth.
+Stack final / hosting / storage Técnico Seguridad, costes, velocidad.
+Modelo comercial y planes Dirección Checkout, límites, permisos.
+Metodología verificadora final Dirección + legal Estados, claims y Trust Center.
+Política de opiniones/disputas Dirección + legal Moderación y reputación.
+Fuentes oficiales por país Verificación + legal Alcance de datos y automatización.
+Caducidad por categoría Producto + verificación Jobs, estados, avisos.
+Contenido inicial real Dirección Home y demostración pública.
+Definición de “listo para desarrollar”
+El equipo técnico puede comenzar P0 con este documento y el Brand Kit. No obstante, debe evitar fijar en código 
+precios, métricas, criterios de verificación o textos legales que todavía estén marcados como decisiones abiertas.
+ANEXO · REFERENCIA VISUAL
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+Pantallas de referencia
+Estas pantallas fijan dirección de composición, densidad, jerarquía, navegación y lenguaje visual. No son 
+especificaciones pixel-perfect ni fuente de datos.
+Home
+Directorio
+FIVERTEN - Confidential working specification - 02 October 2026
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+Perfil público
+Solicitud de verificación
+FIVERTEN - Confidential working specification - 02 October 2026
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+Opiniones verificadas
+Trust Center
+FIVERTEN - Confidential working specification - 02 October 2026
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+Dashboard empresa
+FIVERTEN - Confidential working specification - 02 October 2026
+FIN
+FIVERTEN  /  DEVELOPMENT HANDOFF  /  v1.0
+FIVERTEN
+TRUST, VERIFIED.
+Referencia de desarrollo v1.0 · 02 October 2026
+Ante cualquier conflicto entre un mockup y una regla de este documento, prevalece la regla funcional y de seguridad. 
+Ante cualquier conflicto con el Brand Book, prevalece el Brand Book para identidad visual.
+FIVERTEN - Confidential working specification - 02 October 2026
