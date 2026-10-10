@@ -31,6 +31,8 @@ export default function UsersPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [form, setForm] = useState<NewMemberForm>(EMPTY_FORM);
   const [creating, setCreating] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const canManage = roleAtLeast(role, 'manager');
   const canRemove = roleAtLeast(role, 'admin');
@@ -52,10 +54,30 @@ export default function UsersPage() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (!showCreate) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') setShowCreate(false);
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showCreate]);
+
+  function openCreate() {
+    setForm(EMPTY_FORM);
+    setCreateError(null);
+    setShowCreate(true);
+  }
+
+  function closeCreate() {
+    if (creating) return;
+    setShowCreate(false);
+  }
+
   async function onCreate(event: React.FormEvent) {
     event.preventDefault();
     setCreating(true);
-    setError(null);
+    setCreateError(null);
     setNotice(null);
     try {
       await api.addMember({
@@ -66,10 +88,11 @@ export default function UsersPage() {
         password: form.password || undefined,
       });
       setForm(EMPTY_FORM);
+      setShowCreate(false);
       setNotice('Usuario añadido a la empresa.');
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo añadir el usuario');
+      setCreateError(err instanceof ApiError ? err.message : 'No se pudo añadir el usuario');
     } finally {
       setCreating(false);
     }
@@ -147,60 +170,16 @@ export default function UsersPage() {
         )}
 
         {canManage && (
-          <section className="rounded-xl border border-slate-200 bg-white p-5">
-            <h2 className="text-base font-bold text-slate-900">Añadir usuario</h2>
-            <p className="text-xs text-slate-500">
-              Si el correo no existe, se creará una cuenta nueva con la contraseña indicada.
-            </p>
-            <form onSubmit={onCreate} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-5">
-              <input
-                type="email"
-                required
-                placeholder="correo@empresa.com"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className={`sm:col-span-2 ${inputClass}`}
-              />
-              <input
-                placeholder="Nombre"
-                value={form.firstName}
-                onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-                className={inputClass}
-              />
-              <input
-                placeholder="Apellidos"
-                value={form.lastName}
-                onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-                className={inputClass}
-              />
-              <select
-                value={form.role}
-                onChange={(e) => setForm({ ...form, role: e.target.value })}
-                className={inputClass}
-              >
-                {ROLE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="password"
-                placeholder="Contraseña (usuarios nuevos)"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className={`sm:col-span-3 ${inputClass}`}
-              />
-              <button
-                type="submit"
-                disabled={creating}
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60 sm:col-span-2"
-              >
-                <span className="material-symbols-outlined text-[18px]">person_add</span>
-                {creating ? 'Añadiendo…' : 'Añadir usuario'}
-              </button>
-            </form>
-          </section>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={openCreate}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600"
+            >
+              <span className="material-symbols-outlined text-[18px]">person_add</span>
+              Añadir usuario
+            </button>
+          </div>
         )}
 
         <section className="rounded-xl border border-slate-200 bg-white">
@@ -328,6 +307,127 @@ export default function UsersPage() {
           )}
         </section>
       </div>
+
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/40 p-4 backdrop-blur-sm sm:items-center">
+          <button
+            type="button"
+            aria-label="Cerrar"
+            onClick={closeCreate}
+            className="absolute inset-0 cursor-default"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-user-title"
+            className="relative z-10 w-full max-w-lg rounded-xl border border-slate-200 bg-white p-5 shadow-xl"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 id="add-user-title" className="text-base font-bold text-slate-900">
+                  Añadir usuario
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Si el correo no existe, se creará una cuenta nueva con la contraseña indicada.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeCreate}
+                disabled={creating}
+                aria-label="Cerrar"
+                className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-900 disabled:opacity-60"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {createError && (
+              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {createError}
+              </div>
+            )}
+
+            <form onSubmit={onCreate} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <label className="sm:col-span-2">
+                <span className="mb-1 block text-xs font-semibold text-slate-600">
+                  Correo electrónico
+                </span>
+                <input
+                  type="email"
+                  required
+                  placeholder="correo@empresa.com"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className={inputClass}
+                />
+              </label>
+              <label>
+                <span className="mb-1 block text-xs font-semibold text-slate-600">Nombre</span>
+                <input
+                  placeholder="Nombre"
+                  value={form.firstName}
+                  onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                  className={inputClass}
+                />
+              </label>
+              <label>
+                <span className="mb-1 block text-xs font-semibold text-slate-600">Apellidos</span>
+                <input
+                  placeholder="Apellidos"
+                  value={form.lastName}
+                  onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                  className={inputClass}
+                />
+              </label>
+              <label>
+                <span className="mb-1 block text-xs font-semibold text-slate-600">Rol</span>
+                <select
+                  value={form.role}
+                  onChange={(e) => setForm({ ...form, role: e.target.value })}
+                  className={inputClass}
+                >
+                  {ROLE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span className="mb-1 block text-xs font-semibold text-slate-600">
+                  Contraseña
+                </span>
+                <input
+                  type="password"
+                  placeholder="Solo usuarios nuevos"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  className={inputClass}
+                />
+              </label>
+              <div className="mt-1 flex justify-end gap-2 sm:col-span-2">
+                <button
+                  type="button"
+                  onClick={closeCreate}
+                  disabled={creating}
+                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
+                >
+                  <span className="material-symbols-outlined text-[18px]">person_add</span>
+                  {creating ? 'Añadiendo…' : 'Añadir usuario'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </DashboardShell>
   );
 }
