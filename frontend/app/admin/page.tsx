@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import DashboardShell from '../../components/DashboardShell';
 import OrganizationsTable from '../../components/admin/OrganizationsTable';
-import Pagination from '../../components/admin/Pagination';
+import Pagination from '../../components/ui/Pagination';
 import PlatformStatCards from '../../components/admin/PlatformStatCards';
 import UsersTable, { type UserToggle } from '../../components/admin/UsersTable';
 import { Alert } from '../../components/ui';

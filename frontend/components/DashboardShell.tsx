@@ -36,8 +36,8 @@ const TENANT_NAV: NavItem[] = [
   { key: 'overview', label: 'Resumen', icon: 'dashboard', href: '/dashboard' },
   { key: 'company', label: 'Empresa', icon: 'storefront', href: '/dashboard/company' },
   { key: 'users', label: 'Usuarios', icon: 'group', href: '/dashboard/users' },
-  { key: 'reviews', label: 'Opiniones', icon: 'reviews', href: '/dashboard' },
-  { key: 'profile', label: 'Perfil público', icon: 'verified', href: '/dashboard' },
+  { key: 'reviews', label: 'Opiniones', icon: 'reviews', href: '/dashboard/reviews' },
+  { key: 'profile', label: 'Perfil público', icon: 'verified', href: '/empresa' },
 ];
 
 const ADMIN_NAV: NavItem[] = [
@@ -176,7 +176,10 @@ export default function DashboardShell({
               type="button"
               onClick={() => {
                 setMobileOpen(false);
-                router.push(item.href);
+                // El perfil público depende del slug de la empresa.
+                router.push(
+                  item.key === 'profile' && organization ? `/empresa/${organization.slug}` : item.href,
+                );
               }}
               className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                 active === item.key

@@ -81,6 +81,19 @@ export class MailService implements OnModuleInit {
     });
   }
 
+  async sendReviewConfirmation(to: string, token: string, organizationName: string): Promise<void> {
+    const link = `${this.frontendUrl}/confirmar-resena?token=${encodeURIComponent(token)}`;
+    await this.send({
+      kind: 'confirmacion de resena',
+      to,
+      subject: `Confirma tu reseña de ${organizationName} - ${BRAND}`,
+      title: 'Confirma tu reseña',
+      intro: `Gracias por compartir tu experiencia con ${organizationName}. Confirma tu correo para que publiquemos tu reseña. Si no la has escrito tú, ignora este mensaje y no se publicará.`,
+      action: 'Confirmar y publicar',
+      link,
+    });
+  }
+
   async verifyConnection(): Promise<boolean> {
     if (this.mode === 'smtp') {
       return this.getTransporter().verify();

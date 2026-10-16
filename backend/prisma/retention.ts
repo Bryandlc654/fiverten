@@ -23,6 +23,10 @@ async function main(): Promise<void> {
   const resets = await prisma.passwordResetToken.deleteMany({
     where: { expiresAt: { lt: now } },
   });
+  // Reseñas nunca confirmadas por su autor (enlace caducado a los 7 días).
+  const unconfirmedReviews = await prisma.review.deleteMany({
+    where: { emailConfirmedAt: null, createdAt: { lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
+  });
   const invitations = await prisma.organizationInvitation.deleteMany({
     where: { acceptedAt: null, expiresAt: { lt: now } },
   });
@@ -31,7 +35,8 @@ async function main(): Promise<void> {
     `Retención aplicada: auth_attempts(-${days}d)=${attempts.count}, ` +
       `email_verifications(caducados)=${verifications.count}, ` +
       `password_reset_tokens(caducados)=${resets.count}, ` +
-      `organization_invitations(caducadas)=${invitations.count}`,
+      `organization_invitations(caducadas)=${invitations.count}, ` +
+      `reviews(sin confirmar)=${unconfirmedReviews.count}`,
   );
 }
 

@@ -80,6 +80,85 @@ export interface InvitationPreview {
   hasAccount: boolean;
 }
 
+export interface RatingSummary {
+  average: number | null;
+  total: number;
+  distribution: Record<string, number>;
+}
+
+export interface PublicProfile {
+  slug: string;
+  tradeName: string;
+  description: string | null;
+  logoUrl: string | null;
+  coverUrl: string | null;
+  website: string | null;
+  email: string | null;
+  phone: string | null;
+  verified: boolean;
+  createdAt: string;
+  rating: RatingSummary;
+}
+
+export interface ReviewReply {
+  body: string;
+  createdAt: string;
+  editedAt: string | null;
+}
+
+export interface PublicReview {
+  id: string;
+  reviewerName: string;
+  rating: number;
+  title: string | null;
+  body: string;
+  experienceDate: string | null;
+  verified: boolean;
+  publishedAt: string;
+  response: ReviewReply | null;
+}
+
+export interface ReviewForm {
+  slug: string;
+  tradeName: string;
+  logoUrl: string | null;
+  verified: boolean;
+  isPublic: boolean;
+}
+
+export interface SubmitReviewPayload {
+  name: string;
+  email: string;
+  rating: number;
+  title?: string;
+  body: string;
+  experienceDate?: string;
+  orderReference?: string;
+  consent: boolean;
+  website?: string;
+}
+
+export type ReviewStatus = 'pending' | 'published' | 'under_review' | 'reported' | 'hidden';
+
+export interface TenantReview {
+  id: string;
+  reviewerName: string;
+  rating: number;
+  title: string | null;
+  body: string;
+  experienceDate: string | null;
+  orderReference: string | null;
+  status: ReviewStatus;
+  verified: boolean;
+  createdAt: string;
+  publishedAt: string | null;
+  response: ReviewReply | null;
+}
+
+export interface TenantReviewList extends Paginated<TenantReview> {
+  summary: { total: number; published: number; pending: number; unanswered: number; negative: number };
+}
+
 export interface AdminOrganizationSummary {
   id: string;
   publicId: string;
@@ -122,6 +201,14 @@ export interface Paginated<T> {
   total: number;
   page: number;
   pageSize: number;
+}
+
+export interface ReviewListParams {
+  rating?: number;
+  status?: string;
+  sort?: 'recent' | 'oldest';
+  page?: number;
+  pageSize?: number;
 }
 
 export interface ListParams {
@@ -178,6 +265,23 @@ export interface LoginPayload {
 let accessToken: string | null = null;
 let refreshInFlight: Promise<AuthResponse> | null = null;
 
+// Restauración inicial de la sesión (AuthProvider hace el primer refresh). Los
+// efectos de las páginas se ejecutan antes que los del proveedor, así que sin
+// esta espera sus peticiones privadas salían sin token y devolvían 401.
+let markSessionReady: () => void = () => undefined;
+const sessionReady = new Promise<void>((resolve) => {
+  markSessionReady = resolve;
+});
+
+export function sessionRestored(): void {
+  markSessionReady();
+}
+
+/** Rutas que no necesitan sesión (o que la crean) y no deben esperar. */
+function isSessionless(path: string): boolean {
+  return path.startsWith('/auth/') || path.startsWith('/public/') || path.startsWith('/invitations/');
+}
+
 export function setAccessToken(token: string | null): void {
   accessToken = token;
 }
@@ -192,6 +296,9 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  if (!isSessionless(path)) {
+    await sessionReady;
+  }
   const headers = new Headers(init.headers);
   if (!headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
@@ -217,6 +324,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 async function requestForm<T>(path: string, body: FormData): Promise<T> {
+  await sessionReady;
   const headers = new Headers();
   if (accessToken) {
     headers.set('Authorization', `Bearer ${accessToken}`);
@@ -390,6 +498,50 @@ export const api = {
     });
   },
 
+  // Reseñas (empresa)
+  listReviews(params: ReviewListParams = {}): Promise<TenantReviewList> {
+    return request<TenantReviewList>(`/organizations/me/reviews${buildQuery(params)}`);
+  },
+  respondToReview(id: string, body: string): Promise<TenantReview> {
+    return request<TenantReview>(`/organizations/me/reviews/${id}/response`, {
+      method: 'PUT',
+      body: JSON.stringify({ body }),
+    });
+  },
+  removeReviewResponse(id: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(`/organizations/me/reviews/${id}/response`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Perfil público y reseñas (sin sesión)
+  publicProfile(slug: string): Promise<PublicProfile> {
+    return request<PublicProfile>(`/public/organizations/${encodeURIComponent(slug)}`);
+  },
+  publicReviews(slug: string, params: ReviewListParams = {}): Promise<Paginated<PublicReview>> {
+    return request<Paginated<PublicReview>>(
+      `/public/organizations/${encodeURIComponent(slug)}/reviews${buildQuery(params)}`,
+    );
+  },
+  reviewForm(slug: string): Promise<ReviewForm> {
+    return request<ReviewForm>(`/public/organizations/${encodeURIComponent(slug)}/review-form`);
+  },
+  submitReview(slug: string, payload: SubmitReviewPayload): Promise<{ status: string }> {
+    return request<{ status: string }>(
+      `/public/organizations/${encodeURIComponent(slug)}/reviews`,
+      { method: 'POST', body: JSON.stringify(payload) },
+    );
+  },
+  confirmReview(token: string): Promise<{
+    status: 'published' | 'under_review';
+    organization: { slug: string; tradeName: string; isPublic: boolean };
+  }> {
+    return request('/public/reviews/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  },
+
   // Ámbito plataforma (administrador general)
   adminStats(): Promise<PlatformStats> {
     return request<PlatformStats>('/admin/stats');
@@ -444,7 +596,7 @@ export const api = {
   },
 };
 
-function buildQuery(params: ListParams): string {
+function buildQuery(params: ListParams | ReviewListParams): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null && value !== '') {

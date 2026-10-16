@@ -106,6 +106,7 @@ export default function DashboardPage() {
       <div className="flex-1 flex flex-col min-w-0">
         <TenantHeader
           company={company}
+          slug={organization?.slug}
           isVerified={isVerified}
           roleText={roleText}
           initials={initials}
@@ -144,6 +145,7 @@ export default function DashboardPage() {
             firstName={user.firstName}
             isVerified={isVerified}
             publicId={organization?.publicId}
+            slug={organization?.slug}
           />
 
           <StatsGrid />

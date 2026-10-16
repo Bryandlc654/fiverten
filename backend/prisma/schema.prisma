@@ -51,6 +51,7 @@ model Organization {
   memberships OrganizationMembership[]
   sessions    Session[]
   invitations OrganizationInvitation[]
+  reviews     Review[]
 
   @@index([slug])
   @@index([status, isActive, deletedAt])
@@ -203,6 +204,64 @@ model OrganizationInvitation {
   @@index([organizationId, acceptedAt, revokedAt])
   @@index([email])
   @@map("organization_invitations")
+}
+
+// Reseña de un cliente. Sigue las dimensiones de estado del modelo completo
+// (modelo_bd_fiverten_completo.sql): ciclo de vida, verificación, visibilidad
+// y moderación son independientes. Se publica cuando el autor confirma su email.
+model Review {
+  id                 String    @id @default(uuid()) @db.Uuid
+  organizationId     String    @map("organization_id") @db.Uuid
+  reviewerName       String    @map("reviewer_name") @db.VarChar(200)
+  reviewerEmail      String    @map("reviewer_email") @db.VarChar(255)
+  rating             Int       @db.SmallInt
+  title              String?   @db.VarChar(255)
+  body               String    @db.Text
+  experienceDate     DateTime? @map("experience_date") @db.Date
+  orderReference     String?   @map("order_reference") @db.VarChar(100)
+  consent            Boolean   @default(false)
+  lifecycleStatus    String    @default("submitted") @map("lifecycle_status") @db.VarChar(20)
+  verificationStatus String    @default("not_verified") @map("verification_status") @db.VarChar(20)
+  visibility         String    @default("private") @db.VarChar(20)
+  moderationStatus   String    @default("none") @map("moderation_status") @db.VarChar(20)
+  confirmTokenHash   String?   @unique @map("confirm_token_hash") @db.VarChar(255)
+  emailConfirmedAt   DateTime? @map("email_confirmed_at") @db.Timestamptz(6)
+  publishedAt        DateTime? @map("published_at") @db.Timestamptz(6)
+  ipAddress          String?   @map("ip_address") @db.VarChar(45)
+  userAgent          String?   @map("user_agent") @db.VarChar(500)
+  metadata           Json      @default("{}") @db.JsonB
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt          DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  response     ReviewResponse?
+
+  @@index([organizationId, deletedAt])
+  @@index([organizationId, lifecycleStatus, moderationStatus])
+  @@index([organizationId, rating])
+  @@index([publishedAt])
+  @@index([ipAddress])
+  @@index([organizationId, reviewerEmail])
+  @@map("reviews")
+}
+
+// Respuesta pública de la empresa, mostrada debajo de la reseña.
+model ReviewResponse {
+  id             String    @id @default(uuid()) @db.Uuid
+  reviewId       String    @unique @map("review_id") @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  authorUserId   String?   @map("author_user_id") @db.Uuid
+  body           String    @db.Text
+  isPublic       Boolean   @default(true) @map("is_public")
+  editedAt       DateTime? @map("edited_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("review_responses")
 }
 
 model Session {

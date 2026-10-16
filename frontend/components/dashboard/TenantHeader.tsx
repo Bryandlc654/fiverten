@@ -1,9 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
 interface TenantHeaderProps {
   company: string;
+  slug: string | undefined;
   isVerified: boolean;
   roleText: string;
   initials: string;
@@ -16,6 +18,7 @@ interface TenantHeaderProps {
 
 export default function TenantHeader({
   company,
+  slug,
   isVerified,
   roleText,
   initials,
@@ -70,13 +73,16 @@ export default function TenantHeader({
       </div>
 
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          className="hidden md:inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
-        >
-          <span className="material-symbols-outlined text-[18px]">open_in_new</span>
-          Ver mi perfil público
-        </button>
+        {slug && (
+          <Link
+            href={`/empresa/${slug}`}
+            target="_blank"
+            className="hidden md:inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+          >
+            <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+            Ver mi perfil público
+          </Link>
+        )}
         <button
           type="button"
           className="relative rounded-lg border border-slate-200 bg-white p-2 text-slate-500 transition hover:text-slate-900"

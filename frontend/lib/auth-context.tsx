@@ -11,6 +11,7 @@ import {
 } from 'react';
 import {
   api,
+  sessionRestored,
   setAccessToken,
   type AuthResponse,
   type LoginPayload,
@@ -66,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       })
       .finally(() => {
+        sessionRestored();
         if (active) {
           setIsLoading(false);
         }

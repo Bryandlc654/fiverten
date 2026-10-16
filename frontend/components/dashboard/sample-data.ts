@@ -25,30 +25,6 @@ export const TASKS = [
   { label: 'Publica tu perfil público', done: false },
 ];
 
-export const REVIEWS = [
-  {
-    name: 'Marta González',
-    platform: 'Google',
-    rating: 5,
-    date: 'Hace 2 días',
-    text: 'Trabajo impecable y muy profesional. Repetiré sin duda.',
-  },
-  {
-    name: 'Javier Ruiz',
-    platform: 'FIVERTEN',
-    rating: 4,
-    date: 'Hace 5 días',
-    text: 'Buen resultado final y cumplimiento de plazos.',
-  },
-  {
-    name: 'Lucía Fernández',
-    platform: 'Google',
-    rating: 5,
-    date: 'Hace 1 semana',
-    text: 'Comunicación excelente durante todo el proyecto.',
-  },
-];
-
 export const ACTIVITY = [
   { icon: 'reviews', text: 'Nueva opinión verificada de Marta González', time: 'Hace 2 días' },
   { icon: 'verified_user', text: 'Se validó el documento de identidad fiscal', time: 'Hace 3 días' },

@@ -161,6 +161,26 @@ export const rlsStatements: string[] = [
   // a través del backend (contexto de plataforma).
   ...tenantTablePolicy('organization_invitations'),
 
+  // Reseñas y respuestas: de la organización, y además legibles por cualquiera
+  // cuando están publicadas (perfil público). La política pública solo filtra
+  // filas: el backend debe seleccionar columnas seguras (nunca reviewer_email).
+  ...tenantTablePolicy('reviews'),
+  `DROP POLICY IF EXISTS rls_reviews_public ON reviews`,
+  `CREATE POLICY rls_reviews_public ON reviews FOR SELECT
+     USING (lifecycle_status = 'published' AND visibility = 'public' AND deleted_at IS NULL)`,
+  ...tenantTablePolicy('review_responses'),
+  `DROP POLICY IF EXISTS rls_review_responses_public ON review_responses`,
+  `CREATE POLICY rls_review_responses_public ON review_responses FOR SELECT
+     USING (
+       is_public AND EXISTS (
+         SELECT 1 FROM reviews r
+         WHERE r.id = review_responses.review_id
+           AND r.lifecycle_status = 'published'
+           AND r.visibility = 'public'
+           AND r.deleted_at IS NULL
+       )
+     )`,
+
   // Catálogo global de permisos: lectura para todos, escritura solo plataforma.
   `ALTER TABLE permissions ENABLE ROW LEVEL SECURITY`,
   `DROP POLICY IF EXISTS rls_permissions_select ON permissions`,

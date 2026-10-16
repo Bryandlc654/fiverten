@@ -146,6 +146,40 @@ CREATE POLICY rls_organization_invitations ON organization_invitations
     USING (organization_id = app_current_org() OR app_is_platform_admin())
     WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
 
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_reviews ON reviews;
+
+CREATE POLICY rls_reviews ON reviews
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
+DROP POLICY IF EXISTS rls_reviews_public ON reviews;
+
+CREATE POLICY rls_reviews_public ON reviews FOR SELECT
+  USING (lifecycle_status = 'published' AND visibility = 'public' AND deleted_at IS NULL);
+
+ALTER TABLE review_responses ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_review_responses ON review_responses;
+
+CREATE POLICY rls_review_responses ON review_responses
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
+DROP POLICY IF EXISTS rls_review_responses_public ON review_responses;
+
+CREATE POLICY rls_review_responses_public ON review_responses FOR SELECT
+  USING (
+    is_public AND EXISTS (
+      SELECT 1 FROM reviews r
+      WHERE r.id = review_responses.review_id
+        AND r.lifecycle_status = 'published'
+        AND r.visibility = 'public'
+        AND r.deleted_at IS NULL
+    )
+  );
+
 ALTER TABLE permissions ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS rls_permissions_select ON permissions;

@@ -1,11 +1,15 @@
+import Link from 'next/link';
+
 export default function WelcomeBanner({
   firstName,
   isVerified,
   publicId,
+  slug,
 }: {
   firstName: string | null;
   isVerified: boolean;
   publicId: string | undefined;
+  slug: string | undefined;
 }) {
   return (
     <section className="relative overflow-hidden rounded-2xl bg-[#0b101b] px-6 py-7 text-white">
@@ -28,12 +32,15 @@ export default function WelcomeBanner({
               <span className="material-symbols-outlined text-[18px]">verified</span>
               Obtener mi sello
             </button>
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/5"
-            >
-              Ver mi perfil
-            </button>
+            {slug && (
+              <Link
+                href={`/empresa/${slug}`}
+                target="_blank"
+                className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/5"
+              >
+                Ver mi perfil
+              </Link>
+            )}
           </div>
         </div>
 

@@ -7,7 +7,7 @@ const NAV_ITEMS = [
   { icon: 'dashboard', label: 'Resumen', href: '/dashboard', active: true },
   { icon: 'storefront', label: 'Empresa', href: '/dashboard/company' },
   { icon: 'group', label: 'Usuarios', href: '/dashboard/users' },
-  { icon: 'reviews', label: 'Opiniones', href: '/dashboard' },
+  { icon: 'reviews', label: 'Opiniones', href: '/dashboard/reviews' },
   { icon: 'verified', label: 'Sello', href: '/dashboard' },
   { icon: 'settings', label: 'Configuración', href: '/dashboard' },
 ];
