@@ -14,20 +14,20 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { PlatformAdmin } from '../auth/decorators/platform-admin.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PlatformAdminGuard } from '../auth/guards/platform-admin.guard';
+import { AdminService } from './admin.service';
 import { AdminUpdateOrganizationDto } from './dto/admin-update-organization.dto';
 import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
-import { OrganizationsService } from './organizations.service';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, PlatformAdminGuard)
 @PlatformAdmin()
 export class AdminController {
-  constructor(private readonly organizations: OrganizationsService) {}
+  constructor(private readonly admin: AdminService) {}
 
   @Get('stats')
   stats() {
-    return this.organizations.stats();
+    return this.admin.stats();
   }
 
   @Get('organizations')
@@ -37,7 +37,7 @@ export class AdminController {
     @Query('search') search?: string,
     @Query('status') status?: string,
   ) {
-    return this.organizations.listOrganizations({ search, status, page, pageSize });
+    return this.admin.listOrganizations({ search, status, page, pageSize });
   }
 
   @Post('organizations')
@@ -45,12 +45,12 @@ export class AdminController {
     @CurrentUser('userId') userId: string,
     @Body() dto: CreateOrganizationDto,
   ) {
-    return this.organizations.createOrganization(dto, userId);
+    return this.admin.createOrganization(dto, userId);
   }
 
   @Get('organizations/:id')
   getOrganization(@Param('id') id: string) {
-    return this.organizations.getOrganization(id);
+    return this.admin.getOrganization(id);
   }
 
   @Patch('organizations/:id')
@@ -59,7 +59,7 @@ export class AdminController {
     @Param('id') id: string,
     @Body() dto: AdminUpdateOrganizationDto,
   ) {
-    return this.organizations.updateOrganization(id, userId, dto);
+    return this.admin.updateOrganization(id, userId, dto);
   }
 
   @Get('users')
@@ -68,7 +68,7 @@ export class AdminController {
     @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
     @Query('search') search?: string,
   ) {
-    return this.organizations.listUsers({ search, page, pageSize });
+    return this.admin.listUsers({ search, page, pageSize });
   }
 
   @Patch('users/:id')
@@ -77,6 +77,6 @@ export class AdminController {
     @Param('id') id: string,
     @Body() dto: AdminUpdateUserDto,
   ) {
-    return this.organizations.updateUser(id, userId, dto);
+    return this.admin.updateUser(id, userId, dto);
   }
 }

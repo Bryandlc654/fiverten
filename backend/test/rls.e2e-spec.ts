@@ -1,5 +1,10 @@
 import { Prisma, PrismaClient } from '@prisma/client';
-import { APP_ROLE, APP_ROLE_PASSWORD, rlsStatements } from '../prisma/rls/setup-statements';
+import {
+  APP_ROLE,
+  APP_ROLE_PASSWORD,
+  RLS_EXEMPT_TABLES,
+  rlsStatements,
+} from '../prisma/rls/setup-statements';
 
 const ADMIN_URL = process.env.DATABASE_URL as string;
 const APP_URL = process.env.APP_DATABASE_URL as string;
@@ -29,6 +34,7 @@ describe('RLS - aislamiento multi-tenant (e2e)', () => {
     memberships: [] as string[],
     sessions: [] as string[],
     tokens: [] as string[],
+    invitations: [] as string[],
   };
 
   let orgA: { id: string };
@@ -112,9 +118,22 @@ describe('RLS - aislamiento multi-tenant (e2e)', () => {
       select: { id: true },
     });
     created.tokens.push(tokenA.id, tokenB.id);
+
+    const invitationB = await admin.organizationInvitation.create({
+      data: {
+        organizationId: orgB.id,
+        email: `inv-b-${suffix}@test.local`,
+        role: 'viewer',
+        tokenHash: `inv-b-${suffix}`,
+        expiresAt: new Date(Date.now() + 86400000),
+      },
+      select: { id: true },
+    });
+    created.invitations.push(invitationB.id);
   });
 
   afterAll(async () => {
+    await admin.organizationInvitation.deleteMany({ where: { id: { in: created.invitations } } });
     await admin.refreshToken.deleteMany({ where: { id: { in: created.tokens } } });
     await admin.session.deleteMany({ where: { id: { in: created.sessions } } });
     await admin.organizationMembership.deleteMany({ where: { id: { in: created.memberships } } });
@@ -137,6 +156,58 @@ describe('RLS - aislamiento multi-tenant (e2e)', () => {
     await expect(app.organization.count()).resolves.toBe(0);
     await expect(app.session.count()).resolves.toBe(0);
     await expect(app.refreshToken.count()).resolves.toBe(0);
+    await expect(app.user.count()).resolves.toBe(0);
+    await expect(app.organizationInvitation.count()).resolves.toBe(0);
+    await expect(app.emailVerification.count()).resolves.toBe(0);
+    await expect(app.passwordResetToken.count()).resolves.toBe(0);
+    await expect(app.authAttempt.count()).resolves.toBe(0);
+  });
+
+  it('todas las tablas del esquema tienen RLS activada', async () => {
+    const rows = (await admin.$queryRawUnsafe(
+      `SELECT c.relname AS name
+         FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'public' AND c.relkind = 'r' AND NOT c.relrowsecurity`,
+    )) as { name: string }[];
+    const missing = rows.map((row) => row.name).filter((name) => !RLS_EXEMPT_TABLES.includes(name));
+    // Si falla: añade la política de la tabla nueva en prisma/rls/setup-statements.ts
+    // (tenantTablePolicy / userTablePolicy) y ejecuta npm run db:rls.
+    expect(missing).toEqual([]);
+  });
+
+  it('un usuario solo ve su propia fila de users', async () => {
+    const ids = await app.$transaction(async (tx) => {
+      await setContext(tx, { user: userA.id });
+      return tx.user.findMany({ select: { id: true } });
+    });
+    expect(ids.map((row) => row.id)).toEqual([userA.id]);
+  });
+
+  it('en el contexto de una organización solo se ven sus miembros', async () => {
+    const ids = await app.$transaction(async (tx) => {
+      await setContext(tx, { org: orgA.id });
+      return tx.user.findMany({ select: { id: true } });
+    });
+    expect(ids.map((row) => row.id)).toEqual([userA.id]);
+  });
+
+  it('un usuario no puede modificar la fila de otro', async () => {
+    const result = await app.$transaction(async (tx) => {
+      await setContext(tx, { user: userA.id, org: orgA.id });
+      return tx.user.updateMany({ where: { id: userB.id }, data: { firstName: 'Hackeado' } });
+    });
+    expect(result.count).toBe(0);
+  });
+
+  it('las invitaciones solo son visibles para su organización', async () => {
+    const counts = await app.$transaction(async (tx) => {
+      await setContext(tx, { org: orgA.id });
+      const fromA = await tx.organizationInvitation.count();
+      await setContext(tx, { org: orgB.id });
+      const fromB = await tx.organizationInvitation.count();
+      return { fromA, fromB };
+    });
+    expect(counts).toEqual({ fromA: 0, fromB: 1 });
   });
 
   it('aísla las organizaciones por app.current_org', async () => {

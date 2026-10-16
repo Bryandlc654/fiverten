@@ -35,7 +35,8 @@ export class CreateOrganizationDto {
   @MaxLength(4000)
   description?: string;
 
-  // Propietario inicial (opcional).
+  // Propietario inicial (opcional): recibe una invitación por correo y es él
+  // quien acepta y elige su contraseña.
   @IsOptional()
   @IsEmail({}, { message: 'El correo del propietario no es válido' })
   ownerEmail?: string;
@@ -49,10 +50,4 @@ export class CreateOrganizationDto {
   @IsString()
   @MaxLength(100)
   ownerLastName?: string;
-
-  @IsOptional()
-  @IsString()
-  @MinLength(8, { message: 'La contraseña debe tener al menos 8 caracteres' })
-  @MaxLength(72)
-  ownerPassword?: string;
 }

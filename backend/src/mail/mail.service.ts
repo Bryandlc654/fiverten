@@ -63,6 +63,24 @@ export class MailService implements OnModuleInit {
     });
   }
 
+  async sendOrganizationInvitation(
+    to: string,
+    token: string,
+    organizationName: string,
+    roleLabel: string,
+  ): Promise<void> {
+    const link = `${this.frontendUrl}/accept-invitation?token=${encodeURIComponent(token)}`;
+    await this.send({
+      kind: 'invitacion a empresa',
+      to,
+      subject: `Te han invitado a ${organizationName} en ${BRAND}`,
+      title: `Únete a ${organizationName}`,
+      intro: `Te han invitado a unirte a ${organizationName} en FIVERTEN con el rol "${roleLabel}". Si no esperabas esta invitación, ignora este correo: no se creará ninguna cuenta ni se te añadirá a la empresa.`,
+      action: 'Ver la invitación',
+      link,
+    });
+  }
+
   async verifyConnection(): Promise<boolean> {
     if (this.mode === 'smtp') {
       return this.getTransporter().verify();
@@ -97,7 +115,12 @@ export class MailService implements OnModuleInit {
     );
   }
 
-  private renderHtml({ title, intro, action, link }: MailMessage): string {
+  private renderHtml(message: MailMessage): string {
+    // Algunos campos (p. ej. el nombre de la empresa) los escribe el usuario.
+    const title = escapeHtml(message.title);
+    const intro = escapeHtml(message.intro);
+    const action = escapeHtml(message.action);
+    const link = escapeHtml(message.link);
     return `<!doctype html>
 <html lang="es">
   <body style="margin:0;padding:24px;background:#f4f5f7;font-family:Arial,Helvetica,sans-serif;color:#1f2430;">
@@ -169,4 +192,13 @@ export class MailService implements OnModuleInit {
   private isTruthy(value: string | undefined): boolean {
     return value === 'true' || value === '1';
   }
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { validateEnvironment } from './config/env.validation';
 import { HealthController } from './health/health.controller';
@@ -26,6 +27,7 @@ import { PrismaModule } from './prisma/prisma.module';
     MailModule,
     AuthModule,
     OrganizationsModule,
+    AdminModule,
     MediaModule,
   ],
   controllers: [HealthController],

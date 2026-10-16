@@ -60,6 +60,26 @@ export interface Member {
   joinedAt: string;
 }
 
+export interface Invitation {
+  id: string;
+  email: string;
+  role: string;
+  firstName: string | null;
+  lastName: string | null;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface InvitationPreview {
+  email: string;
+  role: string;
+  firstName: string | null;
+  lastName: string | null;
+  organization: { tradeName: string };
+  expiresAt: string;
+  hasAccount: boolean;
+}
+
 export interface AdminOrganizationSummary {
   id: string;
   publicId: string;
@@ -70,6 +90,11 @@ export interface AdminOrganizationSummary {
   isActive: boolean;
   createdAt: string;
   members: number;
+}
+
+export interface AdminOrganizationDetail extends OrganizationDetail {
+  members: Member[];
+  invitations: Invitation[];
 }
 
 export interface AdminUser {
@@ -151,6 +176,7 @@ export interface LoginPayload {
 }
 
 let accessToken: string | null = null;
+let refreshInFlight: Promise<AuthResponse> | null = null;
 
 export function setAccessToken(token: string | null): void {
   accessToken = token;
@@ -240,7 +266,13 @@ export const api = {
     });
   },
   refresh(): Promise<AuthResponse> {
-    return request<AuthResponse>('/auth/refresh', { method: 'POST' });
+    // Un solo refresh en vuelo: el refresh token rota en cada uso y dos
+    // peticiones simultáneas con el mismo token se tratan como reutilización
+    // (revocan la sesión). Ocurre p. ej. con el doble efecto de React StrictMode.
+    refreshInFlight ??= request<AuthResponse>('/auth/refresh', { method: 'POST' }).finally(() => {
+      refreshInFlight = null;
+    });
+    return refreshInFlight;
   },
   logout(): Promise<{ success: boolean }> {
     return request<{ success: boolean }>('/auth/logout', { method: 'POST' });
@@ -299,16 +331,48 @@ export const api = {
   listMembers(): Promise<{ members: Member[] }> {
     return request<{ members: Member[] }>('/organizations/me/members');
   },
-  addMember(payload: {
+  listInvitations(): Promise<{ invitations: Invitation[] }> {
+    return request<{ invitations: Invitation[] }>('/organizations/me/invitations');
+  },
+  inviteMember(payload: {
     email: string;
     firstName?: string;
     lastName?: string;
     role?: string;
-    password?: string;
-  }): Promise<Member> {
-    return request<Member>('/organizations/me/members', {
+  }): Promise<Invitation> {
+    return request<Invitation>('/organizations/me/invitations', {
       method: 'POST',
       body: JSON.stringify(payload),
+    });
+  },
+  revokeInvitation(id: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(`/organizations/me/invitations/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Invitado (enlace del correo)
+  previewInvitation(token: string): Promise<InvitationPreview> {
+    return request<InvitationPreview>('/invitations/preview', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  },
+  acceptInvitation(payload: {
+    token: string;
+    password: string;
+    firstName?: string;
+    lastName?: string;
+  }): Promise<{ email: string }> {
+    return request<{ email: string }>('/invitations/accept', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  acceptInvitationAsUser(token: string): Promise<Member> {
+    return request<Member>('/invitations/accept-existing', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
     });
   },
   updateMember(
@@ -348,17 +412,14 @@ export const api = {
     ownerEmail?: string;
     ownerFirstName?: string;
     ownerLastName?: string;
-    ownerPassword?: string;
-  }): Promise<OrganizationDetail> {
-    return request<OrganizationDetail>('/admin/organizations', {
+  }): Promise<OrganizationDetail & { ownerInvitationSent: boolean }> {
+    return request<OrganizationDetail & { ownerInvitationSent: boolean }>('/admin/organizations', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
   },
-  adminGetOrganization(
-    id: string,
-  ): Promise<OrganizationDetail & { members: Member[] }> {
-    return request<OrganizationDetail & { members: Member[] }>(`/admin/organizations/${id}`);
+  adminGetOrganization(id: string): Promise<AdminOrganizationDetail> {
+    return request<AdminOrganizationDetail>(`/admin/organizations/${id}`);
   },
   adminUpdateOrganization(
     id: string,

@@ -32,6 +32,8 @@ interface AuthContextValue extends AuthState {
   login: (payload: LoginPayload) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<AuthResponse>;
   logout: () => Promise<void>;
+  /** Vuelve a pedir la sesión al backend (p. ej. tras unirse a una empresa). */
+  reloadSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -103,6 +105,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const reloadSession = useCallback(async () => {
+    apply(await api.refresh());
+  }, [apply]);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -114,8 +120,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      reloadSession,
     }),
-    [user, organization, role, isLoading, login, register, logout],
+    [user, organization, role, isLoading, login, register, logout, reloadSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

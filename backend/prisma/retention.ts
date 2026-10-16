@@ -23,11 +23,15 @@ async function main(): Promise<void> {
   const resets = await prisma.passwordResetToken.deleteMany({
     where: { expiresAt: { lt: now } },
   });
+  const invitations = await prisma.organizationInvitation.deleteMany({
+    where: { acceptedAt: null, expiresAt: { lt: now } },
+  });
 
   console.log(
     `Retención aplicada: auth_attempts(-${days}d)=${attempts.count}, ` +
       `email_verifications(caducados)=${verifications.count}, ` +
-      `password_reset_tokens(caducados)=${resets.count}`,
+      `password_reset_tokens(caducados)=${resets.count}, ` +
+      `organization_invitations(caducadas)=${invitations.count}`,
   );
 }
 

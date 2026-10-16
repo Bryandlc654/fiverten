@@ -9,19 +9,24 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { CreateMemberDto } from './dto/create-member.dto';
+import { CreateInvitationDto } from './dto/create-invitation.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
+import { InvitationsService } from './invitations.service';
 import { OrganizationsService } from './organizations.service';
 
 @Controller('organizations')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class OrganizationsController {
-  constructor(private readonly organizations: OrganizationsService) {}
+  constructor(
+    private readonly organizations: OrganizationsService,
+    private readonly invitations: InvitationsService,
+  ) {}
 
   @Get('me')
   getMine(@CurrentUser('organizationId') orgId: string | null) {
@@ -43,14 +48,32 @@ export class OrganizationsController {
     return this.organizations.listMembers(this.requireOrg(orgId));
   }
 
-  @Post('me/members')
+  // Las altas van por invitación: el invitado acepta desde el enlace del correo.
+  @Get('me/invitations')
   @Roles('manager')
-  addMember(
+  listInvitations(@CurrentUser('organizationId') orgId: string | null) {
+    return this.invitations.listPending(this.requireOrg(orgId));
+  }
+
+  @Post('me/invitations')
+  @Roles('manager')
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  invite(
     @CurrentUser('organizationId') orgId: string | null,
     @CurrentUser('userId') userId: string,
-    @Body() dto: CreateMemberDto,
+    @Body() dto: CreateInvitationDto,
   ) {
-    return this.organizations.addMember(this.requireOrg(orgId), userId, dto);
+    return this.invitations.invite(this.requireOrg(orgId), userId, dto);
+  }
+
+  @Delete('me/invitations/:id')
+  @Roles('manager')
+  revokeInvitation(
+    @CurrentUser('organizationId') orgId: string | null,
+    @CurrentUser('userId') userId: string,
+    @Param('id') invitationId: string,
+  ) {
+    return this.invitations.revoke(this.requireOrg(orgId), userId, invitationId);
   }
 
   @Patch('me/members/:id')

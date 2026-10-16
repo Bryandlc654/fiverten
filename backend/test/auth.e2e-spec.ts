@@ -136,10 +136,31 @@ describe('FIVERTEN Auth (e2e)', () => {
       for (let i = 0; i < 5; i += 1) {
         await loginUser(email, 'mal-mal-mal').expect(401);
       }
-      await loginUser(email, USER_PASSWORD).expect(401);
+      const locked = await loginUser(email, USER_PASSWORD).expect(401);
+      expect(locked.body.message).toMatch(/bloqueada/);
 
       const user = await prisma.user.findUnique({ where: { email } });
       expect(user?.lockedUntil).not.toBeNull();
+    });
+
+    it('con la cuenta bloqueada y contraseña incorrecta responde igual que si no existiera', async () => {
+      const locked = await loginUser('lock@empresa.test', 'mal-mal-mal').expect(401);
+      const missing = await loginUser('nadie@empresa.test', 'mal-mal-mal').expect(401);
+      expect(locked.body.message).toBe(missing.body.message);
+    });
+
+    it('un correo inexistente también calcula el hash (tiempo similar)', async () => {
+      const time = async (email: string) => {
+        const start = process.hrtime.bigint();
+        await loginUser(email, 'incorrecta123').expect(401);
+        return Number(process.hrtime.bigint() - start) / 1e6;
+      };
+      // Calentamiento (el hash ficticio se genera en la primera llamada).
+      await time('nadie@empresa.test');
+      const existing = await time(USER_EMAIL);
+      const missing = await time('nadie@empresa.test');
+      // Sin el hash ficticio el caso inexistente tardaba ~0 ms frente a decenas.
+      expect(missing).toBeGreaterThan(existing * 0.4);
     });
   });
 
@@ -202,6 +223,44 @@ describe('FIVERTEN Auth (e2e)', () => {
       await http().post(`${API}/refresh`).set('Cookie', cookie1).expect(401);
       // El token nuevo de la familia también queda revocado.
       await http().post(`${API}/refresh`).set('Cookie', cookie2).expect(401);
+    });
+
+    it('dos refresh simultáneos con el mismo token no rotan dos veces', async () => {
+      const login = await loginUser(USER_EMAIL, USER_PASSWORD).expect(200);
+      const cookie = extractRefreshCookie(login);
+
+      const responses = await Promise.all(
+        Array.from({ length: 5 }, () => http().post(`${API}/refresh`).set('Cookie', cookie)),
+      );
+      const ok = responses.filter((response) => response.status === 200);
+      expect(ok.length).toBeLessThanOrEqual(1);
+
+      const session = await prisma.session.findFirst({
+        where: { user: { email: USER_EMAIL } },
+        orderBy: { createdAt: 'desc' },
+      });
+      const alive = await prisma.refreshToken.count({
+        where: { sessionId: session!.id, isUsed: false, revokedAt: null },
+      });
+      // Ningún token de la familia queda vivo: la carrera se trata como reutilización.
+      expect(alive).toBe(0);
+    });
+
+    it('fija y borra la cookie indicadora de sesión para el middleware', async () => {
+      const login = await loginUser(USER_EMAIL, USER_PASSWORD).expect(200);
+      const hint = (login.headers['set-cookie'] as unknown as string[]).find((cookie) =>
+        cookie.startsWith('fiverten_session='),
+      );
+      expect(hint).toMatch(/^fiverten_session=1;.*Path=\/;/);
+
+      const failed = await http()
+        .post(`${API}/refresh`)
+        .set('Cookie', 'fiverten_refresh=invalido')
+        .expect(401);
+      const cleared = (failed.headers['set-cookie'] as unknown as string[]).find((cookie) =>
+        cookie.startsWith('fiverten_session='),
+      );
+      expect(cleared).toMatch(/^fiverten_session=;/);
     });
   });
 

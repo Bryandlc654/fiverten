@@ -9,12 +9,12 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import type { Organization, User } from '@prisma/client';
-import { Prisma } from '@prisma/client';
-import * as argon2 from '@node-rs/argon2';
-import * as bcrypt from 'bcryptjs';
-import { randomBytes, randomUUID, createHash } from 'crypto';
+import { randomUUID } from 'crypto';
 import { generatePublicId } from '../common/ids';
+import { burnPasswordCheck, hashPassword, verifyPassword } from '../common/passwords';
 import { ensureAllSystemRoles, ensureSystemRole } from '../common/system-roles';
+import { hashToken, randomToken } from '../common/tokens';
+import { buildUniqueSlug, buildUniqueUsername } from '../common/unique';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
@@ -58,13 +58,19 @@ export class AuthService {
   async register(dto: RegisterDto, ctx: RequestContext) {
     const email = dto.email.trim().toLowerCase();
 
-    const existing = await this.prisma.user.findFirst({
-      where: {
-        OR: [{ email }, { username: dto.username ?? '__no_match__' }],
-        deletedAt: null,
-      },
-      select: { id: true },
-    });
+    // El hash se calcula antes de comprobar si el correo existe para que ambos
+    // caminos tarden lo mismo.
+    const passwordHash = await hashPassword(dto.password);
+
+    const existing = await this.prisma.withContext({ isPlatformAdmin: true }, (tx) =>
+      tx.user.findFirst({
+        where: {
+          OR: [{ email }, { username: dto.username ?? '__no_match__' }],
+          deletedAt: null,
+        },
+        select: { id: true },
+      }),
+    );
     if (existing) {
       // Mensaje generico para no revelar si el correo o el usuario ya existen.
       throw new ConflictException(
@@ -72,15 +78,13 @@ export class AuthService {
       );
     }
 
-    const passwordHash = await this.hashPassword(dto.password);
-
     const created = await this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
       const organization = await tx.organization.create({
         data: {
           publicId: generatePublicId(),
           tradeName: dto.companyName.trim(),
           legalName: dto.companyName.trim(),
-          slug: await this.buildUniqueSlug(tx, dto.companyName),
+          slug: await buildUniqueSlug(tx, dto.companyName),
           taxId: dto.taxId?.trim() || null,
           email,
           phone: dto.phone?.trim() || null,
@@ -92,7 +96,7 @@ export class AuthService {
       await ensureAllSystemRoles(tx, organization.id);
       const role = await ensureSystemRole(tx, organization.id, 'admin');
 
-      const username = dto.username ?? (await this.buildUniqueUsername(tx, email));
+      const username = dto.username ?? (await buildUniqueUsername(tx, email));
       const user = await tx.user.create({
         data: {
           email,
@@ -151,27 +155,39 @@ export class AuthService {
   // ---------------------------------------------------------------------------
   async login(dto: LoginDto, ctx: RequestContext) {
     const email = dto.email.trim().toLowerCase();
-    const user = await this.prisma.user.findFirst({ where: { email, deletedAt: null } });
+    const user = await this.prisma.withContext({ isPlatformAdmin: true }, (tx) =>
+      tx.user.findFirst({ where: { email, deletedAt: null } }),
+    );
 
+    // Anti-enumeracion: siempre se calcula un hash (real o ficticio) y las
+    // respuestas que delatan el estado de la cuenta (bloqueada, inactiva) solo
+    // se dan a quien conoce la contraseña.
     if (!user) {
+      await burnPasswordCheck(dto.password);
       await this.recordAttempt(null, email, 'login', false, 'user_not_found', ctx);
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
+    const passwordCheck = await verifyPassword(dto.password, user.passwordHash);
+    const isLocked = !!user.lockedUntil && user.lockedUntil.getTime() > Date.now();
+
+    if (isLocked) {
       await this.recordAttempt(user.id, email, 'login', false, 'locked', ctx);
-      throw new UnauthorizedException('La cuenta está bloqueada temporalmente. Inténtalo más tarde.');
+      throw new UnauthorizedException(
+        passwordCheck.valid
+          ? 'La cuenta está bloqueada temporalmente. Inténtalo más tarde.'
+          : 'Credenciales inválidas',
+      );
+    }
+
+    if (!passwordCheck.valid) {
+      await this.handleFailedLogin(user.id, user.failedLoginCount, email, ctx);
+      throw new UnauthorizedException('Credenciales inválidas');
     }
 
     if (!user.isActive) {
       await this.recordAttempt(user.id, email, 'login', false, 'inactive', ctx);
       throw new UnauthorizedException('Esta cuenta está inactiva');
-    }
-
-    const passwordCheck = await this.verifyPassword(dto.password, user.passwordHash);
-    if (!passwordCheck.valid) {
-      await this.handleFailedLogin(user.id, user.failedLoginCount, email, ctx);
-      throw new UnauthorizedException('Credenciales inválidas');
     }
 
     if (this.isEmailVerificationRequired() && !user.emailVerifiedAt) {
@@ -193,9 +209,7 @@ export class AuthService {
             lockedUntil: null,
             lastLoginAt: new Date(),
             // Rehash transparente a Argon2id si el hash almacenado es legacy (bcrypt).
-            passwordHash: passwordCheck.needsRehash
-              ? await this.hashPassword(dto.password)
-              : undefined,
+            passwordHash: passwordCheck.needsRehash ? await hashPassword(dto.password) : undefined,
           },
         });
 
@@ -242,7 +256,7 @@ export class AuthService {
 
     const token = await this.prisma.withContext({ isPlatformAdmin: true }, (tx) =>
       tx.refreshToken.findUnique({
-        where: { tokenHash: this.hashToken(refreshToken) },
+        where: { tokenHash: hashToken(refreshToken) },
         include: { user: true },
       }),
     );
@@ -276,7 +290,40 @@ export class AuthService {
     const organization = membership ? await this.loadOrganization(membership.organizationId) : null;
 
     const refreshExpiresAt = token.expiresAt;
-    const newRefreshToken = this.randomToken(48);
+    const newRefreshToken = randomToken(48);
+
+    // Rotación atómica: el token se "reclama" con un UPDATE condicional. Si dos
+    // peticiones llegan a la vez, solo una obtiene count === 1; la otra se trata
+    // como reutilización (igual que un token ya rotado).
+    const rotated = await this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
+      const claimed = await tx.refreshToken.updateMany({
+        where: { id: token.id, isUsed: false, revokedAt: null },
+        data: { isUsed: true, usedAt: new Date() },
+      });
+      if (claimed.count !== 1) {
+        return false;
+      }
+      const created = await tx.refreshToken.create({
+        data: {
+          userId: token.userId,
+          sessionId: token.sessionId,
+          tokenHash: hashToken(newRefreshToken),
+          familyId: token.familyId,
+          expiresAt: refreshExpiresAt,
+        },
+      });
+      await tx.refreshToken.update({
+        where: { id: token.id },
+        data: { replacedByTokenId: created.id },
+      });
+      return true;
+    });
+
+    if (!rotated) {
+      await this.revokeFamily(token.familyId, token.sessionId, 'refresh_token_reuse');
+      this.logger.warn(`Rotación concurrente de refresh token (user=${token.userId})`);
+      throw new UnauthorizedException('Sesión comprometida. Vuelve a iniciar sesión.');
+    }
 
     const newAccessToken = await this.signAccessToken(
       {
@@ -290,26 +337,6 @@ export class AuthService {
       },
       token.sessionId,
     );
-
-    await this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
-      const created = await tx.refreshToken.create({
-        data: {
-          userId: token.userId,
-          sessionId: token.sessionId,
-          tokenHash: this.hashToken(newRefreshToken),
-          familyId: token.familyId,
-          expiresAt: refreshExpiresAt,
-        },
-      });
-      await tx.refreshToken.update({
-        where: { id: token.id },
-        data: {
-          isUsed: true,
-          usedAt: new Date(),
-          replacedByTokenId: created.id,
-        },
-      });
-    });
 
     void ctx;
 
@@ -329,7 +356,7 @@ export class AuthService {
     }
     const token = await this.prisma.withContext({ isPlatformAdmin: true }, (tx) =>
       tx.refreshToken.findUnique({
-        where: { tokenHash: this.hashToken(refreshToken) },
+        where: { tokenHash: hashToken(refreshToken) },
         select: { familyId: true, sessionId: true },
       }),
     );
@@ -343,9 +370,9 @@ export class AuthService {
   // Perfil del usuario autenticado
   // ---------------------------------------------------------------------------
   async me(userId: string) {
-    const user = await this.prisma.user.findFirst({
-      where: { id: userId, isActive: true, deletedAt: null },
-    });
+    const user = await this.prisma.withContext({ userId }, (tx) =>
+      tx.user.findFirst({ where: { id: userId, isActive: true, deletedAt: null } }),
+    );
     if (!user) {
       throw new UnauthorizedException('Sesión no válida');
     }
@@ -399,9 +426,9 @@ export class AuthService {
   // Verificación de correo electrónico
   // ---------------------------------------------------------------------------
   async requestEmailVerification(userId: string) {
-    const user = await this.prisma.user.findFirst({
-      where: { id: userId, isActive: true, deletedAt: null },
-    });
+    const user = await this.prisma.withContext({ userId }, (tx) =>
+      tx.user.findFirst({ where: { id: userId, isActive: true, deletedAt: null } }),
+    );
     if (!user) {
       throw new UnauthorizedException('Sesión no válida');
     }
@@ -413,9 +440,9 @@ export class AuthService {
   }
 
   async verifyEmail(token: string) {
-    const record = await this.prisma.emailVerification.findUnique({
-      where: { tokenHash: this.hashToken(token) },
-    });
+    const record = await this.prisma.withContext({ isPlatformAdmin: true }, (tx) =>
+      tx.emailVerification.findUnique({ where: { tokenHash: hashToken(token) } }),
+    );
     if (
       !record ||
       !record.isActive ||
@@ -425,7 +452,7 @@ export class AuthService {
       throw new BadRequestException('El enlace de verificación no es válido o ha caducado');
     }
 
-    await this.prisma.$transaction(async (tx) => {
+    await this.prisma.withContext({ userId: record.userId }, async (tx) => {
       await tx.emailVerification.update({
         where: { id: record.id },
         data: { verifiedAt: new Date(), isActive: false },
@@ -443,19 +470,21 @@ export class AuthService {
       return;
     }
     const ttlHours = Number(this.config.get<string>('EMAIL_VERIFICATION_TTL_HOURS') ?? 24);
-    const token = this.randomToken(32);
+    const token = randomToken(32);
 
-    await this.prisma.emailVerification.updateMany({
-      where: { userId: user.id, isActive: true, verifiedAt: null },
-      data: { isActive: false },
-    });
-    await this.prisma.emailVerification.create({
-      data: {
-        userId: user.id,
-        tokenHash: this.hashToken(token),
-        expiresAt: new Date(Date.now() + ttlHours * 60 * 60 * 1000),
-        isActive: true,
-      },
+    await this.prisma.withContext({ userId: user.id }, async (tx) => {
+      await tx.emailVerification.updateMany({
+        where: { userId: user.id, isActive: true, verifiedAt: null },
+        data: { isActive: false },
+      });
+      await tx.emailVerification.create({
+        data: {
+          userId: user.id,
+          tokenHash: hashToken(token),
+          expiresAt: new Date(Date.now() + ttlHours * 60 * 60 * 1000),
+          isActive: true,
+        },
+      });
     });
 
     try {
@@ -470,35 +499,37 @@ export class AuthService {
   // ---------------------------------------------------------------------------
   async forgotPassword(emailRaw: string, ctx: RequestContext) {
     const email = emailRaw.trim().toLowerCase();
-    const user = await this.prisma.user.findFirst({
-      where: { email, isActive: true, deletedAt: null },
-    });
+    const user = await this.prisma.withContext({ isPlatformAdmin: true }, (tx) =>
+      tx.user.findFirst({ where: { email, isActive: true, deletedAt: null } }),
+    );
 
     // No se revela si el correo existe (evita enumeración de usuarios).
     if (user) {
       const ttlMinutes = Number(this.config.get<string>('PASSWORD_RESET_TTL_MINUTES') ?? 60);
-      const token = this.randomToken(32);
+      const token = randomToken(32);
 
-      await this.prisma.passwordResetToken.updateMany({
-        where: { userId: user.id, isActive: true, usedAt: null },
-        data: { isActive: false },
-      });
-      await this.prisma.passwordResetToken.create({
-        data: {
-          userId: user.id,
-          tokenHash: this.hashToken(token),
-          expiresAt: new Date(Date.now() + ttlMinutes * 60 * 1000),
-          ipAddress: ctx.ipAddress ?? null,
-          userAgent: ctx.userAgent?.slice(0, 500) ?? null,
-          isActive: true,
-        },
+      await this.prisma.withContext({ userId: user.id }, async (tx) => {
+        await tx.passwordResetToken.updateMany({
+          where: { userId: user.id, isActive: true, usedAt: null },
+          data: { isActive: false },
+        });
+        await tx.passwordResetToken.create({
+          data: {
+            userId: user.id,
+            tokenHash: hashToken(token),
+            expiresAt: new Date(Date.now() + ttlMinutes * 60 * 1000),
+            ipAddress: ctx.ipAddress ?? null,
+            userAgent: ctx.userAgent?.slice(0, 500) ?? null,
+            isActive: true,
+          },
+        });
       });
 
-      try {
-        await this.mail.sendPasswordReset(user.email, token);
-      } catch (error) {
+      // El envío no se espera: si se esperase, la respuesta tardaría más cuando
+      // el correo existe y eso permitiría enumerar usuarios.
+      this.mail.sendPasswordReset(user.email, token).catch((error: unknown) => {
         this.logger.error(`No se pudo enviar el correo de recuperación: ${String(error)}`);
-      }
+      });
     }
 
     await this.recordAttempt(user?.id ?? null, email, 'password_reset', true, null, ctx);
@@ -506,9 +537,9 @@ export class AuthService {
   }
 
   async resetPassword(token: string, newPassword: string, ctx: RequestContext) {
-    const record = await this.prisma.passwordResetToken.findUnique({
-      where: { tokenHash: this.hashToken(token) },
-    });
+    const record = await this.prisma.withContext({ isPlatformAdmin: true }, (tx) =>
+      tx.passwordResetToken.findUnique({ where: { tokenHash: hashToken(token) } }),
+    );
     if (
       !record ||
       !record.isActive ||
@@ -518,7 +549,7 @@ export class AuthService {
       throw new BadRequestException('El enlace de recuperación no es válido o ha caducado');
     }
 
-    const passwordHash = await this.hashPassword(newPassword);
+    const passwordHash = await hashPassword(newPassword);
 
     await this.prisma.withContext({ userId: record.userId }, async (tx) => {
       await tx.passwordResetToken.update({
@@ -623,15 +654,15 @@ export class AuthService {
     const failedCount = currentCount + 1;
     const shouldLock = failedCount >= maxAttempts;
 
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        failedLoginCount: failedCount,
-        lockedUntil: shouldLock
-          ? new Date(Date.now() + lockMinutes * 60 * 1000)
-          : null,
-      },
-    });
+    await this.prisma.withContext({ userId }, (tx) =>
+      tx.user.update({
+        where: { id: userId },
+        data: {
+          failedLoginCount: failedCount,
+          lockedUntil: shouldLock ? new Date(Date.now() + lockMinutes * 60 * 1000) : null,
+        },
+      }),
+    );
     await this.recordAttempt(userId, email, 'login', false, 'invalid_password', ctx);
   }
 
@@ -641,15 +672,15 @@ export class AuthService {
   ): Promise<SessionBundle> {
     const ttlDays = Number(this.config.get<string>('JWT_REFRESH_TTL_DAYS') ?? 30);
     const refreshExpiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000);
-    const sessionToken = this.randomToken(32);
-    const refreshToken = this.randomToken(48);
+    const sessionToken = randomToken(32);
+    const refreshToken = randomToken(48);
 
     const session = await this.prisma.withContext({ userId: subject.userId }, async (tx) => {
       const created = await tx.session.create({
         data: {
           userId: subject.userId,
           organizationId: subject.organizationId,
-          sessionTokenHash: this.hashToken(sessionToken),
+          sessionTokenHash: hashToken(sessionToken),
           ipAddress: ctx.ipAddress ?? null,
           userAgent: ctx.userAgent?.slice(0, 500) ?? null,
           expiresAt: refreshExpiresAt,
@@ -661,7 +692,7 @@ export class AuthService {
         data: {
           userId: subject.userId,
           sessionId: created.id,
-          tokenHash: this.hashToken(refreshToken),
+          tokenHash: hashToken(refreshToken),
           familyId: randomUUID(),
           expiresAt: refreshExpiresAt,
         },
@@ -726,51 +757,22 @@ export class AuthService {
     ctx: RequestContext,
   ): Promise<void> {
     try {
-      await this.prisma.authAttempt.create({
-        data: {
-          userId,
-          email,
-          ipAddress: ctx.ipAddress ?? null,
-          userAgent: ctx.userAgent?.slice(0, 500) ?? null,
-          attemptType,
-          success,
-          failureReason,
-        },
-      });
+      await this.prisma.withContext({ isPlatformAdmin: true }, (tx) =>
+        tx.authAttempt.create({
+          data: {
+            userId,
+            email,
+            ipAddress: ctx.ipAddress ?? null,
+            userAgent: ctx.userAgent?.slice(0, 500) ?? null,
+            attemptType,
+            success,
+            failureReason,
+          },
+        }),
+      );
     } catch (error) {
       this.logger.error(`No se pudo registrar el intento de autenticación: ${String(error)}`);
     }
-  }
-
-  private async hashPassword(password: string): Promise<string> {
-    return argon2.hash(password, {
-      algorithm: argon2.Algorithm.Argon2id,
-      memoryCost: 19456, // 19 MiB (recomendacion OWASP)
-      timeCost: 2,
-      parallelism: 1,
-    });
-  }
-
-  private async verifyPassword(
-    password: string,
-    storedHash: string,
-  ): Promise<{ valid: boolean; needsRehash: boolean }> {
-    if (!storedHash) {
-      return { valid: false, needsRehash: false };
-    }
-    if (storedHash.startsWith('$argon2')) {
-      try {
-        return { valid: await argon2.verify(storedHash, password), needsRehash: false };
-      } catch {
-        return { valid: false, needsRehash: false };
-      }
-    }
-    // Compatibilidad con hashes legacy bcrypt (bcryptjs): se valida y se re-hashea a Argon2id.
-    if (storedHash.startsWith('$2')) {
-      const valid = await bcrypt.compare(password, storedHash);
-      return { valid, needsRehash: valid };
-    }
-    return { valid: false, needsRehash: false };
   }
 
   private async signAccessToken(
@@ -787,60 +789,6 @@ export class AuthService {
       root: subject.isSuperAdmin,
       staff: subject.isStaff,
     });
-  }
-
-  private hashToken(token: string): string {
-    return createHash('sha256').update(token).digest('hex');
-  }
-
-  private randomToken(bytes: number): string {
-    return randomBytes(bytes).toString('hex');
-  }
-
-  private async buildUniqueSlug(
-    tx: Prisma.TransactionClient,
-    name: string,
-  ): Promise<string> {
-    const base =
-      name
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, 160) || 'organizacion';
-
-    let slug = base;
-    let attempt = 0;
-    while (await tx.organization.findUnique({ where: { slug }, select: { id: true } })) {
-      slug = `${base}-${Math.random().toString(36).slice(2, 6)}`;
-      if (++attempt > 6) {
-        throw new BadRequestException('No se pudo generar un identificador único para la organización');
-      }
-    }
-    return slug;
-  }
-
-  private async buildUniqueUsername(
-    tx: Prisma.TransactionClient,
-    email: string,
-  ): Promise<string> {
-    const base =
-      email
-        .split('@')[0]
-        .toLowerCase()
-        .replace(/[^a-z0-9._-]/g, '')
-        .slice(0, 80) || 'usuario';
-
-    let username = base;
-    let attempt = 0;
-    while (await tx.user.findUnique({ where: { username }, select: { id: true } })) {
-      username = `${base}${Math.floor(Math.random() * 90000)}`;
-      if (++attempt > 6) {
-        throw new BadRequestException('No se pudo generar un nombre de usuario único');
-      }
-    }
-    return username;
   }
 
   private isEmailVerificationRequired(): boolean {
@@ -885,5 +833,4 @@ export class AuthService {
       isFivertenStaff: user.isFivertenStaff,
     };
   }
-
 }
