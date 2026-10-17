@@ -12,6 +12,11 @@ export const RATING_LABELS: Record<number, string> = {
   5: 'Excelente',
 };
 
+/** Media con un decimal y coma: 4 -> "4,0", 4.25 -> "4,3". */
+export function formatRating(value: number): string {
+  return value.toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
 /** Estrellas de solo lectura (admite medias, p. ej. 4,6). */
 export function Stars({ rating, size = 18 }: { rating: number; size?: number }) {
   const color = STAR_COLORS[Math.max(1, Math.round(rating))] ?? 'text-amber-400';

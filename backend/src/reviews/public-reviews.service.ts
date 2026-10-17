@@ -12,16 +12,17 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SubmitReviewDto } from './dto/submit-review.dto';
 import { dataForStatus } from './review-states';
 import { PUBLIC_REVIEW_SELECT, toPublicReview } from './reviews.mappers';
+import { reviewOrder, type ReviewSort } from './reviews.params';
 
 interface RequestContext {
   ipAddress?: string;
   userAgent?: string;
 }
 
-export type ReviewSort = 'recent' | 'oldest';
-
 interface ListQuery {
   rating?: number;
+  /** Solo reseñas publicadas desde esta fecha. */
+  since?: Date;
   sort: ReviewSort;
   page: number;
   pageSize: number;
@@ -105,6 +106,9 @@ export class PublicReviewsService {
     if (query.rating) {
       where.rating = query.rating;
     }
+    if (query.since) {
+      where.publishedAt = { gte: query.since };
+    }
 
     return this.prisma.withContext({}, async (tx) => {
       const [total, rows] = await Promise.all([
@@ -112,7 +116,7 @@ export class PublicReviewsService {
         tx.review.findMany({
           where,
           select: PUBLIC_REVIEW_SELECT,
-          orderBy: { publishedAt: query.sort === 'oldest' ? 'asc' : 'desc' },
+          orderBy: reviewOrder(query.sort, 'publishedAt'),
           skip: (page - 1) * pageSize,
           take: pageSize,
         }),

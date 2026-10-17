@@ -260,7 +260,11 @@ export interface Paginated<T> {
 export interface ReviewListParams {
   rating?: number;
   status?: string;
-  sort?: 'recent' | 'oldest';
+  sort?: 'recent' | 'oldest' | 'highest' | 'lowest';
+  /** Últimos 30, 90 o 365 días. */
+  period?: string;
+  /** Panel: 'yes' con respuesta, 'no' sin respuesta. */
+  answered?: string;
   page?: number;
   pageSize?: number;
 }
@@ -329,6 +333,21 @@ const sessionReady = new Promise<void>((resolve) => {
 
 export function sessionRestored(): void {
   markSessionReady();
+}
+
+// Enlaces de un solo uso (confirmar reseña, verificar email): la petición se
+// hace una única vez por token. Si se repitiera (p. ej. el doble efecto de React
+// StrictMode en desarrollo), la segunda recibiría "enlace ya usado" y se
+// mostraría un error aunque la primera hubiera funcionado.
+const oneTimeCalls = new Map<string, Promise<unknown>>();
+
+function once<T>(key: string, call: () => Promise<T>): Promise<T> {
+  let pending = oneTimeCalls.get(key) as Promise<T> | undefined;
+  if (!pending) {
+    pending = call();
+    oneTimeCalls.set(key, pending);
+  }
+  return pending;
 }
 
 /** Rutas que no necesitan sesión (o que la crean) y no deben esperar. */
@@ -443,10 +462,12 @@ export const api = {
     return request<MeResponse>('/auth/me');
   },
   verifyEmail(token: string): Promise<{ verified: boolean }> {
-    return request<{ verified: boolean }>('/auth/verify-email', {
-      method: 'POST',
-      body: JSON.stringify({ token }),
-    });
+    return once(`verify-email:${token}`, () =>
+      request<{ verified: boolean }>('/auth/verify-email', {
+        method: 'POST',
+        body: JSON.stringify({ token }),
+      }),
+    );
   },
   requestEmailVerification(): Promise<{ sent: boolean; alreadyVerified: boolean }> {
     return request<{ sent: boolean; alreadyVerified: boolean }>('/auth/verify-email/request', {
@@ -605,10 +626,12 @@ export const api = {
     status: 'published' | 'under_review';
     organization: { slug: string; tradeName: string; isPublic: boolean };
   }> {
-    return request('/public/reviews/confirm', {
-      method: 'POST',
-      body: JSON.stringify({ token }),
-    });
+    return once(`confirm-review:${token}`, () =>
+      request('/public/reviews/confirm', {
+        method: 'POST',
+        body: JSON.stringify({ token }),
+      }),
+    );
   },
 
   // Ámbito plataforma (administrador general)

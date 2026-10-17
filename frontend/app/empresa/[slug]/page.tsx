@@ -8,8 +8,14 @@ import PublicShell from '../../../components/public/PublicShell';
 import RatingBreakdown from '../../../components/reviews/RatingBreakdown';
 import ReportReviewModal from '../../../components/reviews/ReportReviewModal';
 import ReviewCard from '../../../components/reviews/ReviewCard';
-import { Stars } from '../../../components/reviews/Stars';
+import { formatRating, Stars } from '../../../components/reviews/Stars';
 import { ApiError, api, type Paginated, type PublicProfile, type PublicReview } from '../../../lib/api';
+import {
+  PERIOD_OPTIONS,
+  SORT_OPTIONS,
+  type ReviewPeriod,
+  type ReviewSort,
+} from '../../../lib/review-filters';
 
 const PAGE_SIZE = 10;
 
@@ -20,7 +26,8 @@ export default function PublicProfilePage() {
   const [reviews, setReviews] = useState<Paginated<PublicReview> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [rating, setRating] = useState<number | null>(null);
-  const [sort, setSort] = useState<'recent' | 'oldest'>('recent');
+  const [sort, setSort] = useState<ReviewSort>('recent');
+  const [period, setPeriod] = useState<ReviewPeriod>('');
   const [page, setPage] = useState(1);
   const [loadingReviews, setLoadingReviews] = useState(true);
   const [reportingId, setReportingId] = useState<string | null>(null);
@@ -43,11 +50,17 @@ export default function PublicProfilePage() {
     if (!slug) return;
     setLoadingReviews(true);
     api
-      .publicReviews(slug, { rating: rating ?? undefined, sort, page, pageSize: PAGE_SIZE })
+      .publicReviews(slug, {
+        rating: rating ?? undefined,
+        sort,
+        period: period || undefined,
+        page,
+        pageSize: PAGE_SIZE,
+      })
       .then(setReviews)
       .catch(() => setReviews(null))
       .finally(() => setLoadingReviews(false));
-  }, [slug, rating, sort, page]);
+  }, [slug, rating, sort, period, page]);
 
   useEffect(() => {
     loadReviews();
@@ -124,7 +137,7 @@ export default function PublicProfilePage() {
                 <Stars rating={profile.rating.average ?? 0} size={16} />
                 <span>
                   {profile.rating.average !== null
-                    ? `${profile.rating.average.toLocaleString('es-ES')} · `
+                    ? `${formatRating(profile.rating.average)} · `
                     : ''}
                   {profile.rating.total} {profile.rating.total === 1 ? 'reseña' : 'reseñas'}
                 </span>
@@ -204,26 +217,46 @@ export default function PublicProfilePage() {
                 </button>
               ))}
             </div>
-            <select
-              value={sort}
-              onChange={(e) => {
-                setSort(e.target.value as 'recent' | 'oldest');
-                setPage(1);
-              }}
-              aria-label="Ordenar reseñas"
-              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 outline-none focus:border-blue-500"
-            >
-              <option value="recent">Más recientes</option>
-              <option value="oldest">Más antiguas</option>
-            </select>
+            <div className="flex flex-wrap gap-2">
+              <select
+                value={period}
+                onChange={(e) => {
+                  setPeriod(e.target.value as ReviewPeriod);
+                  setPage(1);
+                }}
+                aria-label="Filtrar por fecha"
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 outline-none focus:border-blue-500"
+              >
+                {PERIOD_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={sort}
+                onChange={(e) => {
+                  setSort(e.target.value as ReviewSort);
+                  setPage(1);
+                }}
+                aria-label="Ordenar reseñas"
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 outline-none focus:border-blue-500"
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {loadingReviews && !reviews ? (
             <p className="text-sm text-slate-500">Cargando reseñas…</p>
           ) : !reviews || reviews.items.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-              {rating
-                ? `Todavía no hay reseñas de ${rating} ${rating === 1 ? 'estrella' : 'estrellas'}.`
+              {rating || period
+                ? 'No hay reseñas con estos filtros.'
                 : 'Todavía no hay reseñas. ¡Sé el primero en opinar!'}
             </div>
           ) : (

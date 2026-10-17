@@ -3,10 +3,16 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ReviewResponseDto } from './dto/review-response.dto';
 import { statusFilter, toTenantReview, type ReviewStatus } from './reviews.mappers';
+import { reviewOrder, type ReviewSort } from './reviews.params';
 
 interface ListQuery {
   rating?: number;
   status?: ReviewStatus;
+  /** Solo reseñas recibidas desde esta fecha. */
+  since?: Date;
+  /** true = con respuesta, false = sin respuesta. */
+  answered?: boolean;
+  sort: ReviewSort;
   page: number;
   pageSize: number;
 }
@@ -27,6 +33,12 @@ export class ReviewsService {
     if (query.rating) {
       where.rating = query.rating;
     }
+    if (query.since) {
+      where.createdAt = { gte: query.since };
+    }
+    if (query.answered !== undefined) {
+      where.response = query.answered ? { isNot: null } : { is: null };
+    }
 
     return this.prisma.withContext({ orgId }, async (tx) => {
       const [total, rows, counts] = await Promise.all([
@@ -34,7 +46,7 @@ export class ReviewsService {
         tx.review.findMany({
           where,
           include: { response: true },
-          orderBy: { createdAt: 'desc' },
+          orderBy: reviewOrder(query.sort, 'createdAt'),
           skip: (page - 1) * pageSize,
           take: pageSize,
         }),

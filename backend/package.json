@@ -22,6 +22,7 @@
     "db:rls:sql": "ts-node prisma/rls/render.ts",
     "db:retention": "ts-node prisma/retention.ts",
     "db:seed": "ts-node prisma/seed.ts",
+    "db:seed:demo": "ts-node prisma/seed-demo.ts",
     "test": "jest --config ./test/jest-e2e.json --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json --runInBand"
   },

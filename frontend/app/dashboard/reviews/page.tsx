@@ -15,6 +15,12 @@ import {
   type TenantReviewList,
 } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
+import {
+  PERIOD_OPTIONS,
+  SORT_OPTIONS,
+  type ReviewPeriod,
+  type ReviewSort,
+} from '../../../lib/review-filters';
 import { roleAtLeast } from '../../../lib/roles';
 
 const PAGE_SIZE = 20;
@@ -27,6 +33,9 @@ export default function ReviewsPage() {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<ReviewStatus | ''>('');
   const [rating, setRating] = useState('');
+  const [period, setPeriod] = useState<ReviewPeriod>('');
+  const [answered, setAnswered] = useState('');
+  const [sort, setSort] = useState<ReviewSort>('recent');
   const [page, setPage] = useState(1);
 
   const canRespond = roleAtLeast(role, 'editor');
@@ -46,6 +55,9 @@ export default function ReviewsPage() {
         await api.listReviews({
           status: status || undefined,
           rating: rating ? Number(rating) : undefined,
+          period: period || undefined,
+          answered: answered || undefined,
+          sort,
           page,
           pageSize: PAGE_SIZE,
         }),
@@ -55,7 +67,7 @@ export default function ReviewsPage() {
     } finally {
       setLoading(false);
     }
-  }, [status, rating, page]);
+  }, [status, rating, period, answered, sort, page]);
 
   useEffect(() => {
     void load();
@@ -156,6 +168,49 @@ export default function ReviewsPage() {
                   </option>
                 ))}
               </select>
+              <select
+                aria-label="Filtrar por respuesta"
+                value={answered}
+                onChange={(e) => {
+                  setAnswered(e.target.value);
+                  setPage(1);
+                }}
+                className={selectClass}
+              >
+                <option value="">Con y sin respuesta</option>
+                <option value="no">Sin responder</option>
+                <option value="yes">Respondidas</option>
+              </select>
+              <select
+                aria-label="Filtrar por fecha"
+                value={period}
+                onChange={(e) => {
+                  setPeriod(e.target.value as ReviewPeriod);
+                  setPage(1);
+                }}
+                className={selectClass}
+              >
+                {PERIOD_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label="Ordenar reseñas"
+                value={sort}
+                onChange={(e) => {
+                  setSort(e.target.value as ReviewSort);
+                  setPage(1);
+                }}
+                className={selectClass}
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -165,7 +220,7 @@ export default function ReviewsPage() {
             </div>
           ) : !data || data.items.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-              {status || rating
+              {status || rating || period || answered
                 ? 'No hay reseñas con estos filtros.'
                 : 'Aún no has recibido reseñas. Comparte tu enlace para empezar.'}
             </div>

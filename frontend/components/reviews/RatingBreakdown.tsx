@@ -1,7 +1,7 @@
 'use client';
 
 import type { RatingSummary } from '../../lib/api';
-import { Stars } from './Stars';
+import { formatRating, Stars } from './Stars';
 
 /** Media, total y distribución por estrellas; cada barra filtra el listado. */
 export default function RatingBreakdown({
@@ -17,7 +17,7 @@ export default function RatingBreakdown({
     <div className="rounded-xl border border-slate-200 bg-white p-5">
       <div className="flex items-end gap-3">
         <span className="text-4xl font-bold text-slate-900">
-          {rating.average !== null ? rating.average.toLocaleString('es-ES') : '—'}
+          {rating.average !== null ? formatRating(rating.average) : '—'}
         </span>
         <div className="pb-1">
           <Stars rating={rating.average ?? 0} />

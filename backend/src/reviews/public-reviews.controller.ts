@@ -18,8 +18,8 @@ import type { Request } from 'express';
 import { ReportReviewDto } from './dto/moderation.dto';
 import { ConfirmReviewDto, SubmitReviewDto } from './dto/submit-review.dto';
 import { ModerationService } from './moderation.service';
-import { PublicReviewsService, type ReviewSort } from './public-reviews.service';
-import { parseRating } from './reviews.params';
+import { PublicReviewsService } from './public-reviews.service';
+import { parsePeriod, parseRating, REVIEW_SORTS, type ReviewSort } from './reviews.params';
 
 /** Perfil público y recepción de reseñas (sin sesión). */
 @Controller('public')
@@ -39,11 +39,18 @@ export class PublicReviewsController {
     @Param('slug') slug: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('pageSize', new DefaultValuePipe(10), ParseIntPipe) pageSize: number,
-    @Query('sort', new DefaultValuePipe('recent'), new ParseEnumPipe(['recent', 'oldest']))
+    @Query('sort', new DefaultValuePipe('recent'), new ParseEnumPipe(REVIEW_SORTS))
     sort: ReviewSort,
     @Query('rating') rating?: string,
+    @Query('period') period?: string,
   ) {
-    return this.reviews.listReviews(slug, { page, pageSize, sort, rating: parseRating(rating) });
+    return this.reviews.listReviews(slug, {
+      page,
+      pageSize,
+      sort,
+      rating: parseRating(rating),
+      since: parsePeriod(period),
+    });
   }
 
   @Get('organizations/:slug/review-form')

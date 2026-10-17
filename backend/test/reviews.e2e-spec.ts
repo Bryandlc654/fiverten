@@ -207,9 +207,43 @@ describe('FIVERTEN Perfil público y reseñas (e2e)', () => {
       expect(oldest.body.items[0].rating).toBe(5);
     });
 
+    it('ordena por puntuación', async () => {
+      const highest = await http()
+        .get(`${PUBLIC}/organizations/${slug}/reviews?sort=highest`)
+        .expect(200);
+      const lowest = await http()
+        .get(`${PUBLIC}/organizations/${slug}/reviews?sort=lowest`)
+        .expect(200);
+      expect(highest.body.items.map((r: { rating: number }) => r.rating)).toEqual([5, 2]);
+      expect(lowest.body.items.map((r: { rating: number }) => r.rating)).toEqual([2, 5]);
+    });
+
+    it('filtra por periodo de publicación', async () => {
+      // La reseña de Marta pasa a tener 100 días.
+      await prisma.review.updateMany({
+        where: { reviewerEmail: 'marta@cliente.test' },
+        data: { publishedAt: new Date(Date.now() - 100 * 24 * 60 * 60 * 1000) },
+      });
+      const lastQuarter = await http()
+        .get(`${PUBLIC}/organizations/${slug}/reviews?period=90d`)
+        .expect(200);
+      const lastYear = await http()
+        .get(`${PUBLIC}/organizations/${slug}/reviews?period=365d`)
+        .expect(200);
+      expect(lastQuarter.body.items.map((r: { rating: number }) => r.rating)).toEqual([2]);
+      expect(lastYear.body.total).toBe(2);
+
+      // Combinable con las estrellas.
+      const combined = await http()
+        .get(`${PUBLIC}/organizations/${slug}/reviews?period=90d&rating=5`)
+        .expect(200);
+      expect(combined.body.total).toBe(0);
+    });
+
     it('rechaza filtros no válidos', async () => {
       await http().get(`${PUBLIC}/organizations/${slug}/reviews?rating=9`).expect(400);
       await http().get(`${PUBLIC}/organizations/${slug}/reviews?sort=otro`).expect(400);
+      await http().get(`${PUBLIC}/organizations/${slug}/reviews?period=7y`).expect(400);
     });
   });
 
@@ -237,6 +271,31 @@ describe('FIVERTEN Perfil público y reseñas (e2e)', () => {
         .get(`${PUBLIC}/organizations/${slug}/reviews?rating=2`)
         .expect(200);
       expect(list.body.items[0].response.body).toContain('Lamentamos');
+    });
+
+    it('el panel filtra por reseñas con y sin respuesta', async () => {
+      const answered = await http()
+        .get(`${TENANT}?answered=yes`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .expect(200);
+      expect(answered.body.items.map((r: { id: string }) => r.id)).toEqual([reviewId]);
+
+      const unanswered = await http()
+        .get(`${TENANT}?answered=no&status=published`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .expect(200);
+      expect(unanswered.body.items.map((r: { rating: number }) => r.rating)).toEqual([5]);
+
+      const lowest = await http()
+        .get(`${TENANT}?status=published&sort=lowest`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .expect(200);
+      expect(lowest.body.items.map((r: { rating: number }) => r.rating)).toEqual([2, 5]);
+
+      await http()
+        .get(`${TENANT}?answered=quizas`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .expect(400);
     });
 
     it('puede editar y retirar su respuesta', async () => {

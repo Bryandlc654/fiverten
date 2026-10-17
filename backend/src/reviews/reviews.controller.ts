@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseEnumPipe,
   ParseIntPipe,
   ParseUUIDPipe,
   Post,
@@ -24,7 +25,13 @@ import { ReportReviewDto } from './dto/moderation.dto';
 import { ReviewResponseDto } from './dto/review-response.dto';
 import { ModerationService } from './moderation.service';
 import { REVIEW_STATUSES, type ReviewStatus } from './reviews.mappers';
-import { parseRating } from './reviews.params';
+import {
+  parseAnswered,
+  parsePeriod,
+  parseRating,
+  REVIEW_SORTS,
+  type ReviewSort,
+} from './reviews.params';
 import { ReviewsService } from './reviews.service';
 
 @Controller('organizations/me/reviews')
@@ -40,8 +47,12 @@ export class ReviewsController {
     @CurrentUser('organizationId') orgId: string | null,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
+    @Query('sort', new DefaultValuePipe('recent'), new ParseEnumPipe(REVIEW_SORTS))
+    sort: ReviewSort,
     @Query('rating') rating?: string,
     @Query('status') status?: string,
+    @Query('period') period?: string,
+    @Query('answered') answered?: string,
   ) {
     if (status && !REVIEW_STATUSES.includes(status as ReviewStatus)) {
       throw new BadRequestException('Estado no válido');
@@ -49,8 +60,11 @@ export class ReviewsController {
     return this.reviews.list(this.requireOrg(orgId), {
       page,
       pageSize,
+      sort,
       rating: parseRating(rating),
       status: (status || undefined) as ReviewStatus | undefined,
+      since: parsePeriod(period),
+      answered: parseAnswered(answered),
     });
   }
 
