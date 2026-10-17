@@ -16,8 +16,7 @@ test.describe('Panel de administración general', () => {
   test('el super administrador accede al panel, ve estadísticas y usuarios', async ({ page }) => {
     await loginAsAdmin(page);
 
-    await page.getByTestId('admin-panel-link').click();
-    await page.waitForURL('**/admin');
+    await page.goto('/admin');
 
     await expect(page.getByRole('heading', { name: 'Panel general' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Empresas' })).toBeVisible();

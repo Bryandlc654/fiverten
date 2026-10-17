@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { ApiError } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
+import { nextPath } from '../../lib/next-path';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && feedback !== 'success') {
-      router.replace('/dashboard');
+      router.replace(nextPath());
     }
   }, [isLoading, isAuthenticated, router, feedback]);
 
@@ -37,7 +38,7 @@ export default function LoginPage() {
       await login({ email, password });
       // Espera a que se vea la animación de éxito antes de entrar al panel.
       setFeedback('success');
-      window.setTimeout(() => router.replace('/dashboard'), 1100);
+      window.setTimeout(() => router.replace(nextPath()), 1100);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo iniciar sesión');
       setSubmitting(false);

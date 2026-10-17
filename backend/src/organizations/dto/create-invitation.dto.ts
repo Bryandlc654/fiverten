@@ -1,7 +1,12 @@
-import { IsEmail, IsIn, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 import { ORGANIZATION_ROLES, type OrganizationRole } from '../../common/roles';
 
-export class CreateMemberDto {
+/**
+ * Invitación de un miembro. Nunca crea usuarios ni membresías directamente:
+ * el invitado recibe un enlace y es él quien acepta y, si no tiene cuenta,
+ * elige su propia contraseña.
+ */
+export class CreateInvitationDto {
   @IsEmail({}, { message: 'El correo del usuario no es válido' })
   email!: string;
 
@@ -18,13 +23,4 @@ export class CreateMemberDto {
   @IsOptional()
   @IsIn(ORGANIZATION_ROLES, { message: 'Rol no válido' })
   role?: OrganizationRole;
-
-  @IsOptional()
-  @IsString()
-  @MinLength(8, { message: 'La contraseña debe tener al menos 8 caracteres' })
-  @MaxLength(72)
-  @Matches(/^(?=.*[A-Za-z])(?=.*\d).+$/, {
-    message: 'La contraseña debe contener al menos una letra y un número',
-  })
-  password?: string;
 }

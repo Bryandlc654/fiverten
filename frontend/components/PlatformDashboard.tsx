@@ -11,20 +11,8 @@ import {
 } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
 import { organizationStatusLabel, verificationStatusLabel } from '../lib/roles';
-
-const STATUS_TONE: Record<string, string> = {
-  active: 'bg-emerald-50 text-emerald-600',
-  pending: 'bg-amber-50 text-amber-600',
-  suspended: 'bg-red-50 text-red-600',
-  inactive: 'bg-slate-100 text-slate-500',
-};
-
-const VERIFICATION_TONE: Record<string, string> = {
-  verified: 'bg-emerald-50 text-emerald-600',
-  pending: 'bg-blue-50 text-blue-600',
-  not_verified: 'bg-slate-100 text-slate-500',
-  rejected: 'bg-red-50 text-red-600',
-};
+import { NEUTRAL_TONE, STATUS_TONE, VERIFICATION_TONE } from '../lib/status-tones';
+import { Badge, StatCard } from './ui';
 
 export default function PlatformDashboard() {
   const router = useRouter();
@@ -181,13 +169,13 @@ export default function PlatformDashboard() {
                       <td className="px-5 py-3">
                         <Badge
                           label={organizationStatusLabel(org.status)}
-                          tone={STATUS_TONE[org.status] ?? 'bg-slate-100 text-slate-500'}
+                          tone={STATUS_TONE[org.status] ?? NEUTRAL_TONE}
                         />
                       </td>
                       <td className="px-5 py-3">
                         <Badge
                           label={verificationStatusLabel(org.verificationStatus)}
-                          tone={VERIFICATION_TONE[org.verificationStatus] ?? 'bg-slate-100 text-slate-500'}
+                          tone={VERIFICATION_TONE[org.verificationStatus] ?? NEUTRAL_TONE}
                         />
                       </td>
                       <td className="px-5 py-3 text-slate-600">{org.members}</td>
@@ -209,7 +197,17 @@ export default function PlatformDashboard() {
           )}
         </section>
 
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <QuickAction
+            icon="gavel"
+            title="Moderar reseñas"
+            description={
+              stats
+                ? `${stats.reviews.underReview} en revisión · ${stats.reviews.reported} reportadas`
+                : 'Reseñas en revisión y reportadas'
+            }
+            onClick={() => router.push('/admin/reviews')}
+          />
           <QuickAction
             icon="storefront"
             title="Empresas"
@@ -231,33 +229,6 @@ export default function PlatformDashboard() {
         </section>
       </div>
     </DashboardShell>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  hint,
-  icon,
-  tone,
-}: {
-  label: string;
-  value: number | undefined;
-  hint: string;
-  icon: string;
-  tone: string;
-}) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
-      <div className="flex items-center justify-between">
-        <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${tone}`}>
-          <span className="material-symbols-outlined text-[20px]">{icon}</span>
-        </span>
-        <span className="text-xs text-slate-400">{hint}</span>
-      </div>
-      <p className="mt-3 text-2xl font-bold text-slate-900">{value ?? '—'}</p>
-      <p className="text-xs text-slate-500">{label}</p>
-    </div>
   );
 }
 
@@ -286,11 +257,5 @@ function QuickAction({
         <span className="block text-xs text-slate-500">{description}</span>
       </span>
     </button>
-  );
-}
-
-function Badge({ label, tone }: { label: string; tone: string }) {
-  return (
-    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}>{label}</span>
   );
 }

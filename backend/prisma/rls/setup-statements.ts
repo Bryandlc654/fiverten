@@ -16,6 +16,59 @@ export const APP_ROLE = 'fiverten_app';
 // En produccion define APP_DB_PASSWORD (y reflejalo en APP_DATABASE_URL).
 export const APP_ROLE_PASSWORD = process.env.APP_DB_PASSWORD ?? 'fiverten_app';
 
+// ---------------------------------------------------------------------------
+// Plantillas para tablas nuevas. TODA tabla del esquema public debe tener RLS
+// (lo comprueba test/rls.e2e-spec.ts). Para una tabla de un tenant basta con:
+//   ...tenantTablePolicy('reviews')
+// y para una tabla de datos personales de un usuario:
+//   ...userTablePolicy('notification_preferences')
+// ---------------------------------------------------------------------------
+
+/** Tabla con columna organization_id: visible solo para su organización. */
+export function tenantTablePolicy(table: string, column = 'organization_id'): string[] {
+  return [
+    `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`,
+    `DROP POLICY IF EXISTS rls_${table} ON ${table}`,
+    `CREATE POLICY rls_${table} ON ${table}
+       USING (${column} = app_current_org() OR app_is_platform_admin())
+       WITH CHECK (${column} = app_current_org() OR app_is_platform_admin())`,
+  ];
+}
+
+/** Tabla con columna user_id: visible solo para el propio usuario. */
+export function userTablePolicy(table: string, column = 'user_id'): string[] {
+  return [
+    `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`,
+    `DROP POLICY IF EXISTS rls_${table} ON ${table}`,
+    `CREATE POLICY rls_${table} ON ${table}
+       USING (${column} = app_current_user() OR app_is_platform_admin())
+       WITH CHECK (${column} = app_current_user() OR app_is_platform_admin())`,
+  ];
+}
+
+/** Tabla de uso interno de la plataforma (moderación, auditoría). */
+export function platformTablePolicy(table: string): string[] {
+  return [
+    `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`,
+    `DROP POLICY IF EXISTS rls_${table} ON ${table}`,
+    `CREATE POLICY rls_${table} ON ${table}
+       USING (app_is_platform_admin())
+       WITH CHECK (app_is_platform_admin())`,
+  ];
+}
+
+/** Catálogo global: lectura para todos, escritura solo plataforma. */
+export function catalogTablePolicy(table: string): string[] {
+  return [
+    ...platformTablePolicy(table),
+    `DROP POLICY IF EXISTS rls_${table}_select ON ${table}`,
+    `CREATE POLICY rls_${table}_select ON ${table} FOR SELECT USING (true)`,
+  ];
+}
+
+// Tablas que no necesitan politica (no contienen datos de tenants ni de usuarios).
+export const RLS_EXEMPT_TABLES = ['_prisma_migrations'];
+
 // Sentencias que requieren privilegios de propietario. El rol de aplicacion se
 // crea aparte (ver apply.ts) porque CREATE ROLE no admite IF NOT EXISTS.
 export const rlsStatements: string[] = [
@@ -98,17 +151,65 @@ export const rlsStatements: string[] = [
        )
      )`,
 
-  `ALTER TABLE sessions ENABLE ROW LEVEL SECURITY`,
-  `DROP POLICY IF EXISTS rls_sessions ON sessions`,
-  `CREATE POLICY rls_sessions ON sessions
-     USING (user_id = app_current_user() OR app_is_platform_admin())
-     WITH CHECK (user_id = app_current_user() OR app_is_platform_admin())`,
+  // Usuarios: cada uno ve su fila y la de los miembros de su organización
+  // (listado de miembros), pero solo puede modificar la suya. Las búsquedas
+  // previas a conocer la identidad (login, recuperación) usan el contexto de
+  // plataforma desde el backend.
+  `ALTER TABLE users ENABLE ROW LEVEL SECURITY`,
+  `DROP POLICY IF EXISTS rls_users ON users`,
+  `DROP POLICY IF EXISTS rls_users_select ON users`,
+  `CREATE POLICY rls_users_select ON users FOR SELECT
+     USING (
+       id = app_current_user()
+       OR app_is_platform_admin()
+       OR EXISTS (
+         SELECT 1 FROM organization_memberships m
+         WHERE m.user_id = users.id
+           AND m.organization_id = app_current_org()
+       )
+     )`,
+  `CREATE POLICY rls_users ON users
+     USING (id = app_current_user() OR app_is_platform_admin())
+     WITH CHECK (id = app_current_user() OR app_is_platform_admin())`,
 
-  `ALTER TABLE refresh_tokens ENABLE ROW LEVEL SECURITY`,
-  `DROP POLICY IF EXISTS rls_refresh_tokens ON refresh_tokens`,
-  `CREATE POLICY rls_refresh_tokens ON refresh_tokens
-     USING (user_id = app_current_user() OR app_is_platform_admin())
-     WITH CHECK (user_id = app_current_user() OR app_is_platform_admin())`,
+  ...userTablePolicy('sessions'),
+  ...userTablePolicy('refresh_tokens'),
+  ...userTablePolicy('email_verifications'),
+  ...userTablePolicy('password_reset_tokens'),
+
+  // Invitaciones: las gestiona la organización; el invitado accede por token
+  // a través del backend (contexto de plataforma).
+  ...tenantTablePolicy('organization_invitations'),
+
+  // Reseñas y respuestas: de la organización, y además legibles por cualquiera
+  // cuando están publicadas (perfil público). La política pública solo filtra
+  // filas: el backend debe seleccionar columnas seguras (nunca reviewer_email).
+  ...tenantTablePolicy('reviews'),
+  `DROP POLICY IF EXISTS rls_reviews_public ON reviews`,
+  `CREATE POLICY rls_reviews_public ON reviews FOR SELECT
+     USING (lifecycle_status = 'published' AND visibility = 'public' AND deleted_at IS NULL)`,
+  ...tenantTablePolicy('review_responses'),
+  `DROP POLICY IF EXISTS rls_review_responses_public ON review_responses`,
+  `CREATE POLICY rls_review_responses_public ON review_responses FOR SELECT
+     USING (
+       is_public AND EXISTS (
+         SELECT 1 FROM reviews r
+         WHERE r.id = review_responses.review_id
+           AND r.lifecycle_status = 'published'
+           AND r.visibility = 'public'
+           AND r.deleted_at IS NULL
+       )
+     )`,
+
+  // Catálogos globales: lectura para todos, escritura solo plataforma.
+  ...catalogTablePolicy('permissions'),
+  ...catalogTablePolicy('report_reasons'),
+
+  // Uso interno de la plataforma: auditoría de autenticación, reportes de
+  // reseñas e historial de moderación (el backend los escribe como sistema).
+  ...platformTablePolicy('auth_attempts'),
+  ...platformTablePolicy('review_reports'),
+  ...platformTablePolicy('moderation_actions'),
 
   `GRANT USAGE ON SCHEMA public TO fiverten_app`,
   `GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO fiverten_app`,

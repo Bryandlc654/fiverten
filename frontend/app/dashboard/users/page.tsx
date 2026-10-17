@@ -2,37 +2,23 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import DashboardShell from '../../../components/DashboardShell';
-import { ApiError, api, type Member } from '../../../lib/api';
+import { Alert } from '../../../components/ui';
+import InviteMemberModal from '../../../components/users/InviteMemberModal';
+import MembersTable from '../../../components/users/MembersTable';
+import PendingInvitations from '../../../components/users/PendingInvitations';
+import { ApiError, api, type Invitation, type Member } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
-import { ROLE_OPTIONS, roleAtLeast, roleLabel } from '../../../lib/roles';
-
-interface NewMemberForm {
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  password: string;
-}
-
-const EMPTY_FORM: NewMemberForm = {
-  email: '',
-  firstName: '',
-  lastName: '',
-  role: 'viewer',
-  password: '',
-};
+import { roleAtLeast } from '../../../lib/roles';
 
 export default function UsersPage() {
   const { role } = useAuth();
   const [members, setMembers] = useState<Member[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [form, setForm] = useState<NewMemberForm>(EMPTY_FORM);
-  const [creating, setCreating] = useState(false);
-  const [showCreate, setShowCreate] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
+  const [showInvite, setShowInvite] = useState(false);
 
   const canManage = roleAtLeast(role, 'manager');
   const canRemove = roleAtLeast(role, 'admin');
@@ -41,115 +27,98 @@ export default function UsersPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.listMembers();
-      setMembers(data.members);
+      const [memberData, invitationData] = await Promise.all([
+        api.listMembers(),
+        canManage ? api.listInvitations() : Promise.resolve({ invitations: [] }),
+      ]);
+      setMembers(memberData.members);
+      setInvitations(invitationData.invitations);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudieron cargar los usuarios');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [canManage]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  useEffect(() => {
-    if (!showCreate) return;
-    function onKey(event: KeyboardEvent) {
-      if (event.key === 'Escape') setShowCreate(false);
-    }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [showCreate]);
-
-  function openCreate() {
-    setForm(EMPTY_FORM);
-    setCreateError(null);
-    setShowCreate(true);
-  }
-
-  function closeCreate() {
-    if (creating) return;
-    setShowCreate(false);
-  }
-
-  async function onCreate(event: React.FormEvent) {
-    event.preventDefault();
-    setCreating(true);
-    setCreateError(null);
+  /** Ejecuta una acción sobre una fila mostrando su estado y el resultado. */
+  async function run(id: string, action: () => Promise<string>, failure: string) {
+    setBusyId(id);
+    setError(null);
     setNotice(null);
     try {
-      await api.addMember({
-        email: form.email.trim(),
-        firstName: form.firstName.trim() || undefined,
-        lastName: form.lastName.trim() || undefined,
-        role: form.role,
-        password: form.password || undefined,
-      });
-      setForm(EMPTY_FORM);
-      setShowCreate(false);
-      setNotice('Usuario añadido a la empresa.');
-      await load();
+      setNotice(await action());
     } catch (err) {
-      setCreateError(err instanceof ApiError ? err.message : 'No se pudo añadir el usuario');
+      setError(err instanceof ApiError ? err.message : failure);
     } finally {
-      setCreating(false);
+      setBusyId(null);
     }
   }
 
-  async function changeRole(member: Member, newRole: string) {
+  function replaceMember(updated: Member) {
+    setMembers((current) =>
+      current.map((item) => (item.membershipId === updated.membershipId ? updated : item)),
+    );
+  }
+
+  function changeRole(member: Member, newRole: string) {
     if (newRole === member.role) return;
-    setBusyId(member.membershipId);
-    setError(null);
-    setNotice(null);
-    try {
-      const updated = await api.updateMember(member.membershipId, { role: newRole });
-      setMembers((current) =>
-        current.map((item) => (item.membershipId === updated.membershipId ? updated : item)),
-      );
-      setNotice('Rol actualizado.');
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo actualizar el rol');
-    } finally {
-      setBusyId(null);
-    }
+    void run(
+      member.membershipId,
+      async () => {
+        replaceMember(await api.updateMember(member.membershipId, { role: newRole }));
+        return 'Rol actualizado.';
+      },
+      'No se pudo actualizar el rol',
+    );
   }
 
-  async function toggleActive(member: Member) {
-    setBusyId(member.membershipId);
-    setError(null);
-    setNotice(null);
-    try {
-      const updated = await api.updateMember(member.membershipId, { isActive: !member.isActive });
-      setMembers((current) =>
-        current.map((item) => (item.membershipId === updated.membershipId ? updated : item)),
-      );
-      setNotice(updated.isActive ? 'Usuario reactivado.' : 'Usuario desactivado.');
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo cambiar el estado');
-    } finally {
-      setBusyId(null);
-    }
+  function toggleActive(member: Member) {
+    void run(
+      member.membershipId,
+      async () => {
+        const updated = await api.updateMember(member.membershipId, { isActive: !member.isActive });
+        replaceMember(updated);
+        return updated.isActive ? 'Usuario reactivado.' : 'Usuario desactivado.';
+      },
+      'No se pudo cambiar el estado',
+    );
   }
 
-  async function onRemove(member: Member) {
-    setBusyId(member.membershipId);
-    setError(null);
-    setNotice(null);
-    try {
-      await api.removeMember(member.membershipId);
-      setMembers((current) => current.filter((item) => item.membershipId !== member.membershipId));
-      setNotice('Usuario eliminado de la empresa.');
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo eliminar el usuario');
-    } finally {
-      setBusyId(null);
-    }
+  function removeMember(member: Member) {
+    void run(
+      member.membershipId,
+      async () => {
+        await api.removeMember(member.membershipId);
+        setMembers((current) =>
+          current.filter((item) => item.membershipId !== member.membershipId),
+        );
+        return 'Usuario eliminado de la empresa.';
+      },
+      'No se pudo eliminar el usuario',
+    );
   }
 
-  const inputClass =
-    'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500';
+  function revokeInvitation(invitation: Invitation) {
+    void run(
+      invitation.id,
+      async () => {
+        await api.revokeInvitation(invitation.id);
+        setInvitations((current) => current.filter((item) => item.id !== invitation.id));
+        return 'Invitación cancelada.';
+      },
+      'No se pudo cancelar la invitación',
+    );
+  }
+
+  async function onInvited(email: string) {
+    setShowInvite(false);
+    setNotice(`Invitación enviada a ${email}. Entrará en la empresa cuando la acepte.`);
+    await load();
+  }
 
   return (
     <DashboardShell
@@ -158,275 +127,44 @@ export default function UsersPage() {
       subtitle="Gestiona los miembros de tu empresa y sus roles"
     >
       <div className="space-y-6">
-        {notice && (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            {notice}
-          </div>
-        )}
-        {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
+        {notice && <Alert tone="success">{notice}</Alert>}
+        {error && <Alert tone="error">{error}</Alert>}
 
         {canManage && (
           <div className="flex justify-end">
             <button
               type="button"
-              onClick={openCreate}
+              onClick={() => setShowInvite(true)}
               className="inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600"
             >
               <span className="material-symbols-outlined text-[18px]">person_add</span>
-              Añadir usuario
+              Invitar usuario
             </button>
           </div>
         )}
 
-        <section className="rounded-xl border border-slate-200 bg-white">
-          <div className="flex items-center justify-between px-5 py-4">
-            <h2 className="text-base font-bold text-slate-900">Miembros</h2>
-            <span className="text-xs font-semibold text-slate-500">{members.length} en total</span>
-          </div>
+        <MembersTable
+          members={members}
+          loading={loading}
+          busyId={busyId}
+          canManage={canManage}
+          canRemove={canRemove}
+          onChangeRole={changeRole}
+          onToggleActive={toggleActive}
+          onRemove={removeMember}
+        />
 
-          {loading ? (
-            <div className="flex items-center gap-3 px-5 pb-6 text-sm text-slate-500">
-              <span className="material-symbols-outlined animate-spin">progress_activity</span>
-              Cargando usuarios…
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] border-t border-slate-100 text-left text-sm">
-                <thead>
-                  <tr className="text-xs uppercase tracking-wide text-slate-400">
-                    <th className="px-5 py-3 font-semibold">Usuario</th>
-                    <th className="px-5 py-3 font-semibold">Rol</th>
-                    <th className="px-5 py-3 font-semibold">Estado</th>
-                    <th className="px-5 py-3 font-semibold">Alta</th>
-                    <th className="px-5 py-3 text-right font-semibold">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {members.map((member) => {
-                    const busy = busyId === member.membershipId;
-                    const name =
-                      [member.firstName, member.lastName].filter(Boolean).join(' ') || member.username;
-                    return (
-                      <tr key={member.membershipId} className="align-middle">
-                        <td className="px-5 py-3">
-                          <div className="flex items-center gap-3">
-                            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
-                              {name
-                                .split(' ')
-                                .map((part) => part[0])
-                                .join('')
-                                .slice(0, 2)
-                                .toUpperCase()}
-                            </span>
-                            <div className="min-w-0">
-                              <p className="flex items-center gap-1.5 font-semibold text-slate-900">
-                                {name}
-                                {member.isOwner && (
-                                  <span className="material-symbols-outlined text-[15px] text-amber-500">
-                                    workspace_premium
-                                  </span>
-                                )}
-                              </p>
-                              <p className="truncate text-xs text-slate-500">{member.email}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3">
-                          {canManage && !member.isOwner ? (
-                            <select
-                              value={member.role ?? 'viewer'}
-                              disabled={busy}
-                              onChange={(e) => void changeRole(member, e.target.value)}
-                              className="rounded-lg border border-slate-200 px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-blue-500 disabled:opacity-60"
-                            >
-                              {ROLE_OPTIONS.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                              {roleLabel(member.role)}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-5 py-3">
-                          <span
-                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
-                              member.isActive
-                                ? 'bg-emerald-50 text-emerald-600'
-                                : 'bg-slate-100 text-slate-500'
-                            }`}
-                          >
-                            <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                            {member.isActive ? 'Activo' : 'Inactivo'}
-                          </span>
-                          {!member.isVerified && (
-                            <span className="ml-2 text-[11px] text-amber-500">sin verificar</span>
-                          )}
-                        </td>
-                        <td className="px-5 py-3 text-xs text-slate-500">
-                          {new Date(member.joinedAt).toLocaleDateString('es-ES')}
-                        </td>
-                        <td className="px-5 py-3">
-                          <div className="flex items-center justify-end gap-2">
-                            {canManage && !member.isOwner && (
-                              <button
-                                type="button"
-                                disabled={busy}
-                                onClick={() => void toggleActive(member)}
-                                className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-900 disabled:opacity-60"
-                              >
-                                {member.isActive ? 'Desactivar' : 'Activar'}
-                              </button>
-                            )}
-                            {canRemove && !member.isOwner && (
-                              <button
-                                type="button"
-                                disabled={busy}
-                                onClick={() => void onRemove(member)}
-                                className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
-                              >
-                                <span className="material-symbols-outlined text-[16px]">delete</span>
-                                Eliminar
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
+        {canManage && (
+          <PendingInvitations
+            invitations={invitations}
+            busyId={busyId}
+            onRevoke={revokeInvitation}
+          />
+        )}
       </div>
 
-      {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/40 p-4 backdrop-blur-sm sm:items-center">
-          <button
-            type="button"
-            aria-label="Cerrar"
-            onClick={closeCreate}
-            className="absolute inset-0 cursor-default"
-          />
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="add-user-title"
-            className="relative z-10 w-full max-w-lg rounded-xl border border-slate-200 bg-white p-5 shadow-xl"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 id="add-user-title" className="text-base font-bold text-slate-900">
-                  Añadir usuario
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Si el correo no existe, se creará una cuenta nueva con la contraseña indicada.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={closeCreate}
-                disabled={creating}
-                aria-label="Cerrar"
-                className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-900 disabled:opacity-60"
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-
-            {createError && (
-              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {createError}
-              </div>
-            )}
-
-            <form onSubmit={onCreate} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <label className="sm:col-span-2">
-                <span className="mb-1 block text-xs font-semibold text-slate-600">
-                  Correo electrónico
-                </span>
-                <input
-                  type="email"
-                  required
-                  placeholder="correo@empresa.com"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className={inputClass}
-                />
-              </label>
-              <label>
-                <span className="mb-1 block text-xs font-semibold text-slate-600">Nombre</span>
-                <input
-                  placeholder="Nombre"
-                  value={form.firstName}
-                  onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-                  className={inputClass}
-                />
-              </label>
-              <label>
-                <span className="mb-1 block text-xs font-semibold text-slate-600">Apellidos</span>
-                <input
-                  placeholder="Apellidos"
-                  value={form.lastName}
-                  onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-                  className={inputClass}
-                />
-              </label>
-              <label>
-                <span className="mb-1 block text-xs font-semibold text-slate-600">Rol</span>
-                <select
-                  value={form.role}
-                  onChange={(e) => setForm({ ...form, role: e.target.value })}
-                  className={inputClass}
-                >
-                  {ROLE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span className="mb-1 block text-xs font-semibold text-slate-600">
-                  Contraseña
-                </span>
-                <input
-                  type="password"
-                  placeholder="Solo usuarios nuevos"
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  className={inputClass}
-                />
-              </label>
-              <div className="mt-1 flex justify-end gap-2 sm:col-span-2">
-                <button
-                  type="button"
-                  onClick={closeCreate}
-                  disabled={creating}
-                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={creating}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
-                >
-                  <span className="material-symbols-outlined text-[18px]">person_add</span>
-                  {creating ? 'Añadiendo…' : 'Añadir usuario'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {showInvite && (
+        <InviteMemberModal onClose={() => setShowInvite(false)} onInvited={onInvited} />
       )}
     </DashboardShell>
   );

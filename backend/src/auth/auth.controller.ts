@@ -30,6 +30,9 @@ interface AuthResult {
   [key: string]: unknown;
 }
 
+// Debe coincidir con SESSION_HINT_COOKIE en frontend/middleware.ts.
+const SESSION_HINT_COOKIE = 'fiverten_session';
+
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -68,8 +71,15 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const token = req.cookies?.[this.cookieName] as string | undefined;
-    const result = await this.auth.refresh(token, this.context(req));
-    return this.settle(res, result);
+    try {
+      const result = await this.auth.refresh(token, this.context(req));
+      return this.settle(res, result);
+    } catch (error) {
+      // Sesión inválida: se borran las cookies para que el middleware del
+      // frontend deje de considerar al navegador como autenticado.
+      this.clearCookies(res);
+      throw error;
+    }
   }
 
   @Post('logout')
@@ -77,7 +87,7 @@ export class AuthController {
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const token = req.cookies?.[this.cookieName] as string | undefined;
     await this.auth.logout(token);
-    res.clearCookie(this.cookieName, this.clearCookieOptions());
+    this.clearCookies(res);
     return { success: true };
   }
 
@@ -144,7 +154,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   logoutAll(@CurrentUser('userId') userId: string, @Res({ passthrough: true }) res: Response) {
-    res.clearCookie(this.cookieName, this.clearCookieOptions());
+    this.clearCookies(res);
     return this.auth.logoutAll(userId);
   }
 
@@ -154,8 +164,19 @@ export class AuthController {
     // El registro con verificación de correo obligatoria no emite sesión.
     if (refreshToken && refreshExpiresAt) {
       res.cookie(this.cookieName, refreshToken, this.cookieOptions(refreshExpiresAt));
+      // Indicador sin secretos con path "/" para que el middleware de Next pueda
+      // saber si hay sesión (la cookie de refresh solo viaja a /api/auth).
+      res.cookie(SESSION_HINT_COOKIE, '1', {
+        ...this.cookieOptions(refreshExpiresAt),
+        path: '/',
+      });
     }
     return publicResult;
+  }
+
+  private clearCookies(res: Response) {
+    res.clearCookie(this.cookieName, this.clearCookieOptions());
+    res.clearCookie(SESSION_HINT_COOKIE, { ...this.clearCookieOptions(), path: '/' });
   }
 
   private context(req: Request) {

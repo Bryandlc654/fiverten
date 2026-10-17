@@ -26,6 +26,12 @@ export interface AuthenticatedUser {
   sessionId: string | null;
 }
 
+interface ActiveMembership {
+  organizationId: string;
+  isOwner: boolean;
+  role: { baseRole: string | null };
+}
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
@@ -41,51 +47,59 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
     // El access token es de vida corta, pero revalidamos contra la base de datos
-    // para que la desactivación del usuario o la revocación de su sesión surtan
-    // efecto de inmediato en lugar de esperar a que expire el token.
-    if (!payload.sid) {
-      const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
-      if (!user || user.deletedAt || !user.isActive) {
-        throw new UnauthorizedException('Sesión no válida');
-      }
-      return this.buildUser(payload, user.isSuperAdmin, user.isFivertenStaff);
-    }
+    // para que la desactivación del usuario, la revocación de su sesión y los
+    // cambios de rol o expulsiones surtan efecto de inmediato en lugar de
+    // esperar a que expire el token. Del JWT solo se usa la identidad (sub, sid)
+    // y la organización elegida (org); el rol se lee siempre de la membresía.
+    // Sin organización (p. ej. el super admin) no hay membresía que leer.
+    const membershipQuery = {
+      where: { organizationId: payload.org ?? undefined, isActive: true },
+      include: { role: { select: { baseRole: true } } },
+      take: payload.org ? 1 : 0,
+    };
 
-    const session = await this.prisma.withContext({ userId: payload.sub }, (tx) =>
-      tx.session.findUnique({ where: { id: payload.sid! }, include: { user: true } }),
+    const { user, sessionValid } = await this.prisma.withContext(
+      { userId: payload.sub },
+      async (tx) => {
+        if (!payload.sid) {
+          const found = await tx.user.findUnique({
+            where: { id: payload.sub },
+            include: { memberships: membershipQuery },
+          });
+          return { user: found, sessionValid: true };
+        }
+        const session = await tx.session.findUnique({
+          where: { id: payload.sid },
+          include: { user: { include: { memberships: membershipQuery } } },
+        });
+        return {
+          user: session?.user ?? null,
+          sessionValid:
+            !!session &&
+            session.userId === payload.sub &&
+            session.isActive &&
+            !session.revokedAt &&
+            session.expiresAt.getTime() > Date.now(),
+        };
+      },
     );
 
-    const user = session?.user;
-    const isValid =
-      !!session &&
-      session.userId === payload.sub &&
-      session.isActive &&
-      !session.revokedAt &&
-      session.expiresAt.getTime() > Date.now() &&
-      !!user &&
-      !user.deletedAt &&
-      user.isActive;
-
-    if (!isValid || !user) {
+    if (!sessionValid || !user || user.deletedAt || !user.isActive) {
       throw new UnauthorizedException('Sesión no válida');
     }
 
-    return this.buildUser(payload, user.isSuperAdmin, user.isFivertenStaff);
-  }
+    const membership: ActiveMembership | undefined = payload.org ? user.memberships[0] : undefined;
 
-  private buildUser(
-    payload: JwtPayload,
-    isSuperAdmin: boolean,
-    isStaff: boolean,
-  ): AuthenticatedUser {
     return {
       userId: payload.sub,
-      email: payload.email,
-      organizationId: payload.org,
-      role: payload.role,
-      isOwner: payload.own ?? false,
-      isSuperAdmin,
-      isStaff,
+      email: user.email,
+      // Si la membresía ya no existe o está inactiva (expulsión, desactivación),
+      // el usuario pierde el acceso a la organización en la siguiente petición.
+      organizationId: membership?.organizationId ?? null,
+      role: membership?.role.baseRole ?? null,
+      isOwner: membership?.isOwner ?? false,
+      isSuperAdmin: user.isSuperAdmin,
+      isStaff: user.isFivertenStaff,
       sessionId: payload.sid,
     };
   }
