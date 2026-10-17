@@ -368,6 +368,52 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * fetch con un error claro cuando la API no responde (servidor apagado, URL mal
+ * configurada, CORS): sin esto el usuario solo veía "No se pudo iniciar sesión".
+ */
+async function send(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch {
+    throw new ApiError(
+      0,
+      'No se puede conectar con el servidor. Comprueba tu conexión o inténtalo de nuevo en unos minutos.',
+    );
+  }
+}
+
+// Render (plan gratuito) suspende el backend tras un rato sin tráfico; al
+// despertar tarda ~30 s y el proxy /api de Next responde 502/503/504 mientras.
+const WAKING_UP = new Set([502, 503, 504]);
+const WAKE_UP_ATTEMPTS = 4;
+const WAKE_UP_DELAY_MS = 3000;
+const WAKE_UP_MESSAGE =
+  'El servidor se está iniciando (tras un rato sin uso puede tardar hasta un minuto). Inténtalo de nuevo en unos segundos.';
+
+/**
+ * Solo se reintenta lo que es seguro repetir: consultas GET y el login. Nunca
+ * el refresh (rota el token: repetirlo revocaría la sesión) ni altas como el
+ * registro (podrían duplicarse si la primera petición sí llegó al servidor).
+ */
+function retriesWhileWakingUp(path: string, method: string): boolean {
+  return method === 'GET' || path === '/auth/login';
+}
+
+function parseBody(text: string): unknown {
+  if (!text) return null;
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    // p. ej. la página HTML de error del proxy en un 502.
+    return null;
+  }
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (!isSessionless(path)) {
     await sessionReady;
@@ -380,18 +426,31 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     headers.set('Authorization', `Bearer ${accessToken}`);
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...init,
-    headers,
-    credentials: 'include',
-    cache: 'no-store',
-  });
+  const method = (init.method ?? 'GET').toUpperCase();
+  const attempts = retriesWhileWakingUp(path, method) ? WAKE_UP_ATTEMPTS : 1;
 
-  const text = await response.text();
-  const data = text ? (JSON.parse(text) as unknown) : null;
+  let response: Response | null = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    response = await send(`${API_URL}${path}`, {
+      ...init,
+      headers,
+      credentials: 'include',
+      cache: 'no-store',
+    });
+    if (!WAKING_UP.has(response.status) || attempt === attempts) {
+      break;
+    }
+    await wait(WAKE_UP_DELAY_MS);
+  }
+  const final = response as Response;
 
-  if (!response.ok) {
-    throw new ApiError(response.status, extractMessage(data, response.status));
+  if (WAKING_UP.has(final.status)) {
+    throw new ApiError(final.status, WAKE_UP_MESSAGE);
+  }
+
+  const data = parseBody(await final.text());
+  if (!final.ok) {
+    throw new ApiError(final.status, extractMessage(data, final.status));
   }
   return data as T;
 }
@@ -403,7 +462,7 @@ async function requestForm<T>(path: string, body: FormData): Promise<T> {
     headers.set('Authorization', `Bearer ${accessToken}`);
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await send(`${API_URL}${path}`, {
     method: 'POST',
     headers,
     body,
@@ -411,9 +470,10 @@ async function requestForm<T>(path: string, body: FormData): Promise<T> {
     cache: 'no-store',
   });
 
-  const text = await response.text();
-  const data = text ? (JSON.parse(text) as unknown) : null;
-
+  if (WAKING_UP.has(response.status)) {
+    throw new ApiError(response.status, WAKE_UP_MESSAGE);
+  }
+  const data = parseBody(await response.text());
   if (!response.ok) {
     throw new ApiError(response.status, extractMessage(data, response.status));
   }
