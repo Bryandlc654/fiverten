@@ -55,8 +55,8 @@ export default function TenantSidebar({
           <Image
             src="/logo-fiverten.png"
             alt="FIVERTEN"
-            width={2170}
-            height={349}
+            width={2000}
+            height={347}
             className="h-8 w-auto"
           />
           <button

@@ -10,6 +10,7 @@ import ReportReviewModal from '../../../components/reviews/ReportReviewModal';
 import ReviewCard from '../../../components/reviews/ReviewCard';
 import { formatRating, Stars } from '../../../components/reviews/Stars';
 import { ApiError, api, type Paginated, type PublicProfile, type PublicReview } from '../../../lib/api';
+import { useAuth } from '../../../lib/auth-context';
 import {
   PERIOD_OPTIONS,
   SORT_OPTIONS,
@@ -22,6 +23,7 @@ const PAGE_SIZE = 10;
 export default function PublicProfilePage() {
   const params = useParams<{ slug: string }>();
   const slug = params?.slug ?? '';
+  const { organization } = useAuth();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [reviews, setReviews] = useState<Paginated<PublicReview> | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +71,30 @@ export default function PublicProfilePage() {
   function selectRating(value: number | null) {
     setRating(value);
     setPage(1);
+  }
+
+  // La propietaria que abre el perfil de su propia empresa sin haberlo
+  // publicado: se le explica qué hacer en lugar del mensaje genérico.
+  if (error === 'not_found' && organization?.slug === slug) {
+    return (
+      <PublicShell>
+        <div className="mx-auto max-w-md rounded-xl border border-amber-200 bg-white p-8 text-center">
+          <span className="material-symbols-outlined text-[40px] text-amber-500">visibility_off</span>
+          <h1 className="mt-2 text-lg font-bold">Tu perfil aún no es público</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {organization.tradeName} todavía no aparece en FIVERTEN. Actívalo en{' '}
+            <strong>Empresa → Mostrar el perfil de la empresa públicamente</strong> y guarda los
+            cambios.
+          </p>
+          <Link
+            href="/dashboard/company"
+            className="mt-5 inline-flex rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600"
+          >
+            Ir a los datos de la empresa
+          </Link>
+        </div>
+      </PublicShell>
+    );
   }
 
   if (error) {
