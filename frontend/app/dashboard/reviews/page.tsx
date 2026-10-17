@@ -177,6 +177,7 @@ export default function ReviewsPage() {
                   review={review}
                   companyName={company?.tradeName ?? 'la empresa'}
                   canRespond={canRespond}
+                  canReport={roleAtLeast(role, 'manager')}
                   onChange={replace}
                 />
               ))}

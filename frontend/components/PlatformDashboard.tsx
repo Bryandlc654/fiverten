@@ -197,7 +197,17 @@ export default function PlatformDashboard() {
           )}
         </section>
 
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <QuickAction
+            icon="gavel"
+            title="Moderar reseñas"
+            description={
+              stats
+                ? `${stats.reviews.underReview} en revisión · ${stats.reviews.reported} reportadas`
+                : 'Reseñas en revisión y reportadas'
+            }
+            onClick={() => router.push('/admin/reviews')}
+          />
           <QuickAction
             icon="storefront"
             title="Empresas"

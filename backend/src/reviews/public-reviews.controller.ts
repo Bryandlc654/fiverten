@@ -8,20 +8,26 @@ import {
   Param,
   ParseEnumPipe,
   ParseIntPipe,
+  ParseUUIDPipe,
   Post,
   Query,
   Req,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
+import { ReportReviewDto } from './dto/moderation.dto';
 import { ConfirmReviewDto, SubmitReviewDto } from './dto/submit-review.dto';
+import { ModerationService } from './moderation.service';
 import { PublicReviewsService, type ReviewSort } from './public-reviews.service';
 import { parseRating } from './reviews.params';
 
 /** Perfil público y recepción de reseñas (sin sesión). */
 @Controller('public')
 export class PublicReviewsController {
-  constructor(private readonly reviews: PublicReviewsService) {}
+  constructor(
+    private readonly reviews: PublicReviewsService,
+    private readonly moderation: ModerationService,
+  ) {}
 
   @Get('organizations/:slug')
   getProfile(@Param('slug') slug: string) {
@@ -52,6 +58,22 @@ export class PublicReviewsController {
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
     });
+  }
+
+  @Get('report-reasons')
+  reportReasons() {
+    return this.moderation.listReasons();
+  }
+
+  @Post('reviews/:id/report')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  report(
+    @Param('id', ParseUUIDPipe) reviewId: string,
+    @Body() dto: ReportReviewDto,
+    @Req() req: Request,
+  ) {
+    return this.moderation.reportAsVisitor(reviewId, dto, req.ip);
   }
 
   @Post('reviews/confirm')

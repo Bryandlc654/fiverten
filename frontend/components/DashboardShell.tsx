@@ -13,7 +13,8 @@ export type NavKey =
   | 'profile'
   | 'reviews'
   | 'adminOrgs'
-  | 'adminUsers';
+  | 'adminUsers'
+  | 'adminReviews';
 
 interface DashboardShellProps {
   active: NavKey;
@@ -49,6 +50,7 @@ const ADMIN_NAV: NavItem[] = [
     href: '/admin?tab=organizations',
   },
   { key: 'adminUsers', label: 'Usuarios', icon: 'group', href: '/admin?tab=users' },
+  { key: 'adminReviews', label: 'Reseñas', icon: 'gavel', href: '/admin/reviews' },
 ];
 
 export default function DashboardShell({

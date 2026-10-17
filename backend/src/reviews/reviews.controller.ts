@@ -6,9 +6,12 @@ import {
   Delete,
   ForbiddenException,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
+  Post,
   Put,
   Query,
   UseGuards,
@@ -17,7 +20,9 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { ReportReviewDto } from './dto/moderation.dto';
 import { ReviewResponseDto } from './dto/review-response.dto';
+import { ModerationService } from './moderation.service';
 import { REVIEW_STATUSES, type ReviewStatus } from './reviews.mappers';
 import { parseRating } from './reviews.params';
 import { ReviewsService } from './reviews.service';
@@ -25,7 +30,10 @@ import { ReviewsService } from './reviews.service';
 @Controller('organizations/me/reviews')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ReviewsController {
-  constructor(private readonly reviews: ReviewsService) {}
+  constructor(
+    private readonly reviews: ReviewsService,
+    private readonly moderation: ModerationService,
+  ) {}
 
   @Get()
   list(
@@ -65,6 +73,19 @@ export class ReviewsController {
     @Param('id', ParseUUIDPipe) reviewId: string,
   ) {
     return this.reviews.removeResponse(this.requireOrg(orgId), userId, reviewId);
+  }
+
+  /** La empresa no puede ocultar reseñas: solo reportarlas a moderación. */
+  @Post(':id/report')
+  @HttpCode(HttpStatus.OK)
+  @Roles('manager')
+  report(
+    @CurrentUser('organizationId') orgId: string | null,
+    @CurrentUser('userId') userId: string,
+    @Param('id', ParseUUIDPipe) reviewId: string,
+    @Body() dto: ReportReviewDto,
+  ) {
+    return this.moderation.reportAsOrganization(this.requireOrg(orgId), userId, reviewId, dto);
   }
 
   private requireOrg(orgId: string | null): string {

@@ -10,6 +10,7 @@ import { hashToken, randomToken } from '../common/tokens';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubmitReviewDto } from './dto/submit-review.dto';
+import { dataForStatus } from './review-states';
 import { PUBLIC_REVIEW_SELECT, toPublicReview } from './reviews.mappers';
 
 interface RequestContext {
@@ -210,26 +211,32 @@ export class PublicReviewsService {
       }
 
       const flags = await this.antifraudFlags(tx, review);
-      const now = new Date();
       const publish = flags.length === 0;
+      const to = publish ? 'published' : 'under_review';
 
       // Reclamo atómico: el mismo enlace no puede confirmarse dos veces.
       const claimed = await tx.review.updateMany({
         where: { id: review.id, emailConfirmedAt: null },
         data: {
-          emailConfirmedAt: now,
+          emailConfirmedAt: new Date(),
           confirmTokenHash: null,
-          ...(publish
-            ? { lifecycleStatus: 'published', visibility: 'public', publishedAt: now }
-            : {
-                moderationStatus: 'under_review',
-                metadata: { ...(review.metadata as object), antifraud: flags },
-              }),
+          ...dataForStatus(to, review),
+          ...(publish ? {} : { metadata: { ...(review.metadata as object), antifraud: flags } }),
         },
       });
       if (claimed.count !== 1) {
         throw new BadRequestException(INVALID_CONFIRMATION);
       }
+      await tx.moderationAction.create({
+        data: {
+          reviewId: review.id,
+          moderatorId: null,
+          action: publish ? 'publish' : 'flag',
+          fromStatus: 'pending',
+          toStatus: to,
+          reason: publish ? 'Correo confirmado por el autor' : `Antifraude: ${flags.join(', ')}`,
+        },
+      });
 
       return {
         status: publish ? ('published' as const) : ('under_review' as const),

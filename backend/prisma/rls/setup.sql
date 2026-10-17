@@ -182,23 +182,51 @@ CREATE POLICY rls_review_responses_public ON review_responses FOR SELECT
 
 ALTER TABLE permissions ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS rls_permissions_select ON permissions;
-
 DROP POLICY IF EXISTS rls_permissions ON permissions;
+
+CREATE POLICY rls_permissions ON permissions
+    USING (app_is_platform_admin())
+    WITH CHECK (app_is_platform_admin());
+
+DROP POLICY IF EXISTS rls_permissions_select ON permissions;
 
 CREATE POLICY rls_permissions_select ON permissions FOR SELECT USING (true);
 
-CREATE POLICY rls_permissions ON permissions
-  USING (app_is_platform_admin())
-  WITH CHECK (app_is_platform_admin());
+ALTER TABLE report_reasons ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_report_reasons ON report_reasons;
+
+CREATE POLICY rls_report_reasons ON report_reasons
+    USING (app_is_platform_admin())
+    WITH CHECK (app_is_platform_admin());
+
+DROP POLICY IF EXISTS rls_report_reasons_select ON report_reasons;
+
+CREATE POLICY rls_report_reasons_select ON report_reasons FOR SELECT USING (true);
 
 ALTER TABLE auth_attempts ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS rls_auth_attempts ON auth_attempts;
 
 CREATE POLICY rls_auth_attempts ON auth_attempts
-  USING (app_is_platform_admin())
-  WITH CHECK (app_is_platform_admin());
+    USING (app_is_platform_admin())
+    WITH CHECK (app_is_platform_admin());
+
+ALTER TABLE review_reports ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_review_reports ON review_reports;
+
+CREATE POLICY rls_review_reports ON review_reports
+    USING (app_is_platform_admin())
+    WITH CHECK (app_is_platform_admin());
+
+ALTER TABLE moderation_actions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_moderation_actions ON moderation_actions;
+
+CREATE POLICY rls_moderation_actions ON moderation_actions
+    USING (app_is_platform_admin())
+    WITH CHECK (app_is_platform_admin());
 
 GRANT USAGE ON SCHEMA public TO fiverten_app;
 

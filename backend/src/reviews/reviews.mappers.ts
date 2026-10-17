@@ -1,7 +1,13 @@
 import { Prisma } from '@prisma/client';
 
 /** Estado visible de una reseña, derivado de sus dimensiones independientes. */
-export type ReviewStatus = 'pending' | 'published' | 'under_review' | 'reported' | 'hidden';
+export type ReviewStatus =
+  | 'pending'
+  | 'published'
+  | 'under_review'
+  | 'reported'
+  | 'hidden'
+  | 'rejected';
 
 export const REVIEW_STATUSES: ReviewStatus[] = [
   'pending',
@@ -9,6 +15,7 @@ export const REVIEW_STATUSES: ReviewStatus[] = [
   'under_review',
   'reported',
   'hidden',
+  'rejected',
 ];
 
 /** Filtro de Prisma equivalente a cada estado visible. */
@@ -24,6 +31,8 @@ export function statusFilter(status: ReviewStatus): Prisma.ReviewWhereInput {
       return { moderationStatus: 'reported' };
     case 'hidden':
       return { moderationStatus: 'hidden' };
+    case 'rejected':
+      return { moderationStatus: 'rejected' };
   }
 }
 
@@ -34,6 +43,7 @@ export function reviewStatus(review: {
   moderationStatus: string;
 }): ReviewStatus {
   if (review.moderationStatus === 'hidden') return 'hidden';
+  if (review.moderationStatus === 'rejected') return 'rejected';
   if (review.moderationStatus === 'under_review') return 'under_review';
   if (review.moderationStatus === 'reported') return 'reported';
   if (review.lifecycleStatus === 'published' && review.visibility === 'public') return 'published';

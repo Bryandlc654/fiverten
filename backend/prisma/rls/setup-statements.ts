@@ -46,6 +46,26 @@ export function userTablePolicy(table: string, column = 'user_id'): string[] {
   ];
 }
 
+/** Tabla de uso interno de la plataforma (moderación, auditoría). */
+export function platformTablePolicy(table: string): string[] {
+  return [
+    `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`,
+    `DROP POLICY IF EXISTS rls_${table} ON ${table}`,
+    `CREATE POLICY rls_${table} ON ${table}
+       USING (app_is_platform_admin())
+       WITH CHECK (app_is_platform_admin())`,
+  ];
+}
+
+/** Catálogo global: lectura para todos, escritura solo plataforma. */
+export function catalogTablePolicy(table: string): string[] {
+  return [
+    ...platformTablePolicy(table),
+    `DROP POLICY IF EXISTS rls_${table}_select ON ${table}`,
+    `CREATE POLICY rls_${table}_select ON ${table} FOR SELECT USING (true)`,
+  ];
+}
+
 // Tablas que no necesitan politica (no contienen datos de tenants ni de usuarios).
 export const RLS_EXEMPT_TABLES = ['_prisma_migrations'];
 
@@ -181,21 +201,15 @@ export const rlsStatements: string[] = [
        )
      )`,
 
-  // Catálogo global de permisos: lectura para todos, escritura solo plataforma.
-  `ALTER TABLE permissions ENABLE ROW LEVEL SECURITY`,
-  `DROP POLICY IF EXISTS rls_permissions_select ON permissions`,
-  `DROP POLICY IF EXISTS rls_permissions ON permissions`,
-  `CREATE POLICY rls_permissions_select ON permissions FOR SELECT USING (true)`,
-  `CREATE POLICY rls_permissions ON permissions
-     USING (app_is_platform_admin())
-     WITH CHECK (app_is_platform_admin())`,
+  // Catálogos globales: lectura para todos, escritura solo plataforma.
+  ...catalogTablePolicy('permissions'),
+  ...catalogTablePolicy('report_reasons'),
 
-  // Auditoría de autenticación: solo la plataforma la lee o escribe.
-  `ALTER TABLE auth_attempts ENABLE ROW LEVEL SECURITY`,
-  `DROP POLICY IF EXISTS rls_auth_attempts ON auth_attempts`,
-  `CREATE POLICY rls_auth_attempts ON auth_attempts
-     USING (app_is_platform_admin())
-     WITH CHECK (app_is_platform_admin())`,
+  // Uso interno de la plataforma: auditoría de autenticación, reportes de
+  // reseñas e historial de moderación (el backend los escribe como sistema).
+  ...platformTablePolicy('auth_attempts'),
+  ...platformTablePolicy('review_reports'),
+  ...platformTablePolicy('moderation_actions'),
 
   `GRANT USAGE ON SCHEMA public TO fiverten_app`,
   `GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO fiverten_app`,

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Pagination from '../../../components/ui/Pagination';
 import PublicShell from '../../../components/public/PublicShell';
 import RatingBreakdown from '../../../components/reviews/RatingBreakdown';
+import ReportReviewModal from '../../../components/reviews/ReportReviewModal';
 import ReviewCard from '../../../components/reviews/ReviewCard';
 import { Stars } from '../../../components/reviews/Stars';
 import { ApiError, api, type Paginated, type PublicProfile, type PublicReview } from '../../../lib/api';
@@ -22,6 +23,8 @@ export default function PublicProfilePage() {
   const [sort, setSort] = useState<'recent' | 'oldest'>('recent');
   const [page, setPage] = useState(1);
   const [loadingReviews, setLoadingReviews] = useState(true);
+  const [reportingId, setReportingId] = useState<string | null>(null);
+  const [reportedIds, setReportedIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!slug) return;
@@ -237,7 +240,24 @@ export default function PublicProfilePage() {
                   verified={review.verified}
                   companyName={profile.tradeName}
                   response={review.response}
-                />
+                >
+                  <div className="mt-3 flex justify-end">
+                    {reportedIds.includes(review.id) ? (
+                      <span className="text-xs text-slate-400">
+                        Gracias, nuestro equipo revisará esta reseña.
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setReportingId(review.id)}
+                        className="inline-flex items-center gap-1 text-xs text-slate-400 transition hover:text-red-600"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">flag</span>
+                        Reportar
+                      </button>
+                    )}
+                  </div>
+                </ReviewCard>
               ))}
               {pages > 1 && (
                 <div className="rounded-xl border border-slate-200 bg-white">
@@ -253,6 +273,18 @@ export default function PublicProfilePage() {
           )}
         </section>
       </div>
+
+      {reportingId && (
+        <ReportReviewModal
+          intro="Si incumple nuestras políticas, la retiraremos. La empresa no puede ocultar reseñas por sí misma."
+          onSubmit={(payload) => api.reportPublicReview(reportingId, payload)}
+          onClose={() => setReportingId(null)}
+          onDone={() => {
+            setReportedIds((current) => [...current, reportingId]);
+            setReportingId(null);
+          }}
+        />
+      )}
     </PublicShell>
   );
 }

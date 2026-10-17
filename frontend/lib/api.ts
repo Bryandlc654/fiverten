@@ -138,7 +138,60 @@ export interface SubmitReviewPayload {
   website?: string;
 }
 
-export type ReviewStatus = 'pending' | 'published' | 'under_review' | 'reported' | 'hidden';
+export type ReviewStatus =
+  | 'pending'
+  | 'published'
+  | 'under_review'
+  | 'reported'
+  | 'hidden'
+  | 'rejected';
+
+export type ModerationAction = 'publish' | 'reject' | 'hide' | 'restore' | 'unflag';
+
+export interface ReportReason {
+  code: string;
+  label: string;
+}
+
+export interface ReportPayload {
+  reason: string;
+  comment?: string;
+}
+
+export interface AdminReview {
+  id: string;
+  organization: { tradeName: string; slug: string };
+  reviewerName: string;
+  reviewerEmail: string;
+  rating: number;
+  title: string | null;
+  body: string;
+  status: ReviewStatus;
+  ipAddress: string | null;
+  antifraud: string[];
+  createdAt: string;
+  publishedAt: string | null;
+  response: string | null;
+  reports: {
+    id: string;
+    reason: string | null;
+    comment: string | null;
+    byOrganization: boolean;
+    createdAt: string;
+  }[];
+  history: {
+    action: string;
+    fromStatus: string | null;
+    toStatus: string | null;
+    reason: string | null;
+    byModerator: boolean;
+    createdAt: string;
+  }[];
+}
+
+export interface AdminReviewList extends Paginated<AdminReview> {
+  queue: { underReview: number; reported: number };
+}
 
 export interface TenantReview {
   id: string;
@@ -194,6 +247,7 @@ export interface AdminUser {
 export interface PlatformStats {
   organizations: { total: number; active: number; verified: number; pending: number };
   users: { total: number; active: number; admins: number };
+  reviews: { published: number; underReview: number; reported: number };
 }
 
 export interface Paginated<T> {
@@ -508,6 +562,12 @@ export const api = {
       body: JSON.stringify({ body }),
     });
   },
+  reportReview(id: string, payload: ReportPayload): Promise<{ status: string }> {
+    return request<{ status: string }>(`/organizations/me/reviews/${id}/report`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
   removeReviewResponse(id: string): Promise<{ success: boolean }> {
     return request<{ success: boolean }>(`/organizations/me/reviews/${id}/response`, {
       method: 'DELETE',
@@ -522,6 +582,15 @@ export const api = {
     return request<Paginated<PublicReview>>(
       `/public/organizations/${encodeURIComponent(slug)}/reviews${buildQuery(params)}`,
     );
+  },
+  reportReasons(): Promise<{ reasons: ReportReason[] }> {
+    return request<{ reasons: ReportReason[] }>('/public/report-reasons');
+  },
+  reportPublicReview(id: string, payload: ReportPayload): Promise<{ status: string }> {
+    return request<{ status: string }>(`/public/reviews/${id}/report`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
   },
   reviewForm(slug: string): Promise<ReviewForm> {
     return request<ReviewForm>(`/public/organizations/${encodeURIComponent(slug)}/review-form`);
@@ -580,6 +649,19 @@ export const api = {
     return request<OrganizationDetail>(`/admin/organizations/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
+    });
+  },
+  adminListReviews(params: ListParams = {}): Promise<AdminReviewList> {
+    return request<AdminReviewList>(`/admin/reviews${buildQuery(params)}`);
+  },
+  adminModerateReview(
+    id: string,
+    action: ModerationAction,
+    reason?: string,
+  ): Promise<{ id: string; status: ReviewStatus }> {
+    return request<{ id: string; status: ReviewStatus }>(`/admin/reviews/${id}/${action}`, {
+      method: 'POST',
+      body: JSON.stringify(reason ? { reason } : {}),
     });
   },
   adminListUsers(params: ListParams = {}): Promise<Paginated<AdminUser>> {

@@ -25,6 +25,7 @@ interface ListQuery {
 interface PlatformStats {
   organizations: { total: number; active: number; verified: number; pending: number };
   users: { total: number; active: number; admins: number };
+  reviews: { published: number; underReview: number; reported: number };
 }
 
 /** Ámbito plataforma (administrador general): empresas, usuarios y métricas. */
@@ -59,6 +60,13 @@ export class AdminService {
         tx.user.count({ where: { deletedAt: null, isActive: true } }),
         tx.user.count({ where: { deletedAt: null, isSuperAdmin: true } }),
       ]);
+      const [publishedReviews, underReview, reported] = await Promise.all([
+        tx.review.count({
+          where: { deletedAt: null, lifecycleStatus: 'published', visibility: 'public' },
+        }),
+        tx.review.count({ where: { deletedAt: null, moderationStatus: 'under_review' } }),
+        tx.review.count({ where: { deletedAt: null, moderationStatus: 'reported' } }),
+      ]);
       return {
         organizations: {
           total: organizations,
@@ -67,6 +75,7 @@ export class AdminService {
           pending: pendingOrganizations,
         },
         users: { total: users, active: activeUsers, admins: staffUsers },
+        reviews: { published: publishedReviews, underReview, reported },
       };
     });
 
