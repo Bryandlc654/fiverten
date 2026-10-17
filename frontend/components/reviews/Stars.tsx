@@ -19,7 +19,9 @@ export function formatRating(value: number): string {
 
 /** Estrellas de solo lectura (admite medias, p. ej. 4,6). */
 export function Stars({ rating, size = 18 }: { rating: number; size?: number }) {
-  const color = STAR_COLORS[Math.max(1, Math.round(rating))] ?? 'text-amber-400';
+  // Sin valoraciones (0) las estrellas van en gris: el rojo sería "muy mala".
+  const color =
+    rating <= 0 ? 'text-slate-300' : (STAR_COLORS[Math.round(rating)] ?? 'text-amber-400');
   return (
     <span className={`inline-flex ${color}`} aria-label={`${rating} de 5 estrellas`} role="img">
       {[1, 2, 3, 4, 5].map((index) => (

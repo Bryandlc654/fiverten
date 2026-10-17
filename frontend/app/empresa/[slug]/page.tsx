@@ -4,12 +4,13 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import Pagination from '../../../components/ui/Pagination';
+import PublicHero from '../../../components/public/PublicHero';
 import PublicShell from '../../../components/public/PublicShell';
 import RatingBreakdown from '../../../components/reviews/RatingBreakdown';
 import ReportReviewModal from '../../../components/reviews/ReportReviewModal';
 import ReviewCard from '../../../components/reviews/ReviewCard';
-import { formatRating, Stars } from '../../../components/reviews/Stars';
 import { ApiError, api, type Paginated, type PublicProfile, type PublicReview } from '../../../lib/api';
+import { useAuth } from '../../../lib/auth-context';
 import {
   PERIOD_OPTIONS,
   SORT_OPTIONS,
@@ -22,6 +23,7 @@ const PAGE_SIZE = 10;
 export default function PublicProfilePage() {
   const params = useParams<{ slug: string }>();
   const slug = params?.slug ?? '';
+  const { organization } = useAuth();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [reviews, setReviews] = useState<Paginated<PublicReview> | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +73,30 @@ export default function PublicProfilePage() {
     setPage(1);
   }
 
+  // La propietaria que abre el perfil de su propia empresa sin haberlo
+  // publicado: se le explica qué hacer en lugar del mensaje genérico.
+  if (error === 'not_found' && organization?.slug === slug) {
+    return (
+      <PublicShell>
+        <div className="mx-auto max-w-md rounded-xl border border-amber-200 bg-white p-8 text-center">
+          <span className="material-symbols-outlined text-[40px] text-amber-500">visibility_off</span>
+          <h1 className="mt-2 text-lg font-bold">Tu perfil aún no es público</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {organization.tradeName} todavía no aparece en FIVERTEN. Actívalo en{' '}
+            <strong>Empresa → Mostrar el perfil de la empresa públicamente</strong> y guarda los
+            cambios.
+          </p>
+          <Link
+            href="/dashboard/company"
+            className="mt-5 inline-flex rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600"
+          >
+            Ir a los datos de la empresa
+          </Link>
+        </div>
+      </PublicShell>
+    );
+  }
+
   if (error) {
     return (
       <PublicShell>
@@ -104,55 +130,7 @@ export default function PublicProfilePage() {
 
   return (
     <PublicShell>
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        {profile.coverUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={profile.coverUrl} alt="" className="h-40 w-full object-cover sm:h-52" />
-        )}
-        <div className="flex flex-wrap items-center justify-between gap-5 p-6">
-          <div className="flex min-w-0 items-center gap-4">
-            {profile.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={profile.logoUrl}
-                alt={profile.tradeName}
-                className="h-16 w-16 shrink-0 rounded-xl border border-slate-200 object-cover"
-              />
-            ) : (
-              <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-[#2563eb] text-2xl font-bold text-white">
-                {profile.tradeName[0]?.toUpperCase()}
-              </span>
-            )}
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-bold text-slate-900">{profile.tradeName}</h1>
-                {profile.verified && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600">
-                    <span className="material-symbols-outlined text-[15px]">verified</span>
-                    Empresa verificada
-                  </span>
-                )}
-              </div>
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500">
-                <Stars rating={profile.rating.average ?? 0} size={16} />
-                <span>
-                  {profile.rating.average !== null
-                    ? `${formatRating(profile.rating.average)} · `
-                    : ''}
-                  {profile.rating.total} {profile.rating.total === 1 ? 'reseña' : 'reseñas'}
-                </span>
-              </div>
-            </div>
-          </div>
-          <Link
-            href={`/review/${profile.slug}`}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600"
-          >
-            <span className="material-symbols-outlined text-[18px]">rate_review</span>
-            Escribir una reseña
-          </Link>
-        </div>
-      </section>
+      <PublicHero profile={profile} />
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <aside className="space-y-4">
