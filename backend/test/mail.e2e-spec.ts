@@ -3,12 +3,17 @@ import { AddressInfo } from 'net';
 import { SMTPServer } from 'smtp-server';
 import { MailService } from '../src/mail/mail.service';
 
+// Quoted-printable: los "=XX" son bytes UTF-8, así que se decodifican a bytes y luego a texto.
 function decode(raw: string): string {
-  return raw
-    .replace(/=\r?\n/g, '')
-    .replace(/=([0-9A-Fa-f]{2})/g, (_match, hex: string) =>
-      String.fromCharCode(parseInt(hex, 16)),
-    );
+  const unfolded = raw.replace(/=\r?\n/g, '');
+  const pieces = unfolded.split(/(=[0-9A-Fa-f]{2})/);
+  return Buffer.concat(
+    pieces.map((piece) =>
+      /^=[0-9A-Fa-f]{2}$/.test(piece)
+        ? Buffer.from([parseInt(piece.slice(1), 16)])
+        : Buffer.from(piece, 'utf8'),
+    ),
+  ).toString('utf8');
 }
 
 describe('FIVERTEN Mail SMTP (e2e)', () => {
@@ -86,6 +91,35 @@ describe('FIVERTEN Mail SMTP (e2e)', () => {
     const decoded = decode(await received);
     expect(decoded).toContain('cliente@empresa.test');
     expect(decoded).toMatch(/\/reset-password\?token=([a-f0-9]{32})/);
+    expect(decoded).toContain(token);
+  });
+
+  it('entrega la invitacion a la empresa con el enlace y el nombre de la empresa', async () => {
+    const token = 'b2c3d4e5f60718293a4b5c6d7e8f9012';
+    const received = new Promise<string>((resolve) => waiters.push(resolve));
+    await service.sendOrganizationInvitation(
+      'invitado@empresa.test',
+      token,
+      'Panadería Luna',
+      'Editor',
+    );
+
+    const decoded = decode(await received);
+    expect(decoded).toContain('invitado@empresa.test');
+    expect(decoded).toContain('Panadería Luna');
+    expect(decoded).toMatch(/\/accept-invitation\?token=([a-f0-9]{32})/);
+    expect(decoded).toContain(token);
+  });
+
+  it('entrega el correo de confirmacion de reseña con el enlace correcto', async () => {
+    const token = 'c3d4e5f60718293a4b5c6d7e8f901234';
+    const received = new Promise<string>((resolve) => waiters.push(resolve));
+    await service.sendReviewConfirmation('cliente@empresa.test', token, 'Clínica Dental Sonrisa');
+
+    const decoded = decode(await received);
+    expect(decoded).toContain('cliente@empresa.test');
+    expect(decoded).toContain('Clínica Dental Sonrisa');
+    expect(decoded).toMatch(/\/confirmar-resena\?token=([a-f0-9]{32})/);
     expect(decoded).toContain(token);
   });
 });
