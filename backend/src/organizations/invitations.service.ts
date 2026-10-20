@@ -72,7 +72,8 @@ export class InvitationsService {
       },
     );
 
-    await this.sendInvitation(invitation.email, token, orgName, invitation.role);
+    // No se espera: sendInvitation ya registra sus errores.
+    void this.sendInvitation(invitation.email, token, orgName, invitation.role);
     return toInvitation(invitation);
   }
 
@@ -308,7 +309,12 @@ export class InvitationsService {
 
   private async sendInvitation(email: string, token: string, orgName: string, role: string) {
     try {
-      await this.mail.sendOrganizationInvitation(email, token, orgName, ROLES.ROLE_LABELS[role] ?? role);
+      await this.mail.sendOrganizationInvitation(
+        email,
+        token,
+        orgName,
+        ROLES.ROLE_LABELS[role] ?? role,
+      );
     } catch (error) {
       this.logger.error(`No se pudo enviar la invitación: ${String(error)}`);
     }

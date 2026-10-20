@@ -187,11 +187,10 @@ export class PublicReviewsService {
       });
     });
 
-    try {
-      await this.mail.sendReviewConfirmation(email, token, org.tradeName);
-    } catch (error) {
+    // No se espera: el envío por SMTP puede tardar y la respuesta debe ser inmediata.
+    this.mail.sendReviewConfirmation(email, token, org.tradeName).catch((error: unknown) => {
       this.logger.error(`No se pudo enviar la confirmación de reseña: ${String(error)}`);
-    }
+    });
     return pending;
   }
 
@@ -258,7 +257,13 @@ export class PublicReviewsService {
   // ---------------------------------------------------------------------------
   private async antifraudFlags(
     tx: Prisma.TransactionClient,
-    review: { id: string; organizationId: string; ipAddress: string | null; body: string; title: string | null },
+    review: {
+      id: string;
+      organizationId: string;
+      ipAddress: string | null;
+      body: string;
+      title: string | null;
+    },
   ): Promise<string[]> {
     const flags: string[] = [];
     if (review.ipAddress) {

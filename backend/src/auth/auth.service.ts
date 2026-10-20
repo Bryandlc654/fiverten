@@ -487,11 +487,10 @@ export class AuthService {
       });
     });
 
-    try {
-      await this.mail.sendEmailVerification(user.email, token);
-    } catch (error) {
+    // No se espera: el envío por SMTP puede tardar y no debe retrasar la respuesta.
+    this.mail.sendEmailVerification(user.email, token).catch((error: unknown) => {
       this.logger.error(`No se pudo enviar la verificación de correo: ${String(error)}`);
-    }
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -540,12 +539,7 @@ export class AuthService {
     const record = await this.prisma.withContext({ isPlatformAdmin: true }, (tx) =>
       tx.passwordResetToken.findUnique({ where: { tokenHash: hashToken(token) } }),
     );
-    if (
-      !record ||
-      !record.isActive ||
-      record.usedAt ||
-      record.expiresAt.getTime() < Date.now()
-    ) {
+    if (!record || !record.isActive || record.usedAt || record.expiresAt.getTime() < Date.now()) {
       throw new BadRequestException('El enlace de recuperación no es válido o ha caducado');
     }
 
@@ -792,7 +786,10 @@ export class AuthService {
   }
 
   private isEmailVerificationRequired(): boolean {
-    return String(this.config.get<string>('REQUIRE_EMAIL_VERIFICATION') ?? 'false').toLowerCase() === 'true';
+    return (
+      String(this.config.get<string>('REQUIRE_EMAIL_VERIFICATION') ?? 'false').toLowerCase() ===
+      'true'
+    );
   }
 
   private buildResponse(
