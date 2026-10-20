@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import DashboardShell from '../../../components/DashboardShell';
 import ShareReviewLink from '../../../components/reviews/ShareReviewLink';
-import TenantReviewItem, { REVIEW_STATUS_LABELS } from '../../../components/reviews/TenantReviewItem';
+import TenantReviewItem, {
+  REVIEW_STATUS_LABELS,
+} from '../../../components/reviews/TenantReviewItem';
 import { Alert, LoadingRow, StatCard } from '../../../components/ui';
 import Pagination from '../../../components/ui/Pagination';
 import {
@@ -76,7 +78,10 @@ export default function ReviewsPage() {
   function replace(updated: TenantReview) {
     setData((current) =>
       current
-        ? { ...current, items: current.items.map((item) => (item.id === updated.id ? updated : item)) }
+        ? {
+            ...current,
+            items: current.items.map((item) => (item.id === updated.id ? updated : item)),
+          }
         : current,
     );
     // Recarga en segundo plano para actualizar los contadores del resumen.

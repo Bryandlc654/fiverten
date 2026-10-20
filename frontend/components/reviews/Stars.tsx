@@ -2,7 +2,14 @@
 
 import { useState } from 'react';
 
-const STAR_COLORS = ['', 'text-red-500', 'text-orange-500', 'text-amber-400', 'text-lime-500', 'text-emerald-500'];
+const STAR_COLORS = [
+  '',
+  'text-red-500',
+  'text-orange-500',
+  'text-amber-400',
+  'text-lime-500',
+  'text-emerald-500',
+];
 
 export const RATING_LABELS: Record<number, string> = {
   1: 'Muy mala',
@@ -53,7 +60,12 @@ export function StarPicker({
   const shown = hover || value;
   return (
     <div className="flex items-center gap-3">
-      <div className="flex" role="radiogroup" aria-label="Puntuación" onMouseLeave={() => setHover(0)}>
+      <div
+        className="flex"
+        role="radiogroup"
+        aria-label="Puntuación"
+        onMouseLeave={() => setHover(0)}
+      >
         {[1, 2, 3, 4, 5].map((rating) => (
           <button
             key={rating}
@@ -67,14 +79,19 @@ export function StarPicker({
           >
             <span
               className="material-symbols-outlined"
-              style={{ fontSize: 36, fontVariationSettings: rating <= shown ? "'FILL' 1" : "'FILL' 0" }}
+              style={{
+                fontSize: 36,
+                fontVariationSettings: rating <= shown ? "'FILL' 1" : "'FILL' 0",
+              }}
             >
               star
             </span>
           </button>
         ))}
       </div>
-      <span className="text-sm font-semibold text-slate-600">{shown ? RATING_LABELS[shown] : ''}</span>
+      <span className="text-sm font-semibold text-slate-600">
+        {shown ? RATING_LABELS[shown] : ''}
+      </span>
     </div>
   );
 }

@@ -49,7 +49,9 @@ export default function LatestReviews() {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-sm font-semibold text-slate-900">{review.reviewerName}</p>
-                  <span className="text-[11px] text-slate-400">{formatDate(review.publishedAt)}</span>
+                  <span className="text-[11px] text-slate-400">
+                    {formatDate(review.publishedAt)}
+                  </span>
                   {!review.response && (
                     <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-600">
                       Sin responder

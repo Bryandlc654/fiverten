@@ -19,7 +19,10 @@ export default function PendingInvitations({
     return null;
   }
   return (
-    <section className="rounded-xl border border-slate-200 bg-white" data-testid="pending-invitations">
+    <section
+      className="rounded-xl border border-slate-200 bg-white"
+      data-testid="pending-invitations"
+    >
       <div className="flex items-center justify-between px-5 py-4">
         <h2 className="text-base font-bold text-slate-900">Invitaciones pendientes</h2>
         <span className="text-xs font-semibold text-slate-500">{invitations.length}</span>

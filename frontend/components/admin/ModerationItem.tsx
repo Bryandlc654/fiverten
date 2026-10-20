@@ -160,7 +160,8 @@ export default function ModerationItem({
       {review.reports.length > 0 && (
         <div className="mt-3 rounded-lg border border-red-100 bg-red-50/50 px-3 py-2">
           <p className="text-xs font-semibold text-red-700">
-            {review.reports.length} {review.reports.length === 1 ? 'reporte abierto' : 'reportes abiertos'}
+            {review.reports.length}{' '}
+            {review.reports.length === 1 ? 'reporte abierto' : 'reportes abiertos'}
           </p>
           <ul className="mt-1 space-y-1 text-xs text-slate-600">
             {review.reports.map((report) => (
@@ -197,10 +198,11 @@ export default function ModerationItem({
             <ol className="mt-2 space-y-1 border-l-2 border-slate-100 pl-3 text-xs text-slate-500">
               {review.history.map((entry, index) => (
                 <li key={index}>
-                  <strong className="text-slate-700">{ACTION_LABELS[entry.action] ?? entry.action}</strong>{' '}
+                  <strong className="text-slate-700">
+                    {ACTION_LABELS[entry.action] ?? entry.action}
+                  </strong>{' '}
                   ({statusLabel(entry.fromStatus)} → {statusLabel(entry.toStatus)}) ·{' '}
-                  {formatDate(entry.createdAt)} ·{' '}
-                  {entry.byModerator ? 'moderador' : 'sistema'}
+                  {formatDate(entry.createdAt)} · {entry.byModerator ? 'moderador' : 'sistema'}
                   {entry.reason ? ` — ${entry.reason}` : ''}
                 </li>
               ))}

@@ -183,14 +183,13 @@ export default function CompanyPage() {
     >
       <div className="mx-auto max-w-3xl">
         {loading ? (
-          <div className="flex items-center gap-3 text-sm text-slate-500">
-            <span className="material-symbols-outlined animate-spin">progress_activity</span>
-            Cargando empresa…
-          </div>
+          <div className="flex items-center gap-3 text-sm text-slate-500">Cargando empresa…</div>
         ) : loadError ? (
           isSuperAdmin ? (
             <div className="rounded-xl border border-slate-200 bg-white p-6 text-center">
-              <span className="material-symbols-outlined text-[32px] text-slate-400">storefront</span>
+              <span className="material-symbols-outlined text-[32px] text-slate-400">
+                storefront
+              </span>
               <p className="mt-2 text-sm font-semibold text-slate-900">
                 Esta sección pertenece a las empresas
               </p>
@@ -259,9 +258,6 @@ export default function CompanyPage() {
                     )}
                     {uploading && (
                       <div className="absolute inset-0 flex items-center justify-center bg-white/70 text-sm text-slate-600">
-                        <span className="material-symbols-outlined mr-2 animate-spin">
-                          progress_activity
-                        </span>
                         Subiendo…
                       </div>
                     )}
@@ -318,7 +314,9 @@ export default function CompanyPage() {
               </label>
 
               <label>
-                <span className="mb-1 block text-xs font-semibold text-slate-600">Razón social</span>
+                <span className="mb-1 block text-xs font-semibold text-slate-600">
+                  Razón social
+                </span>
                 <input
                   value={form.legalName}
                   onChange={(e) => update('legalName', e.target.value)}

@@ -108,7 +108,9 @@ export default function TenantHeader({
               </p>
               <p className="text-[11px] text-slate-500">{roleText}</p>
             </div>
-            <span className="material-symbols-outlined text-[18px] text-slate-400">expand_more</span>
+            <span className="material-symbols-outlined text-[18px] text-slate-400">
+              expand_more
+            </span>
           </button>
           {userMenuOpen && (
             <div

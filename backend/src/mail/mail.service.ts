@@ -3,7 +3,11 @@ import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import type { SentMessageInfo, Transporter } from 'nodemailer';
 
-type TransportMode = 'smtp' | 'json' | 'log';
+type TransportMode = 'resend' | 'smtp' | 'json' | 'log';
+
+// Resend usa HTTPS (puerto 443): no depende de que el proveedor permita SMTP saliente.
+const RESEND_API_URL = 'https://api.resend.com/emails';
+const RESEND_TIMEOUT_MS = 15_000;
 
 interface MailMessage {
   kind: string;
@@ -31,6 +35,14 @@ export class MailService implements OnModuleInit {
         this.logger.log(`SMTP listo (${this.smtpHost}:${this.smtpPort})`);
       } catch (error) {
         this.logger.error(`No se pudo verificar la conexion SMTP: ${String(error)}`);
+      }
+    } else if (this.mode === 'resend') {
+      if (!this.resendApiKey) {
+        this.logger.error(
+          'MAIL_TRANSPORT=resend pero falta RESEND_API_KEY: no se enviará ningún correo',
+        );
+      } else {
+        this.logger.log('Correo listo (Resend por HTTPS)');
       }
     } else {
       this.logger.log(`Correo en modo "${this.mode}" (sin servidor SMTP)`);
@@ -98,6 +110,9 @@ export class MailService implements OnModuleInit {
     if (this.mode === 'smtp') {
       return this.getTransporter().verify();
     }
+    if (this.mode === 'resend') {
+      return Boolean(this.resendApiKey);
+    }
     return true;
   }
 
@@ -115,6 +130,12 @@ export class MailService implements OnModuleInit {
       return;
     }
 
+    if (this.mode === 'resend') {
+      const id = await this.sendViaResend(message);
+      this.logger.log(`[MAIL][${message.kind}] enviado a ${message.to} (resend id=${id})`);
+      return;
+    }
+
     const info = (await this.getTransporter().sendMail({
       from: this.fromAddress,
       to: message.to,
@@ -126,6 +147,41 @@ export class MailService implements OnModuleInit {
     this.logger.log(
       `[MAIL][${message.kind}] enviado a ${message.to} (messageId=${info.messageId ?? 'n/a'})`,
     );
+  }
+
+  /** Envía con la API de Resend. Lanza error si no se puede entregar a la API. */
+  private async sendViaResend(message: MailMessage): Promise<string> {
+    const apiKey = this.resendApiKey;
+    if (!apiKey) {
+      throw new Error('Falta RESEND_API_KEY');
+    }
+
+    const response = await fetch(RESEND_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: this.fromAddress,
+        to: [message.to],
+        subject: message.subject,
+        text: this.renderText(message),
+        html: this.renderHtml(message),
+      }),
+      signal: AbortSignal.timeout(RESEND_TIMEOUT_MS),
+    });
+
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(`Resend respondió ${response.status}: ${detail.slice(0, 300)}`);
+    }
+    const data = (await response.json()) as { id?: string };
+    return data.id ?? 'n/a';
+  }
+
+  private get resendApiKey(): string {
+    return (this.config.get<string>('RESEND_API_KEY') ?? '').trim();
   }
 
   private renderHtml(message: MailMessage): string {
@@ -160,7 +216,7 @@ export class MailService implements OnModuleInit {
 
   private get mode(): TransportMode {
     const explicit = (this.config.get<string>('MAIL_TRANSPORT') ?? '').trim().toLowerCase();
-    if (explicit === 'smtp' || explicit === 'json' || explicit === 'log') {
+    if (explicit === 'resend' || explicit === 'smtp' || explicit === 'json' || explicit === 'log') {
       return explicit;
     }
     return this.config.get<string>('SMTP_HOST') ? 'smtp' : 'json';

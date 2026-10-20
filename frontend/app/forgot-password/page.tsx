@@ -28,15 +28,20 @@ export default function ForgotPasswordPage() {
     <main className="auth-shell">
       <div className="card">
         <h1>Recuperar contraseña</h1>
-        <p className="subtitle">
-          Te enviaremos un enlace para restablecer tu contraseña.
-        </p>
+        <p className="subtitle">Te enviaremos un enlace para restablecer tu contraseña.</p>
 
         {error && <div className="error">{error}</div>}
 
         {sent ? (
           <>
-            <div className="error" style={{ background: 'rgba(34,197,94,0.12)', borderColor: 'rgba(34,197,94,0.4)', color: '#86efac' }}>
+            <div
+              className="error"
+              style={{
+                background: 'rgba(34,197,94,0.12)',
+                borderColor: 'rgba(34,197,94,0.4)',
+                color: '#86efac',
+              }}
+            >
               Si el correo existe, recibirás un enlace en unos minutos.
             </div>
             <div className="footer-link">

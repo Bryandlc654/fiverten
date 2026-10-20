@@ -26,10 +26,7 @@ export default function AdminPage() {
     <Suspense
       fallback={
         <div className="flex-1 flex items-center justify-center bg-slate-50">
-          <div className="flex items-center gap-3 text-sm text-slate-500">
-            <span className="material-symbols-outlined animate-spin">progress_activity</span>
-            Cargando panel…
-          </div>
+          <div className="flex items-center gap-3 text-sm text-slate-500">Cargando panel…</div>
         </div>
       }
     >
@@ -74,13 +71,19 @@ function AdminContent() {
     api
       .adminStats()
       .then(setStats)
-      .catch((err) => setError(err instanceof ApiError ? err.message : 'No se pudieron cargar los datos'));
+      .catch((err) =>
+        setError(err instanceof ApiError ? err.message : 'No se pudieron cargar los datos'),
+      );
   }, [isSuperAdmin]);
 
   const loadOrgs = useCallback(() => {
     setOrgLoading(true);
     api
-      .adminListOrganizations({ page: orgPage, pageSize: PAGE_SIZE, search: orgSearch || undefined })
+      .adminListOrganizations({
+        page: orgPage,
+        pageSize: PAGE_SIZE,
+        search: orgSearch || undefined,
+      })
       .then((data) => {
         setOrgs(data.items);
         setOrgTotal(data.total);

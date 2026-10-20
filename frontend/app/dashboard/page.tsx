@@ -65,10 +65,7 @@ export default function DashboardPage() {
   if (isLoading || !user) {
     return (
       <div className="flex-1 flex items-center justify-center bg-slate-50">
-        <div className="flex items-center gap-3 text-sm text-slate-500">
-          <span className="material-symbols-outlined animate-spin">progress_activity</span>
-          Cargando panel…
-        </div>
+        <div className="flex items-center gap-3 text-sm text-slate-500">Cargando panel…</div>
       </div>
     );
   }

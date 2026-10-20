@@ -3,12 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import DashboardShell from './DashboardShell';
-import {
-  ApiError,
-  api,
-  type AdminOrganizationSummary,
-  type PlatformStats,
-} from '../lib/api';
+import { ApiError, api, type AdminOrganizationSummary, type PlatformStats } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
 import { organizationStatusLabel, verificationStatusLabel } from '../lib/roles';
 import { NEUTRAL_TONE, STATUS_TONE, VERIFICATION_TONE } from '../lib/status-tones';
@@ -33,7 +28,9 @@ export default function PlatformDashboard() {
       .catch((err) => {
         if (active) {
           setError(
-            err instanceof ApiError ? err.message : 'No se pudieron cargar los datos de la plataforma',
+            err instanceof ApiError
+              ? err.message
+              : 'No se pudieron cargar los datos de la plataforma',
           );
         }
       })
@@ -64,9 +61,7 @@ export default function PlatformDashboard() {
           <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-[#2563eb]/30 blur-3xl" />
           <div className="relative flex flex-wrap items-center justify-between gap-6">
             <div className="max-w-lg">
-              <p className="text-sm text-slate-400">
-                Hola{adminName ? `, ${adminName}` : ''} 👋
-              </p>
+              <p className="text-sm text-slate-400">Hola{adminName ? `, ${adminName}` : ''} 👋</p>
               <h2 className="mt-1 text-2xl font-bold">Administración de la plataforma</h2>
               <p className="mt-2 text-sm text-slate-400">
                 Gestiona las empresas y los usuarios de FIVERTEN desde un mismo lugar.
@@ -128,7 +123,9 @@ export default function PlatformDashboard() {
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <div>
               <h3 className="text-base font-bold text-slate-900">Empresas recientes</h3>
-              <p className="text-xs text-slate-500">Últimas empresas registradas en la plataforma</p>
+              <p className="text-xs text-slate-500">
+                Últimas empresas registradas en la plataforma
+              </p>
             </div>
             <button
               type="button"
@@ -142,11 +139,12 @@ export default function PlatformDashboard() {
 
           {loading ? (
             <div className="flex items-center gap-3 px-5 py-8 text-sm text-slate-500">
-              <span className="material-symbols-outlined animate-spin">progress_activity</span>
               Cargando empresas…
             </div>
           ) : orgs.length === 0 ? (
-            <div className="px-5 py-8 text-sm text-slate-500">Todavía no hay empresas registradas.</div>
+            <div className="px-5 py-8 text-sm text-slate-500">
+              Todavía no hay empresas registradas.
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[680px] text-left text-sm">

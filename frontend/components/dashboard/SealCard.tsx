@@ -51,9 +51,7 @@ export default function SealCard({
 
       <div className="mt-4 flex items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 py-6">
         <div className="flex items-center gap-2 rounded-lg bg-[#0b101b] px-3 py-2 text-white">
-          <span className="material-symbols-outlined text-[20px] text-emerald-400">
-            verified
-          </span>
+          <span className="material-symbols-outlined text-[20px] text-emerald-400">verified</span>
           <div className="leading-none">
             <p className="text-[11px] font-bold">FIVERTEN</p>
             <p className="text-[9px] text-slate-400">Empresa verificada</p>
