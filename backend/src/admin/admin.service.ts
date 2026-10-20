@@ -185,7 +185,8 @@ export class AdminService {
       },
     );
 
-    await sendOwnerInvitation?.();
+    // No se espera: el correo de invitación no debe retrasar la respuesta.
+    void sendOwnerInvitation?.();
     return {
       ...toOrganizationDetail(organization),
       ownerInvitationSent: sendOwnerInvitation !== null,

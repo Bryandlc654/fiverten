@@ -195,6 +195,10 @@ export class MailService implements OnModuleInit {
         port: this.smtpPort,
         secure: this.isTruthy(this.config.get<string>('SMTP_SECURE')),
         auth: user ? { user, pass } : undefined,
+        // Tiempos máximos: un servidor SMTP lento no debe dejar la conexión colgada.
+        connectionTimeout: 15_000,
+        greetingTimeout: 10_000,
+        socketTimeout: 20_000,
       });
     } else {
       this.transporter = nodemailer.createTransport({ jsonTransport: true });
