@@ -63,10 +63,7 @@ export default function AdminOrganizationPage() {
       subtitle="Edición de empresa como administrador general"
     >
       {loading ? (
-        <div className="flex items-center gap-3 text-sm text-slate-500">
-          <span className="material-symbols-outlined animate-spin">progress_activity</span>
-          Cargando empresa…
-        </div>
+        <div className="flex items-center gap-3 text-sm text-slate-500">Cargando empresa…</div>
       ) : organization ? (
         <div className="mx-auto max-w-3xl space-y-6">
           <EditOrganizationForm

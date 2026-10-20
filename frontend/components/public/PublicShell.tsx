@@ -27,8 +27,8 @@ export default function PublicShell({ children }: { children: ReactNode }) {
       </header>
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">{children}</main>
       <footer className="border-t border-slate-200 bg-white py-5 text-center text-xs text-slate-400">
-        Reseñas gestionadas por FIVERTEN · Las empresas no pueden ocultar ni editar las opiniones
-        de sus clientes.
+        Reseñas gestionadas por FIVERTEN · Las empresas no pueden ocultar ni editar las opiniones de
+        sus clientes.
       </footer>
     </div>
   );

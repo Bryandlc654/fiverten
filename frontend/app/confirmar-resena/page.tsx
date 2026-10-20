@@ -45,7 +45,9 @@ export default function ConfirmReviewPage() {
   return (
     <PublicShell>
       <div className="mx-auto max-w-lg rounded-xl border border-slate-200 bg-white p-8 text-center">
-        {state.kind === 'loading' && <p className="text-sm text-slate-500">Confirmando tu reseña…</p>}
+        {state.kind === 'loading' && (
+          <p className="text-sm text-slate-500">Confirmando tu reseña…</p>
+        )}
 
         {state.kind === 'error' && (
           <>
@@ -76,7 +78,9 @@ export default function ConfirmReviewPage() {
 
         {state.kind === 'done' && state.status === 'under_review' && (
           <>
-            <span className="material-symbols-outlined text-[44px] text-amber-500">hourglass_top</span>
+            <span className="material-symbols-outlined text-[44px] text-amber-500">
+              hourglass_top
+            </span>
             <h1 className="mt-2 text-xl font-bold">Correo confirmado</h1>
             <p className="mt-2 text-sm text-slate-600">
               Tu reseña sobre <strong>{state.organization.tradeName}</strong> necesita una revisión

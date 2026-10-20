@@ -102,7 +102,7 @@ export default function DashboardShell({
   const roleLabel =
     role === null && isSuperAdmin
       ? 'Administrador general'
-      : ROLE_LABELS[role ?? ''] ?? (role || 'Consulta');
+      : (ROLE_LABELS[role ?? ''] ?? (role || 'Consulta'));
   const company = organization?.tradeName ?? (isSuperAdmin ? 'FIVERTEN' : 'Sin organización');
 
   async function onLogout() {
@@ -115,10 +115,7 @@ export default function DashboardShell({
   if (isLoading || !user) {
     return (
       <div className="flex-1 flex items-center justify-center bg-slate-50">
-        <div className="flex items-center gap-3 text-sm text-slate-500">
-          <span className="material-symbols-outlined animate-spin">progress_activity</span>
-          Cargando panel…
-        </div>
+        <div className="flex items-center gap-3 text-sm text-slate-500">Cargando panel…</div>
       </div>
     );
   }
@@ -180,7 +177,9 @@ export default function DashboardShell({
                 setMobileOpen(false);
                 // El perfil público depende del slug de la empresa.
                 router.push(
-                  item.key === 'profile' && organization ? `/empresa/${organization.slug}` : item.href,
+                  item.key === 'profile' && organization
+                    ? `/empresa/${organization.slug}`
+                    : item.href,
                 );
               }}
               className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
@@ -263,7 +262,9 @@ export default function DashboardShell({
                   disabled={signingOut}
                   className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
                 >
-                  <span className="material-symbols-outlined text-[20px] text-slate-500">logout</span>
+                  <span className="material-symbols-outlined text-[20px] text-slate-500">
+                    logout
+                  </span>
                   {signingOut ? 'Saliendo…' : 'Cerrar sesión'}
                 </button>
               </div>

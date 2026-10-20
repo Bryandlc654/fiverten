@@ -16,13 +16,13 @@ export default function WelcomeBanner({
       <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-[#2563eb]/30 blur-3xl" />
       <div className="relative flex flex-wrap items-center justify-between gap-6">
         <div className="max-w-lg">
-          <p className="text-sm text-slate-400">
-            Hola{firstName ? `, ${firstName}` : ''} 👋
-          </p>
-          <h2 className="mt-1 text-2xl font-bold">Tu reputación verificada, lista para compartir</h2>
+          <p className="text-sm text-slate-400">Hola{firstName ? `, ${firstName}` : ''} 👋</p>
+          <h2 className="mt-1 text-2xl font-bold">
+            Tu reputación verificada, lista para compartir
+          </h2>
           <p className="mt-2 text-sm text-slate-400">
-            Muestra tu sello FIVERTEN en tu web y convierte más visitantes en clientes que
-            confían en ti.
+            Muestra tu sello FIVERTEN en tu web y convierte más visitantes en clientes que confían
+            en ti.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <button
@@ -56,9 +56,7 @@ export default function WelcomeBanner({
           </div>
           <div>
             <p className="text-xs uppercase tracking-wide text-slate-400">Estado del sello</p>
-            <p className="text-lg font-bold">
-              {isVerified ? 'Verificado' : 'En revisión'}
-            </p>
+            <p className="text-lg font-bold">{isVerified ? 'Verificado' : 'En revisión'}</p>
             <p className="text-xs text-slate-400">{publicId ?? '—'}</p>
           </div>
         </div>

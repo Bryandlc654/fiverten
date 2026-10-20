@@ -30,9 +30,7 @@ export default function VerifyEmailPage() {
       .catch((error) => {
         if (active) {
           setStatus('error');
-          setMessage(
-            error instanceof ApiError ? error.message : 'No se pudo verificar el correo.',
-          );
+          setMessage(error instanceof ApiError ? error.message : 'No se pudo verificar el correo.');
         }
       });
     return () => {

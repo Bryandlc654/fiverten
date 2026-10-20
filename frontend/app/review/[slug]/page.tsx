@@ -106,7 +106,9 @@ export default function WriteReviewPage() {
     return (
       <PublicShell>
         <div className="mx-auto max-w-lg rounded-xl border border-slate-200 bg-white p-8 text-center">
-          <span className="material-symbols-outlined text-[44px] text-[#2563eb]">mark_email_unread</span>
+          <span className="material-symbols-outlined text-[44px] text-[#2563eb]">
+            mark_email_unread
+          </span>
           <h1 className="mt-2 text-xl font-bold">Revisa tu correo</h1>
           <p className="mt-2 text-sm text-slate-600">
             Te hemos enviado un enlace a <strong>{sentTo}</strong>. Tu reseña de{' '}
@@ -142,7 +144,10 @@ export default function WriteReviewPage() {
             </p>
             <h1 className="text-2xl font-bold text-slate-900">{company.tradeName}</h1>
             {company.isPublic && (
-              <Link href={`/empresa/${company.slug}`} className="text-xs text-blue-600 hover:underline">
+              <Link
+                href={`/empresa/${company.slug}`}
+                className="text-xs text-blue-600 hover:underline"
+              >
                 Ver el perfil y otras opiniones
               </Link>
             )}
@@ -157,7 +162,9 @@ export default function WriteReviewPage() {
           {error && <Alert tone="error">{error}</Alert>}
 
           <div>
-            <p className="mb-1 text-xs font-semibold text-slate-600">¿Cómo valorarías tu experiencia?</p>
+            <p className="mb-1 text-xs font-semibold text-slate-600">
+              ¿Cómo valorarías tu experiencia?
+            </p>
             <StarPicker value={form.rating} onChange={(rating) => setForm({ ...form, rating })} />
           </div>
 

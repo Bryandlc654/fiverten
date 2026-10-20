@@ -57,7 +57,14 @@ export default function ResetPasswordPage() {
 
         {done ? (
           <>
-            <div className="error" style={{ background: 'rgba(34,197,94,0.12)', borderColor: 'rgba(34,197,94,0.4)', color: '#86efac' }}>
+            <div
+              className="error"
+              style={{
+                background: 'rgba(34,197,94,0.12)',
+                borderColor: 'rgba(34,197,94,0.4)',
+                color: '#86efac',
+              }}
+            >
               Contraseña actualizada. Ya puedes iniciar sesión.
             </div>
             <Link className="btn" href="/login">

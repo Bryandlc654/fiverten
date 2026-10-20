@@ -5,7 +5,13 @@ export const STATS = [
   { label: 'Visitas al perfil', value: '12.847', delta: '+18%', icon: 'visibility', tone: 'blue' },
   { label: 'Opiniones publicadas', value: '127', delta: '+12', icon: 'reviews', tone: 'emerald' },
   { label: 'Valoración media', value: '4,8', delta: '+0,2', icon: 'star', tone: 'amber' },
-  { label: 'Solicitudes pendientes', value: '6', delta: '', icon: 'pending_actions', tone: 'violet' },
+  {
+    label: 'Solicitudes pendientes',
+    value: '6',
+    delta: '',
+    icon: 'pending_actions',
+    tone: 'violet',
+  },
   { label: 'Tasa de respuesta', value: '92%', delta: '+4%', icon: 'forum', tone: 'slate' },
 ];
 
@@ -27,7 +33,11 @@ export const TASKS = [
 
 export const ACTIVITY = [
   { icon: 'reviews', text: 'Nueva opinión verificada de Marta González', time: 'Hace 2 días' },
-  { icon: 'verified_user', text: 'Se validó el documento de identidad fiscal', time: 'Hace 3 días' },
+  {
+    icon: 'verified_user',
+    text: 'Se validó el documento de identidad fiscal',
+    time: 'Hace 3 días',
+  },
   { icon: 'visibility', text: 'Tu perfil superó las 12.000 visitas', time: 'Hace 5 días' },
   { icon: 'content_copy', text: 'Copiaste el widget del sello', time: 'Hace 1 semana' },
 ];

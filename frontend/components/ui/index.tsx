@@ -29,17 +29,14 @@ export function Alert({
 
 export function Badge({ label, tone }: { label: string; tone: string }) {
   return (
-    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}>{label}</span>
+    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}>
+      {label}
+    </span>
   );
 }
 
 export function LoadingRow({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-3 px-5 py-8 text-sm text-slate-500">
-      <span className="material-symbols-outlined animate-spin">progress_activity</span>
-      {label}
-    </div>
-  );
+  return <div className="flex items-center gap-3 px-5 py-8 text-sm text-slate-500">{label}</div>;
 }
 
 export function EmptyRow({ label }: { label: string }) {

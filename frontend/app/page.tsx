@@ -10,9 +10,7 @@ export default function HomePage() {
     <main className="auth-shell">
       <div className="card">
         <h1>FIVERTEN</h1>
-        <p className="subtitle">
-          Reseñas y reputación verificable para tu organización.
-        </p>
+        <p className="subtitle">Reseñas y reputación verificable para tu organización.</p>
 
         {isLoading ? (
           <p className="subtitle">Cargando…</p>
