@@ -1,13 +1,9 @@
 import { Prisma } from '@prisma/client';
+import { LOW_RATING_MAX } from './review-states';
 
 /** Estado visible de una reseña, derivado de sus dimensiones independientes. */
 export type ReviewStatus =
-  | 'pending'
-  | 'published'
-  | 'under_review'
-  | 'reported'
-  | 'hidden'
-  | 'rejected';
+  'pending' | 'published' | 'under_review' | 'reported' | 'hidden' | 'rejected';
 
 export const REVIEW_STATUSES: ReviewStatus[] = [
   'pending',
@@ -100,8 +96,10 @@ export function toPublicReview(review: PublicReviewRow) {
 
 /** Vista de la empresa: incluye el estado, pero no el email del autor. */
 export function toTenantReview(
-  review: Prisma.ReviewGetPayload<{ include: { response: true } }>,
+  review: Prisma.ReviewGetPayload<{ include: { response: true; resolutions: true } }>,
 ) {
+  const resolution = review.resolutions[0] ?? null;
+  const status = reviewStatus(review);
   return {
     id: review.id,
     reviewerName: review.reviewerName,
@@ -110,7 +108,11 @@ export function toTenantReview(
     body: review.body,
     experienceDate: review.experienceDate,
     orderReference: review.orderReference,
-    status: reviewStatus(review),
+    status,
+    lowRating: status === 'published' && review.rating <= LOW_RATING_MAX,
+    resolution: resolution
+      ? { id: resolution.id, status: resolution.status, outcome: resolution.outcome }
+      : null,
     verified: review.verificationStatus === 'verified',
     createdAt: review.createdAt,
     publishedAt: review.publishedAt,
