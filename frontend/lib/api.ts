@@ -98,7 +98,7 @@ export interface PublicProfile {
   phone: string | null;
   verified: boolean;
   createdAt: string;
-  /** La empresa no muestra las reseñas de 1 y 2 estrellas (siguen en la media). */
+  /** La empresa no muestra las reseñas de 1 y 2 estrellas (ni cuentan en la media). */
   lowRatingsHidden: boolean;
   rating: RatingSummary;
 }

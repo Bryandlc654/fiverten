@@ -77,7 +77,11 @@ export class PublicReviewsService {
     const grouped = await this.prisma.withContext({}, (tx) =>
       tx.review.groupBy({
         by: ['rating'],
-        where: { organizationId: org.id, ...PUBLISHED },
+        where: {
+          organizationId: org.id,
+          ...PUBLISHED,
+          ...(org.hideLowRatings ? { rating: { gt: LOW_RATING_MAX } } : {}),
+        },
         _count: { _all: true },
       }),
     );
@@ -102,8 +106,8 @@ export class PublicReviewsService {
       phone: org.allowContact ? org.phone : null,
       verified: org.verificationStatus === 'verified',
       createdAt: org.createdAt,
-      // La media y el total siguen incluyendo todas las reseñas publicadas:
-      // ocultarlas del listado no debe falsear la puntuación.
+      // Si la empresa oculta las reseñas bajas, no cuentan en la media, el
+      // total ni la distribución, y el desglose no muestra sus filas.
       lowRatingsHidden: org.hideLowRatings,
       rating: {
         average: total > 0 ? Math.round((sum / total) * 10) / 10 : null,

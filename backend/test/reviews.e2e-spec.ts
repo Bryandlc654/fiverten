@@ -281,10 +281,11 @@ describe('FIVERTEN Perfil público y reseñas (e2e)', () => {
         .expect(200);
       expect(onlyLow.body.total).toBe(0);
 
-      // La puntuación media no se altera y el perfil avisa de que hay reseñas ocultas.
+      // Tampoco cuentan en la puntuación del perfil.
       const profile = await http().get(`${PUBLIC}/organizations/${slug}`).expect(200);
       expect(profile.body.lowRatingsHidden).toBe(true);
-      expect(profile.body.rating).toMatchObject({ average: 3.5, total: 2 });
+      expect(profile.body.rating).toMatchObject({ average: 5, total: 1 });
+      expect(profile.body.rating.distribution['2']).toBe(0);
 
       // El panel de la empresa sigue mostrándolas.
       const tenant = await http()
@@ -296,6 +297,8 @@ describe('FIVERTEN Perfil público y reseñas (e2e)', () => {
       await setHidden(false);
       const restored = await http().get(`${PUBLIC}/organizations/${slug}/reviews`).expect(200);
       expect(restored.body.total).toBe(2);
+      const restoredProfile = await http().get(`${PUBLIC}/organizations/${slug}`).expect(200);
+      expect(restoredProfile.body.rating).toMatchObject({ average: 3.5, total: 2 });
     });
   });
 

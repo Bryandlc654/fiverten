@@ -417,8 +417,8 @@ export default function CompanyPage() {
                 <span className="text-sm text-slate-700">
                   Ocultar las reseñas de 1 y 2 estrellas en el perfil público
                   <span className="mt-0.5 block text-xs text-slate-500">
-                    Seguirás viéndolas en tu panel. La puntuación media se calcula con todas las
-                    reseñas y los visitantes verán un aviso de que hay reseñas ocultas.
+                    Seguirás viéndolas en tu panel. En el perfil público no aparecerán ni contarán
+                    en la puntuación media.
                   </span>
                 </span>
               </label>

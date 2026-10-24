@@ -291,14 +291,6 @@ export default function PublicProfilePage() {
                   );
                 })}
             </div>
-
-            {profile.lowRatingsHidden && (
-              <p className="mt-3 flex items-start gap-2 text-xs text-slate-500">
-                <span className="material-symbols-outlined text-[16px] text-slate-400">info</span>
-                {profile.tradeName} ha elegido no mostrar las reseñas de 1 y 2 estrellas. La
-                puntuación media incluye todas las reseñas publicadas.
-              </p>
-            )}
           </div>
 
           {loadingReviews && !reviews ? (
