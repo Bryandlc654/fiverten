@@ -18,6 +18,7 @@ interface FormState {
   coverUrl: string;
   isPublic: boolean;
   allowContact: boolean;
+  hideLowRatings: boolean;
 }
 
 function toForm(org: OrganizationDetail): FormState {
@@ -32,6 +33,7 @@ function toForm(org: OrganizationDetail): FormState {
     coverUrl: org.coverUrl ?? '',
     isPublic: org.isPublic,
     allowContact: org.allowContact,
+    hideLowRatings: org.hideLowRatings,
   };
 }
 
@@ -134,6 +136,7 @@ export default function CompanyPage() {
       payload.coverUrl = form.coverUrl ? form.coverUrl : null;
       payload.isPublic = form.isPublic;
       payload.allowContact = form.allowContact;
+      payload.hideLowRatings = form.hideLowRatings;
 
       const updated = await api.updateMyOrganization(payload);
       setOrg(updated);
@@ -400,6 +403,23 @@ export default function CompanyPage() {
                 />
                 <span className="text-sm text-slate-700">
                   Permitir que los clientes contacten a través del perfil
+                </span>
+              </label>
+
+              <label className="flex items-start gap-3 sm:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={form.hideLowRatings}
+                  onChange={(e) => update('hideLowRatings', e.target.checked)}
+                  disabled={!canEdit}
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300"
+                />
+                <span className="text-sm text-slate-700">
+                  Ocultar las reseñas de 1 y 2 estrellas en el perfil público
+                  <span className="mt-0.5 block text-xs text-slate-500">
+                    Seguirás viéndolas en tu panel. La puntuación media se calcula con todas las
+                    reseñas y los visitantes verán un aviso de que hay reseñas ocultas.
+                  </span>
                 </span>
               </label>
 

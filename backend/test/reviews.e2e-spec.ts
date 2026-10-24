@@ -262,6 +262,41 @@ describe('FIVERTEN Perfil público y reseñas (e2e)', () => {
       await http().get(`${PUBLIC}/organizations/${slug}/reviews?sort=otro`).expect(400);
       await http().get(`${PUBLIC}/organizations/${slug}/reviews?period=7y`).expect(400);
     });
+
+    it('la empresa puede ocultar las reseñas de baja valoración del perfil', async () => {
+      const setHidden = (hideLowRatings: boolean) =>
+        http()
+          .patch('/api/organizations/me')
+          .set('Authorization', `Bearer ${ownerToken}`)
+          .send({ hideLowRatings })
+          .expect(200);
+
+      const updated = await setHidden(true);
+      expect(updated.body.hideLowRatings).toBe(true);
+
+      const list = await http().get(`${PUBLIC}/organizations/${slug}/reviews`).expect(200);
+      expect(list.body.items.map((r: { rating: number }) => r.rating)).toEqual([5]);
+      const onlyLow = await http()
+        .get(`${PUBLIC}/organizations/${slug}/reviews?rating=2`)
+        .expect(200);
+      expect(onlyLow.body.total).toBe(0);
+
+      // La puntuación media no se altera y el perfil avisa de que hay reseñas ocultas.
+      const profile = await http().get(`${PUBLIC}/organizations/${slug}`).expect(200);
+      expect(profile.body.lowRatingsHidden).toBe(true);
+      expect(profile.body.rating).toMatchObject({ average: 3.5, total: 2 });
+
+      // El panel de la empresa sigue mostrándolas.
+      const tenant = await http()
+        .get(`${TENANT}?rating=2`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .expect(200);
+      expect(tenant.body.total).toBe(1);
+
+      await setHidden(false);
+      const restored = await http().get(`${PUBLIC}/organizations/${slug}/reviews`).expect(200);
+      expect(restored.body.total).toBe(2);
+    });
   });
 
   describe('respuestas de la empresa', () => {

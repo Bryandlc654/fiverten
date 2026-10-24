@@ -16,7 +16,7 @@ export function toOrganizationDetail(org: {
   website: string | null;
   email: string | null; phone: string | null; locale: string; billingCurrency: string;
   status: string; verificationStatus: string; isActive: boolean; isPublic: boolean;
-  allowContact: boolean; createdAt: Date; verifiedAt: Date | null;
+  allowContact: boolean; hideLowRatings: boolean; createdAt: Date; verifiedAt: Date | null;
 }) {
   return {
     id: org.id,
@@ -38,6 +38,7 @@ export function toOrganizationDetail(org: {
     isActive: org.isActive,
     isPublic: org.isPublic,
     allowContact: org.allowContact,
+    hideLowRatings: org.hideLowRatings,
     createdAt: org.createdAt,
     verifiedAt: org.verifiedAt,
   };

@@ -54,6 +54,11 @@ export class UpdateOrganizationDto {
   @IsBoolean()
   allowContact?: boolean;
 
+  /** El perfil público no muestra las reseñas de 1 y 2 estrellas. */
+  @IsOptional()
+  @IsBoolean()
+  hideLowRatings?: boolean;
+
   @IsOptional()
   @IsString()
   @MaxLength(10)
