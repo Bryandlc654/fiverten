@@ -38,6 +38,7 @@ model Organization {
   isActive               Boolean   @default(true) @map("is_active")
   isPublic               Boolean   @default(false) @map("is_public")
   allowContact           Boolean   @default(false) @map("allow_contact")
+  hideLowRatings         Boolean   @default(false) @map("hide_low_ratings")
   metadata               Json      @default("{}") @db.JsonB
   createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt              DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)

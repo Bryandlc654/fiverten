@@ -18,6 +18,7 @@ import {
 } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
 import {
+  LOW_RATING_MAX,
   PERIOD_OPTIONS,
   SORT_OPTIONS,
   type ReviewPeriod,
@@ -139,7 +140,12 @@ export default function PublicProfilePage() {
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr] xl:grid-cols-[320px_1fr]">
         <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-          <RatingBreakdown rating={profile.rating} selected={rating} onSelect={selectRating} />
+          <RatingBreakdown
+            rating={profile.rating}
+            selected={rating}
+            onSelect={selectRating}
+            lowRatingsHidden={profile.lowRatingsHidden}
+          />
 
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="text-sm font-bold uppercase tracking-wide text-slate-400">
@@ -249,37 +255,50 @@ export default function PublicProfilePage() {
               role="group"
               aria-label="Filtrar por estrellas"
             >
-              {[null, 5, 4, 3, 2, 1].map((value) => {
-                const active = rating === value;
-                return (
-                  <button
-                    key={value ?? 'all'}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => selectRating(value)}
-                    className={`inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-                      active
-                        ? 'bg-[#2563eb] text-white shadow-sm shadow-blue-600/30'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                  >
-                    {value === null ? (
-                      'Todas'
-                    ) : (
-                      <>
-                        {value}
-                        <span
-                          className={`material-symbols-outlined text-[14px] ${active ? 'text-white' : 'text-amber-400'}`}
-                          style={{ fontVariationSettings: "'FILL' 1" }}
-                        >
-                          star
-                        </span>
-                      </>
-                    )}
-                  </button>
-                );
-              })}
+              {[null, 5, 4, 3, 2, 1]
+                .filter(
+                  (value) =>
+                    !(profile.lowRatingsHidden && value !== null && value <= LOW_RATING_MAX),
+                )
+                .map((value) => {
+                  const active = rating === value;
+                  return (
+                    <button
+                      key={value ?? 'all'}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => selectRating(value)}
+                      className={`inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                        active
+                          ? 'bg-[#2563eb] text-white shadow-sm shadow-blue-600/30'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      {value === null ? (
+                        'Todas'
+                      ) : (
+                        <>
+                          {value}
+                          <span
+                            className={`material-symbols-outlined text-[14px] ${active ? 'text-white' : 'text-amber-400'}`}
+                            style={{ fontVariationSettings: "'FILL' 1" }}
+                          >
+                            star
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  );
+                })}
             </div>
+
+            {profile.lowRatingsHidden && (
+              <p className="mt-3 flex items-start gap-2 text-xs text-slate-500">
+                <span className="material-symbols-outlined text-[16px] text-slate-400">info</span>
+                {profile.tradeName} ha elegido no mostrar las reseñas de 1 y 2 estrellas. La
+                puntuación media incluye todas las reseñas publicadas.
+              </p>
+            )}
           </div>
 
           {loadingReviews && !reviews ? (

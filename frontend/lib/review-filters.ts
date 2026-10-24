@@ -1,6 +1,9 @@
 // Opciones de los filtros de reseñas (perfil público y panel de la empresa).
 // Deben coincidir con backend/src/reviews/reviews.params.ts.
 
+/** Reseñas de baja valoración: hasta 2 estrellas (backend: LOW_RATING_MAX). */
+export const LOW_RATING_MAX = 2;
+
 export type ReviewSort = 'recent' | 'oldest' | 'highest' | 'lowest';
 export type ReviewPeriod = '' | '30d' | '90d' | '365d';
 
