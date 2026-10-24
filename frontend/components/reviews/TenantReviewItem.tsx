@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { ApiError, api, type ReviewStatus, type TenantReview } from '../../lib/api';
 import { Badge, inputClass } from '../ui';
 import ReportReviewModal from './ReportReviewModal';
+import ResolutionPanel, { RESOLUTION_STATUS_LABELS } from './ResolutionPanel';
 import ReviewCard from './ReviewCard';
 
 export const REVIEW_STATUS_LABELS: Record<ReviewStatus, { label: string; tone: string }> = {
@@ -34,11 +35,14 @@ export default function TenantReviewItem({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reporting, setReporting] = useState(false);
+  const [showResolution, setShowResolution] = useState(false);
 
   const status = REVIEW_STATUS_LABELS[review.status];
   const respondable = canRespond && review.status !== 'pending';
   // Solo se reporta lo que está publicado; ocultarla lo decide moderación.
   const reportable = canReport && review.status === 'published';
+  // Una reseña de baja valoración publicada se puede resolver con el cliente.
+  const resolvable = canRespond && review.lowRating && review.status === 'published';
 
   async function save(event: FormEvent) {
     event.preventDefault();
@@ -80,9 +84,18 @@ export default function TenantReviewItem({
       companyName={companyName}
       response={editing ? null : review.response}
       badge={
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {review.orderReference && (
             <span className="text-xs text-slate-400">Pedido {review.orderReference}</span>
+          )}
+          {review.lowRating && (
+            <Badge label="Baja valoración" tone="bg-orange-50 text-orange-600" />
+          )}
+          {review.resolution && (
+            <Badge
+              label={RESOLUTION_STATUS_LABELS[review.resolution.status].label}
+              tone={RESOLUTION_STATUS_LABELS[review.resolution.status].tone}
+            />
           )}
           <Badge label={status.label} tone={status.tone} />
         </div>
@@ -124,8 +137,18 @@ export default function TenantReviewItem({
         </form>
       )}
 
-      {(respondable || reportable) && !editing && (
+      {(respondable || reportable || resolvable) && !editing && (
         <div className="mt-4 flex flex-wrap gap-2">
+          {resolvable && (
+            <button
+              type="button"
+              onClick={() => setShowResolution((open) => !open)}
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+            >
+              <span className="material-symbols-outlined text-[16px]">handshake</span>
+              {showResolution ? 'Ocultar resolución' : 'Resolver incidencia'}
+            </button>
+          )}
           {respondable && (
             <button
               type="button"
@@ -157,6 +180,13 @@ export default function TenantReviewItem({
             </button>
           )}
         </div>
+      )}
+
+      {resolvable && showResolution && (
+        <ResolutionPanel
+          reviewId={review.id}
+          onSummaryChange={(resolution) => onChange({ ...review, resolution })}
+        />
       )}
 
       {reporting && (
