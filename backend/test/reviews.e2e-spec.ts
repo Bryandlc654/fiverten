@@ -129,6 +129,10 @@ describe('FIVERTEN Perfil público y reseñas (e2e)', () => {
         .expect(200);
       expect(tenant.body.items[0]).toMatchObject({ status: 'pending', rating: 5 });
       expect(tenant.body.items[0].reviewerEmail).toBeUndefined();
+
+      // Repetir antes de confirmar: se le recuerda que confirme la primera.
+      const again = await submit(review()).expect(409);
+      expect(again.body.message).toContain('pendiente de confirmar');
     });
 
     it('al confirmar se publica y cuenta en la puntuación', async () => {
@@ -151,7 +155,20 @@ describe('FIVERTEN Perfil público y reseñas (e2e)', () => {
     });
 
     it('rechaza una segunda reseña del mismo email en poco tiempo', async () => {
-      await submit(review()).expect(409);
+      // La primera ya está confirmada: no se le pide revisar el correo.
+      const response = await submit(review()).expect(409);
+      expect(response.body.message).toContain('Podrás escribir otra a partir del');
+      expect(response.body.message).not.toContain('Revisa tu correo');
+    });
+
+    it('una reseña sin confirmar con el enlace caducado no bloquea otra', async () => {
+      const email = 'caducada@cliente.test';
+      await submit(review({ email }), '10.0.0.5').expect(201);
+      await prisma.review.updateMany({
+        where: { reviewerEmail: email },
+        data: { createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000) },
+      });
+      await submit(review({ email }), '10.0.0.5').expect(201);
     });
 
     it('descarta en silencio los envíos de bots (honeypot)', async () => {
