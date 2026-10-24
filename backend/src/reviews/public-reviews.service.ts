@@ -42,6 +42,18 @@ const LINK_PATTERN = /(https?:\/\/|www\.)\S+/i;
 
 const INVALID_CONFIRMATION = 'El enlace de confirmación no es válido o ha caducado';
 
+/** Motivo del rechazo de una reseña repetida, según el estado de la anterior. */
+function duplicateMessage(previous: { createdAt: Date; emailConfirmedAt: Date | null }): string {
+  if (!previous.emailConfirmedAt) {
+    return 'Ya has enviado una reseña a esta empresa y está pendiente de confirmar. Revisa tu correo para confirmarla.';
+  }
+  const nextDate = new Date(previous.createdAt.getTime() + DUPLICATE_WINDOW_MS).toLocaleDateString(
+    'es-ES',
+    { day: 'numeric', month: 'long', year: 'numeric' },
+  );
+  return `Ya has dejado una reseña sobre esta empresa en los últimos 30 días. Podrás escribir otra a partir del ${nextDate}.`;
+}
+
 /**
  * Ámbito público: perfil de la empresa, listado de reseñas publicadas y
  * recepción de reseñas nuevas. No requiere sesión.
@@ -160,13 +172,18 @@ export class PublicReviewsService {
           reviewerEmail: email,
           deletedAt: null,
           createdAt: { gt: new Date(Date.now() - DUPLICATE_WINDOW_MS) },
+          // Una reseña sin confirmar cuyo enlace ya caducó no se puede publicar:
+          // no debe impedir que el cliente vuelva a escribir.
+          OR: [
+            { emailConfirmedAt: { not: null } },
+            { createdAt: { gt: new Date(Date.now() - CONFIRM_TTL_MS) } },
+          ],
         },
-        select: { id: true },
+        orderBy: { createdAt: 'desc' },
+        select: { createdAt: true, emailConfirmedAt: true },
       });
       if (duplicate) {
-        throw new ConflictException(
-          'Ya has enviado una reseña a esta empresa recientemente. Revisa tu correo para confirmarla.',
-        );
+        throw new ConflictException(duplicateMessage(duplicate));
       }
 
       await tx.review.create({
