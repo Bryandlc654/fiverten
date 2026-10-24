@@ -46,12 +46,14 @@ model Organization {
   updatedBy              String?   @map("updated_by") @db.Uuid
   deletedBy              String?   @map("deleted_by") @db.Uuid
 
-  users       User[]                   @relation("UserDefaultOrg")
-  roles       Role[]
-  memberships OrganizationMembership[]
-  sessions    Session[]
-  invitations OrganizationInvitation[]
-  reviews     Review[]
+  users              User[]                   @relation("UserDefaultOrg")
+  roles              Role[]
+  memberships        OrganizationMembership[]
+  sessions           Session[]
+  invitations        OrganizationInvitation[]
+  reviews            Review[]
+  reviewResolutions  ReviewResolution[]
+  resolutionMessages ResolutionMessage[]
 
   @@index([slug])
   @@index([status, isActive, deletedAt])
@@ -238,6 +240,7 @@ model Review {
   response          ReviewResponse?
   reports           ReviewReport[]
   moderationActions ModerationAction[]
+  resolutions       ReviewResolution[]
 
   @@index([organizationId, deletedAt])
   @@index([organizationId, lifecycleStatus, moderationStatus])
@@ -319,6 +322,49 @@ model ModerationAction {
   @@index([reviewId, createdAt])
   @@index([moderatorId])
   @@map("moderation_actions")
+}
+
+// Resolución de una incidencia entre la empresa y el cliente que dejó una reseña
+// negativa. El cliente participa desde un enlace con token (no necesita cuenta).
+// Estados y resultados según modelo_bd_fiverten_completo.sql (review_resolutions).
+model ReviewResolution {
+  id             String    @id @default(uuid()) @db.Uuid
+  reviewId       String    @map("review_id") @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  initiatedBy    String?   @map("initiated_by") @db.Uuid
+  status         String    @default("open") @db.VarChar(20)
+  outcome        String?   @db.VarChar(20)
+  tokenHash      String    @unique @map("token_hash") @db.VarChar(255)
+  expiresAt      DateTime  @map("expires_at") @db.Timestamptz(6)
+  closedAt       DateTime? @map("closed_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  review       Review              @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  messages     ResolutionMessage[]
+
+  @@index([reviewId, status])
+  @@index([organizationId])
+  @@map("review_resolutions")
+}
+
+// Mensajes de la conversación de una resolución. El remitente es la empresa,
+// el cliente o el sistema (avisos automáticos).
+model ResolutionMessage {
+  id             String   @id @default(uuid()) @db.Uuid
+  resolutionId   String   @map("resolution_id") @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  senderType     String   @map("sender_type") @db.VarChar(20)
+  senderUserId   String?  @map("sender_user_id") @db.Uuid
+  body           String   @db.Text
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  resolution   ReviewResolution @relation(fields: [resolutionId], references: [id], onDelete: Cascade)
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([resolutionId, createdAt])
+  @@map("resolution_messages")
 }
 
 model Session {

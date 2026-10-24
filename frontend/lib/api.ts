@@ -206,10 +206,63 @@ export interface TenantReview {
   createdAt: string;
   publishedAt: string | null;
   response: ReviewReply | null;
+  /** 1 o 2 estrellas, publicada: candidata a resolver. */
+  lowRating: boolean;
+  resolution: { id: string; status: ResolutionStatus; outcome: ResolutionOutcome | null } | null;
 }
 
 export interface TenantReviewList extends Paginated<TenantReview> {
   summary: { total: number; published: number; pending: number; unanswered: number; negative: number };
+}
+
+export type ResolutionStatus = 'open' | 'in_progress' | 'accepted' | 'rejected' | 'closed';
+export type ResolutionOutcome = 'resolved' | 'unresolved' | 'withdrawn';
+export type ResolutionSender = 'company' | 'client' | 'system';
+
+export interface ResolutionMessage {
+  id?: string;
+  senderType: ResolutionSender;
+  body: string;
+  createdAt: string;
+}
+
+/** Hilo de una resolución, visto por la empresa. */
+export interface CompanyResolution {
+  id: string;
+  status: ResolutionStatus;
+  outcome: ResolutionOutcome | null;
+  expiresAt: string;
+  closedAt: string | null;
+  createdAt: string;
+  messages: ResolutionMessage[];
+}
+
+/** Estado completo de la resolución, visto por el cliente desde su enlace. */
+export interface ClientResolution {
+  company: string;
+  review: {
+    id: string;
+    reviewerName: string;
+    rating: number;
+    title: string | null;
+    body: string;
+    publishedAt: string | null;
+  };
+  resolution: {
+    status: ResolutionStatus;
+    outcome: ResolutionOutcome | null;
+    expiresAt: string;
+    closedAt: string | null;
+  };
+  messages: ResolutionMessage[];
+  permissions: { canWrite: boolean; canEditReview: boolean; canDecide: boolean };
+}
+
+export interface ClientReviewUpdatePayload {
+  token: string;
+  rating?: number;
+  title?: string;
+  body?: string;
 }
 
 export interface AdminOrganizationSummary {
@@ -265,6 +318,8 @@ export interface ReviewListParams {
   period?: string;
   /** Panel: 'yes' con respuesta, 'no' sin respuesta. */
   answered?: string;
+  /** Panel: 'true' solo reseñas de 1 o 2 estrellas publicadas. */
+  lowRating?: 'true';
   page?: number;
   pageSize?: number;
 }
@@ -654,6 +709,29 @@ export const api = {
       method: 'DELETE',
     });
   },
+  getReviewResolution(id: string): Promise<{ resolution: CompanyResolution | null }> {
+    return request<{ resolution: CompanyResolution | null }>(
+      `/organizations/me/reviews/${id}/resolution`,
+    );
+  },
+  openReviewResolution(id: string, message: string): Promise<{ id: string; status: string }> {
+    return request<{ id: string; status: string }>(`/organizations/me/reviews/${id}/resolution`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    });
+  },
+  sendResolutionMessage(id: string, body: string): Promise<{ ok: boolean }> {
+    return request<{ ok: boolean }>(`/organizations/me/reviews/${id}/resolution/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ body }),
+    });
+  },
+  closeReviewResolution(id: string): Promise<{ id: string; status: string }> {
+    return request<{ id: string; status: string }>(
+      `/organizations/me/reviews/${id}/resolution/close`,
+      { method: 'POST' },
+    );
+  },
 
   // Perfil público y reseñas (sin sesión)
   publicProfile(slug: string): Promise<PublicProfile> {
@@ -682,6 +760,38 @@ export const api = {
       { method: 'POST', body: JSON.stringify(payload) },
     );
   },
+  // Resolución de incidencias (cliente, enlace del correo; el token va en el cuerpo)
+  clientResolution(token: string): Promise<ClientResolution> {
+    return request<ClientResolution>('/public/resolutions/lookup', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  },
+  clientResolutionMessage(token: string, body: string): Promise<{ ok: boolean }> {
+    return request<{ ok: boolean }>('/public/resolutions/messages', {
+      method: 'POST',
+      body: JSON.stringify({ token, body }),
+    });
+  },
+  clientUpdateReview(payload: ClientReviewUpdatePayload): Promise<{ ok: boolean }> {
+    return request<{ ok: boolean }>('/public/resolutions/review', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  clientAcceptResolution(token: string): Promise<{ status: string; outcome: string }> {
+    return request<{ status: string; outcome: string }>('/public/resolutions/accept', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  },
+  clientRejectResolution(token: string, reason?: 'no_solution' | 'other') {
+    return request<{ status: string; outcome: string }>('/public/resolutions/reject', {
+      method: 'POST',
+      body: JSON.stringify({ token, ...(reason ? { reason } : {}) }),
+    });
+  },
+
   confirmReview(token: string): Promise<{
     status: 'published' | 'under_review';
     organization: { slug: string; tradeName: string; isPublic: boolean };

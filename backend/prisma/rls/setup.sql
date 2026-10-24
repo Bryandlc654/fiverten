@@ -167,6 +167,22 @@ CREATE POLICY rls_review_responses ON review_responses
     USING (organization_id = app_current_org() OR app_is_platform_admin())
     WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
 
+ALTER TABLE review_resolutions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_review_resolutions ON review_resolutions;
+
+CREATE POLICY rls_review_resolutions ON review_resolutions
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
+ALTER TABLE resolution_messages ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_resolution_messages ON resolution_messages;
+
+CREATE POLICY rls_resolution_messages ON resolution_messages
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
 DROP POLICY IF EXISTS rls_review_responses_public ON review_responses;
 
 CREATE POLICY rls_review_responses_public ON review_responses FOR SELECT

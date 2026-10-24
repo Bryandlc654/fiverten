@@ -189,6 +189,9 @@ export const rlsStatements: string[] = [
   `CREATE POLICY rls_reviews_public ON reviews FOR SELECT
      USING (lifecycle_status = 'published' AND visibility = 'public' AND deleted_at IS NULL)`,
   ...tenantTablePolicy('review_responses'),
+  // Resoluciones de incidencias y sus mensajes: solo la organización titular.
+  ...tenantTablePolicy('review_resolutions'),
+  ...tenantTablePolicy('resolution_messages'),
   `DROP POLICY IF EXISTS rls_review_responses_public ON review_responses`,
   `CREATE POLICY rls_review_responses_public ON review_responses FOR SELECT
      USING (

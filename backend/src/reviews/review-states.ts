@@ -38,7 +38,12 @@ interface Transition {
 export const TRANSITIONS: Record<ModerationActionName, Transition> = {
   publish: { from: ['under_review'], to: 'published', requiresReason: false, reports: null },
   reject: { from: ['under_review'], to: 'rejected', requiresReason: true, reports: null },
-  hide: { from: ['published', 'reported'], to: 'hidden', requiresReason: true, reports: 'accepted' },
+  hide: {
+    from: ['published', 'reported'],
+    to: 'hidden',
+    requiresReason: true,
+    reports: 'accepted',
+  },
   restore: { from: ['hidden', 'rejected'], to: 'published', requiresReason: false, reports: null },
   unflag: { from: ['reported'], to: 'published', requiresReason: false, reports: 'rejected' },
 };
@@ -87,3 +92,9 @@ export function dataForStatus(
       throw new BadRequestException('Una reseña no puede volver a pendiente');
   }
 }
+
+/** Reseñas con esta puntuación o menos son de baja valoración y pueden resolverse. */
+export const LOW_RATING_MAX = 2;
+
+/** Estados de una resolución en los que aún se puede escribir y decidir. */
+export const ACTIVE_RESOLUTION_STATUSES = ['open', 'in_progress'];

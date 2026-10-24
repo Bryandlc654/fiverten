@@ -23,6 +23,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { ReportReviewDto } from './dto/moderation.dto';
 import { ReviewResponseDto } from './dto/review-response.dto';
+import { OpenResolutionDto, ResolutionMessageDto } from './dto/resolution.dto';
 import { ModerationService } from './moderation.service';
 import { REVIEW_STATUSES, type ReviewStatus } from './reviews.mappers';
 import {
@@ -32,6 +33,7 @@ import {
   REVIEW_SORTS,
   type ReviewSort,
 } from './reviews.params';
+import { ResolutionsService } from './resolutions.service';
 import { ReviewsService } from './reviews.service';
 
 @Controller('organizations/me/reviews')
@@ -40,6 +42,7 @@ export class ReviewsController {
   constructor(
     private readonly reviews: ReviewsService,
     private readonly moderation: ModerationService,
+    private readonly resolutions: ResolutionsService,
   ) {}
 
   @Get()
@@ -53,6 +56,7 @@ export class ReviewsController {
     @Query('status') status?: string,
     @Query('period') period?: string,
     @Query('answered') answered?: string,
+    @Query('lowRating') lowRating?: string,
   ) {
     if (status && !REVIEW_STATUSES.includes(status as ReviewStatus)) {
       throw new BadRequestException('Estado no válido');
@@ -65,6 +69,7 @@ export class ReviewsController {
       status: (status || undefined) as ReviewStatus | undefined,
       since: parsePeriod(period),
       answered: parseAnswered(answered),
+      lowRating: lowRating === 'true',
     });
   }
 
@@ -100,6 +105,53 @@ export class ReviewsController {
     @Body() dto: ReportReviewDto,
   ) {
     return this.moderation.reportAsOrganization(this.requireOrg(orgId), userId, reviewId, dto);
+  }
+
+  /** Resolución de la reseña (si la hay), con sus mensajes. */
+  @Get(':id/resolution')
+  getResolution(
+    @CurrentUser('organizationId') orgId: string | null,
+    @Param('id', ParseUUIDPipe) reviewId: string,
+  ) {
+    return this.resolutions.getForReview(this.requireOrg(orgId), reviewId);
+  }
+
+  /** Abre una resolución para una reseña de baja valoración. */
+  @Post(':id/resolution')
+  @HttpCode(HttpStatus.CREATED)
+  @Roles('editor')
+  openResolution(
+    @CurrentUser('organizationId') orgId: string | null,
+    @CurrentUser('userId') userId: string,
+    @Param('id', ParseUUIDPipe) reviewId: string,
+    @Body() dto: OpenResolutionDto,
+  ) {
+    return this.resolutions.open(this.requireOrg(orgId), userId, reviewId, dto.message);
+  }
+
+  /** La empresa escribe al cliente dentro de la resolución activa. */
+  @Post(':id/resolution/messages')
+  @HttpCode(HttpStatus.OK)
+  @Roles('editor')
+  sendResolutionMessage(
+    @CurrentUser('organizationId') orgId: string | null,
+    @CurrentUser('userId') userId: string,
+    @Param('id', ParseUUIDPipe) reviewId: string,
+    @Body() dto: ResolutionMessageDto,
+  ) {
+    return this.resolutions.sendCompanyMessage(this.requireOrg(orgId), userId, reviewId, dto.body);
+  }
+
+  /** La empresa cierra la incidencia sin acuerdo. */
+  @Post(':id/resolution/close')
+  @HttpCode(HttpStatus.OK)
+  @Roles('editor')
+  closeResolution(
+    @CurrentUser('organizationId') orgId: string | null,
+    @CurrentUser('userId') userId: string,
+    @Param('id', ParseUUIDPipe) reviewId: string,
+  ) {
+    return this.resolutions.close(this.requireOrg(orgId), userId, reviewId);
   }
 
   private requireOrg(orgId: string | null): string {

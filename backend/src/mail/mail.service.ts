@@ -106,6 +106,30 @@ export class MailService implements OnModuleInit {
     });
   }
 
+  /** Enlace para que el cliente siga la resolución de su reseña (sin cuenta). */
+  async sendResolutionLink(
+    to: string,
+    token: string,
+    organizationName: string,
+    kind: 'open' | 'message',
+  ): Promise<void> {
+    const link = `${this.frontendUrl}/resolucion/${encodeURIComponent(token)}`;
+    const opened = kind === 'open';
+    await this.send({
+      kind: 'resolucion de incidencia',
+      to,
+      subject: opened
+        ? `${organizationName} quiere resolver tu experiencia - ${BRAND}`
+        : `Tienes un nuevo mensaje de ${organizationName} - ${BRAND}`,
+      title: opened ? `${organizationName} quiere resolverlo contigo` : `Nuevo mensaje de ${organizationName}`,
+      intro: opened
+        ? `Has dejado una reseña y ${organizationName} quiere solucionar lo ocurrido. Desde el enlace puedes responder, actualizar tu reseña o aceptar la solución propuesta. No necesitas crear una cuenta.`
+        : `${organizationName} te ha escrito sobre tu reseña. Desde el enlace puedes responder o decidir si la incidencia está resuelta.`,
+      action: 'Ver la resolución',
+      link,
+    });
+  }
+
   async verifyConnection(): Promise<boolean> {
     if (this.mode === 'smtp') {
       return this.getTransporter().verify();

@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ReviewResponseDto } from './dto/review-response.dto';
 import { statusFilter, toTenantReview, type ReviewStatus } from './reviews.mappers';
+import { LOW_RATING_MAX } from './review-states';
 import { reviewOrder, type ReviewSort } from './reviews.params';
 
 interface ListQuery {
@@ -12,6 +13,8 @@ interface ListQuery {
   since?: Date;
   /** true = con respuesta, false = sin respuesta. */
   answered?: boolean;
+  /** Solo reseñas publicadas de baja valoración (pendientes de atender). */
+  lowRating?: boolean;
   sort: ReviewSort;
   page: number;
   pageSize: number;
@@ -39,13 +42,22 @@ export class ReviewsService {
     if (query.answered !== undefined) {
       where.response = query.answered ? { isNot: null } : { is: null };
     }
+    if (query.lowRating) {
+      where.AND = [
+        { lifecycleStatus: 'published', visibility: 'public', moderationStatus: 'none' },
+        { rating: { lte: LOW_RATING_MAX } },
+      ];
+    }
 
     return this.prisma.withContext({ orgId }, async (tx) => {
       const [total, rows, counts] = await Promise.all([
         tx.review.count({ where }),
         tx.review.findMany({
           where,
-          include: { response: true },
+          include: {
+            response: true,
+            resolutions: { orderBy: { createdAt: 'desc' }, take: 1 },
+          },
           orderBy: reviewOrder(query.sort, 'createdAt'),
           skip: (page - 1) * pageSize,
           take: pageSize,
@@ -73,7 +85,7 @@ export class ReviewsService {
       });
       const updated = await tx.review.findUniqueOrThrow({
         where: { id: review.id },
-        include: { response: true },
+        include: { response: true, resolutions: { orderBy: { createdAt: 'desc' }, take: 1 } },
       });
       return toTenantReview(updated);
     });

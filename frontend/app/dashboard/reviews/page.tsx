@@ -37,6 +37,7 @@ export default function ReviewsPage() {
   const [rating, setRating] = useState('');
   const [period, setPeriod] = useState<ReviewPeriod>('');
   const [answered, setAnswered] = useState('');
+  const [lowRating, setLowRating] = useState<'' | 'true'>('');
   const [sort, setSort] = useState<ReviewSort>('recent');
   const [page, setPage] = useState(1);
 
@@ -59,6 +60,7 @@ export default function ReviewsPage() {
           rating: rating ? Number(rating) : undefined,
           period: period || undefined,
           answered: answered || undefined,
+          lowRating: lowRating || undefined,
           sort,
           page,
           pageSize: PAGE_SIZE,
@@ -69,7 +71,7 @@ export default function ReviewsPage() {
     } finally {
       setLoading(false);
     }
-  }, [status, rating, period, answered, sort, page]);
+  }, [status, rating, period, answered, lowRating, sort, page]);
 
   useEffect(() => {
     void load();
@@ -187,6 +189,18 @@ export default function ReviewsPage() {
                 <option value="yes">Respondidas</option>
               </select>
               <select
+                aria-label="Filtrar por valoración baja"
+                value={lowRating}
+                onChange={(e) => {
+                  setLowRating(e.target.value as '' | 'true');
+                  setPage(1);
+                }}
+                className={selectClass}
+              >
+                <option value="">Todas las valoraciones</option>
+                <option value="true">Baja valoración (1-2 estrellas)</option>
+              </select>
+              <select
                 aria-label="Filtrar por fecha"
                 value={period}
                 onChange={(e) => {
@@ -225,7 +239,7 @@ export default function ReviewsPage() {
             </div>
           ) : !data || data.items.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-              {status || rating || period || answered
+              {status || rating || period || answered || lowRating
                 ? 'No hay reseñas con estos filtros.'
                 : 'Aún no has recibido reseñas. Comparte tu enlace para empezar.'}
             </div>
