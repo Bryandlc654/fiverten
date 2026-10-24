@@ -214,20 +214,43 @@ export class MailService implements OnModuleInit {
     const intro = escapeHtml(message.intro);
     const action = escapeHtml(message.action);
     const link = escapeHtml(message.link);
+    const year = new Date().getFullYear();
+    const font = "font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;";
+    // HTML de correo: tablas y estilos en línea (muchos clientes ignoran <style>
+    // y CSS moderno). El botón es una tabla para que se vea también en Outlook.
     return `<!doctype html>
 <html lang="es">
-  <body style="margin:0;padding:24px;background:#f4f5f7;font-family:Arial,Helvetica,sans-serif;color:#1f2430;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-      <tr><td align="center">
-        <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;padding:32px;">
-          <tr><td style="font-size:20px;font-weight:700;color:#0d6efd;padding-bottom:16px;">${BRAND}</td></tr>
-          <tr><td style="font-size:22px;font-weight:700;padding-bottom:12px;">${title}</td></tr>
-          <tr><td style="font-size:15px;line-height:22px;padding-bottom:20px;">${intro}</td></tr>
-          <tr><td style="padding-bottom:24px;">
-            <a href="${link}" style="display:inline-block;background:#0d6efd;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600;">${action}</a>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>${title}</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f1f5f9;${font}color:#0f172a;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${intro}</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;">
+      <tr><td align="center" style="padding:32px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;">
+          <tr><td style="background:#0b101b;padding:22px 32px;">
+            <span style="${font}font-size:20px;font-weight:800;letter-spacing:3px;color:#ffffff;">${BRAND}</span>
+            <span style="${font}font-size:12px;color:#94a3b8;padding-left:10px;">Reseñas y reputación</span>
           </td></tr>
-          <tr><td style="font-size:12px;color:#8a93a6;">Si no solicitaste este correo, puedes ignorarlo.</td></tr>
+          <tr><td style="padding:36px 32px 8px;">
+            <h1 style="margin:0 0 14px;${font}font-size:24px;line-height:32px;font-weight:700;color:#0f172a;">${title}</h1>
+            <p style="margin:0 0 28px;${font}font-size:15px;line-height:24px;color:#475569;">${intro}</p>
+            <table role="presentation" cellpadding="0" cellspacing="0">
+              <tr><td bgcolor="#2563eb" style="border-radius:10px;">
+                <a href="${link}" style="display:inline-block;padding:14px 28px;${font}font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:10px;">${action}</a>
+              </td></tr>
+            </table>
+          </td></tr>
+          <tr><td style="padding:28px 32px 32px;">
+            <p style="margin:0 0 6px;${font}font-size:13px;line-height:20px;color:#64748b;">¿El botón no funciona? Copia y pega este enlace en tu navegador:</p>
+            <p style="margin:0 0 24px;${font}font-size:13px;line-height:20px;word-break:break-all;"><a href="${link}" style="color:#2563eb;text-decoration:underline;">${link}</a></p>
+            <p style="margin:0;padding-top:20px;border-top:1px solid #e2e8f0;${font}font-size:12px;line-height:18px;color:#94a3b8;">Si no solicitaste este correo, puedes ignorarlo con tranquilidad.</p>
+          </td></tr>
         </table>
+        <p style="margin:20px 0 0;${font}font-size:12px;line-height:18px;color:#94a3b8;">© ${year} ${BRAND} · Plataforma de reseñas verificadas</p>
       </td></tr>
     </table>
   </body>
