@@ -1,5 +1,4 @@
-export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
 
 export interface Organization {
   id: string;
@@ -142,12 +141,7 @@ export interface SubmitReviewPayload {
 }
 
 export type ReviewStatus =
-  | 'pending'
-  | 'published'
-  | 'under_review'
-  | 'reported'
-  | 'hidden'
-  | 'rejected';
+  'pending' | 'published' | 'under_review' | 'reported' | 'hidden' | 'rejected';
 
 export type ModerationAction = 'publish' | 'reject' | 'hide' | 'restore' | 'unflag';
 
@@ -175,6 +169,8 @@ export interface AdminReview {
   createdAt: string;
   publishedAt: string | null;
   response: string | null;
+  /** Caso de evidencias (reseñas de 1 o 2 estrellas). */
+  case: { id: string; status: CaseStatus } | null;
   reports: {
     id: string;
     reason: string | null;
@@ -215,7 +211,13 @@ export interface TenantReview {
 }
 
 export interface TenantReviewList extends Paginated<TenantReview> {
-  summary: { total: number; published: number; pending: number; unanswered: number; negative: number };
+  summary: {
+    total: number;
+    published: number;
+    pending: number;
+    unanswered: number;
+    negative: number;
+  };
 }
 
 export type ResolutionStatus = 'open' | 'in_progress' | 'accepted' | 'rejected' | 'closed';
@@ -266,6 +268,117 @@ export interface ClientReviewUpdatePayload {
   rating?: number;
   title?: string;
   body?: string;
+}
+
+/**
+ * Caso de evidencias de una reseña de 1 o 2 estrellas: el admin pide pruebas al
+ * cliente, si son válidas notifica a la empresa, y decide (rechazar, publicar o
+ * retirar por acuerdo de las tres partes).
+ */
+export type CaseStatus =
+  | 'awaiting_admin'
+  | 'evidence_requested'
+  | 'evidence_submitted'
+  | 'company_notified'
+  | 'company_responded'
+  | 'closed';
+export type CaseOutcome = 'rejected' | 'published' | 'withdrawn';
+export type CaseSender = 'admin' | 'client' | 'company' | 'system';
+
+export interface CaseFile {
+  id: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+}
+
+export interface CaseMessage {
+  id: string;
+  senderType: CaseSender;
+  body: string;
+  createdAt: string;
+  files: CaseFile[];
+}
+
+interface CaseReview {
+  reviewerName: string;
+  rating: number;
+  title: string | null;
+}
+
+export interface AdminCaseSummary {
+  id: string;
+  status: CaseStatus;
+  outcome: CaseOutcome | null;
+  needsAdmin: boolean;
+  clientAgreed: boolean;
+  companyAgreed: boolean;
+  organization: { tradeName: string; slug: string };
+  review: CaseReview;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminCaseList extends Paginated<AdminCaseSummary> {
+  queue: { needsAdmin: number; active: number };
+}
+
+export interface AdminCase extends AdminCaseSummary {
+  decisionReason: string | null;
+  companyNotifiedAt: string | null;
+  closedAt: string | null;
+  review: CaseReview & {
+    id: string;
+    reviewerEmail: string;
+    body: string;
+    experienceDate: string | null;
+    orderReference: string | null;
+    createdAt: string;
+    antifraud: string[];
+  };
+  messages: CaseMessage[];
+}
+
+export type CaseDecision = 'reject' | 'publish' | 'withdraw';
+
+export interface CompanyCaseSummary {
+  id: string;
+  status: CaseStatus;
+  outcome: CaseOutcome | null;
+  clientAgreed: boolean;
+  companyAgreed: boolean;
+  review: CaseReview;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Caso visto por la empresa (sin el correo del cliente). */
+export interface CompanyCase {
+  id: string;
+  status: CaseStatus;
+  outcome: CaseOutcome | null;
+  decisionReason: string | null;
+  review: CaseReview & {
+    body: string;
+    experienceDate: string | null;
+    orderReference: string | null;
+    createdAt: string;
+  };
+  agreements: { client: boolean; company: boolean };
+  messages: CaseMessage[];
+  permissions: { canWrite: boolean; canAgree: boolean };
+}
+
+/** Caso visto por el cliente desde el enlace del correo. */
+export interface ClientCase {
+  company: string;
+  status: CaseStatus;
+  outcome: CaseOutcome | null;
+  decisionReason: string | null;
+  review: CaseReview & { body: string; createdAt: string };
+  agreements: { client: boolean; company: boolean };
+  messages: CaseMessage[];
+  permissions: { canWrite: boolean; canAgree: boolean };
 }
 
 export interface AdminOrganizationSummary {
@@ -410,7 +523,9 @@ function once<T>(key: string, call: () => Promise<T>): Promise<T> {
 
 /** Rutas que no necesitan sesión (o que la crean) y no deben esperar. */
 function isSessionless(path: string): boolean {
-  return path.startsWith('/auth/') || path.startsWith('/public/') || path.startsWith('/invitations/');
+  return (
+    path.startsWith('/auth/') || path.startsWith('/public/') || path.startsWith('/invitations/')
+  );
 }
 
 export function setAccessToken(token: string | null): void {
@@ -514,7 +629,9 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 async function requestForm<T>(path: string, body: FormData): Promise<T> {
-  await sessionReady;
+  if (!isSessionless(path)) {
+    await sessionReady;
+  }
   const headers = new Headers();
   if (accessToken) {
     headers.set('Authorization', `Bearer ${accessToken}`);
@@ -536,6 +653,48 @@ async function requestForm<T>(path: string, body: FormData): Promise<T> {
     throw new ApiError(response.status, extractMessage(data, response.status));
   }
   return data as T;
+}
+
+/** Descarga un archivo (evidencias de un caso): devuelve el contenido como Blob. */
+async function requestBlob(path: string, init: RequestInit = {}): Promise<Blob> {
+  if (!isSessionless(path)) {
+    await sessionReady;
+  }
+  const headers = new Headers(init.headers);
+  if (init.body && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+  if (accessToken) {
+    headers.set('Authorization', `Bearer ${accessToken}`);
+  }
+  const response = await send(`${API_URL}${path}`, {
+    ...init,
+    headers,
+    credentials: 'include',
+    cache: 'no-store',
+  });
+  if (WAKING_UP.has(response.status)) {
+    throw new ApiError(response.status, WAKE_UP_MESSAGE);
+  }
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      extractMessage(parseBody(await response.text()), response.status),
+    );
+  }
+  return response.blob();
+}
+
+/** Mensaje y evidencias como multipart (campo "files", hasta 5 archivos). */
+function caseForm(fields: Record<string, string | undefined>, files: File[]): FormData {
+  const form = new FormData();
+  for (const [key, value] of Object.entries(fields)) {
+    if (value) form.append(key, value);
+  }
+  for (const file of files) {
+    form.append('files', file);
+  }
+  return form;
 }
 
 function extractMessage(data: unknown, status: number): string {
@@ -736,6 +895,26 @@ export const api = {
     );
   },
 
+  // Casos de evidencias en los que la empresa ha sido notificada
+  listCompanyCases(): Promise<{ items: CompanyCaseSummary[] }> {
+    return request<{ items: CompanyCaseSummary[] }>('/organizations/me/cases');
+  },
+  getCompanyCase(id: string): Promise<CompanyCase> {
+    return request<CompanyCase>(`/organizations/me/cases/${id}`);
+  },
+  sendCompanyCaseMessage(id: string, body: string, files: File[]): Promise<{ ok: boolean }> {
+    return requestForm<{ ok: boolean }>(
+      `/organizations/me/cases/${id}/messages`,
+      caseForm({ body }, files),
+    );
+  },
+  agreeCompanyCase(id: string): Promise<{ ok: boolean }> {
+    return request<{ ok: boolean }>(`/organizations/me/cases/${id}/agree`, { method: 'POST' });
+  },
+  companyCaseFile(id: string, fileId: string): Promise<Blob> {
+    return requestBlob(`/organizations/me/cases/${id}/files/${fileId}`);
+  },
+
   // Perfil público y reseñas (sin sesión)
   publicProfile(slug: string): Promise<PublicProfile> {
     return request<PublicProfile>(`/public/organizations/${encodeURIComponent(slug)}`);
@@ -795,8 +974,33 @@ export const api = {
     });
   },
 
+  // Caso de evidencias (cliente, enlace del correo; el token va en el cuerpo)
+  clientCase(token: string): Promise<ClientCase> {
+    return request<ClientCase>('/public/cases/lookup', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  },
+  clientCaseMessage(token: string, body: string, files: File[]): Promise<{ ok: boolean }> {
+    return requestForm<{ ok: boolean }>('/public/cases/messages', caseForm({ token, body }, files));
+  },
+  clientCaseAgree(token: string): Promise<{ ok: boolean }> {
+    return request<{ ok: boolean }>('/public/cases/agree', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  },
+  clientCaseFile(token: string, fileId: string): Promise<Blob> {
+    return requestBlob(`/public/cases/files/${fileId}`, {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  },
+
   confirmReview(token: string): Promise<{
     status: 'published' | 'under_review';
+    /** Reseña de 1 o 2 estrellas: se abre un caso y se pedirán evidencias. */
+    evidenceRequired: boolean;
     organization: { slug: string; tradeName: string; isPublic: boolean };
   }> {
     return once(`confirm-review:${token}`, () =>
@@ -811,9 +1015,7 @@ export const api = {
   adminStats(): Promise<PlatformStats> {
     return request<PlatformStats>('/admin/stats');
   },
-  adminListOrganizations(
-    params: ListParams = {},
-  ): Promise<Paginated<AdminOrganizationSummary>> {
+  adminListOrganizations(params: ListParams = {}): Promise<Paginated<AdminOrganizationSummary>> {
     return request<Paginated<AdminOrganizationSummary>>(
       `/admin/organizations${buildQuery(params)}`,
     );
@@ -859,6 +1061,36 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(reason ? { reason } : {}),
     });
+  },
+  adminListCases(params: {
+    scope?: 'active' | 'closed' | 'all';
+    page?: number;
+    pageSize?: number;
+  }): Promise<AdminCaseList> {
+    return request<AdminCaseList>(`/admin/cases${buildQuery(params)}`);
+  },
+  adminGetCase(id: string): Promise<AdminCase> {
+    return request<AdminCase>(`/admin/cases/${id}`);
+  },
+  /** Pedir evidencias, escribir o validar: todas llevan un mensaje para las partes. */
+  adminCaseStep(
+    id: string,
+    step: 'request-evidence' | 'messages' | 'validate',
+    message: string,
+  ): Promise<AdminCase> {
+    return request<AdminCase>(`/admin/cases/${id}/${step}`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    });
+  },
+  adminDecideCase(id: string, decision: CaseDecision, reason?: string): Promise<AdminCase> {
+    return request<AdminCase>(`/admin/cases/${id}/${decision}`, {
+      method: 'POST',
+      body: JSON.stringify(reason ? { reason } : {}),
+    });
+  },
+  adminCaseFile(id: string, fileId: string): Promise<Blob> {
+    return requestBlob(`/admin/cases/${id}/files/${fileId}`);
   },
   adminListUsers(params: ListParams = {}): Promise<Paginated<AdminUser>> {
     return request<Paginated<AdminUser>>(`/admin/users${buildQuery(params)}`);

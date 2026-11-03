@@ -5,6 +5,7 @@ import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
 import { MailService } from '../src/mail/mail.service';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { publishAfterCase } from './helpers/cases';
 
 const AUTH = '/api/auth';
 const PUBLIC = '/api/public';
@@ -50,6 +51,9 @@ describe('FIVERTEN Resolución de incidencias (e2e)', () => {
       .send({ token: confirmTokens.get(email) })
       .expect(200);
     const review = await prisma.review.findFirstOrThrow({ where: { reviewerEmail: email } });
+    if (rating <= 2) {
+      await publishAfterCase(prisma, review.id);
+    }
     reviewIds.set(email, review.id);
     return review.id;
   };

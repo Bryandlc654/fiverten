@@ -192,6 +192,9 @@ export const rlsStatements: string[] = [
   // Resoluciones de incidencias y sus mensajes: solo la organización titular.
   ...tenantTablePolicy('review_resolutions'),
   ...tenantTablePolicy('resolution_messages'),
+  ...tenantTablePolicy('review_cases'),
+  ...tenantTablePolicy('review_case_messages'),
+  ...tenantTablePolicy('review_case_files'),
   `DROP POLICY IF EXISTS rls_review_responses_public ON review_responses`,
   `CREATE POLICY rls_review_responses_public ON review_responses FOR SELECT
      USING (

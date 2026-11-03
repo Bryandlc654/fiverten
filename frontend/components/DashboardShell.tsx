@@ -12,9 +12,11 @@ export type NavKey =
   | 'users'
   | 'profile'
   | 'reviews'
+  | 'cases'
   | 'adminOrgs'
   | 'adminUsers'
-  | 'adminReviews';
+  | 'adminReviews'
+  | 'adminCases';
 
 interface DashboardShellProps {
   active: NavKey;
@@ -38,6 +40,7 @@ const TENANT_NAV: NavItem[] = [
   { key: 'company', label: 'Empresa', icon: 'storefront', href: '/dashboard/company' },
   { key: 'users', label: 'Usuarios', icon: 'group', href: '/dashboard/users' },
   { key: 'reviews', label: 'Opiniones', icon: 'reviews', href: '/dashboard/reviews' },
+  { key: 'cases', label: 'Casos', icon: 'policy', href: '/dashboard/casos' },
   { key: 'profile', label: 'Perfil público', icon: 'verified', href: '/empresa' },
 ];
 
@@ -51,6 +54,7 @@ const ADMIN_NAV: NavItem[] = [
   },
   { key: 'adminUsers', label: 'Usuarios', icon: 'group', href: '/admin?tab=users' },
   { key: 'adminReviews', label: 'Reseñas', icon: 'gavel', href: '/admin/reviews' },
+  { key: 'adminCases', label: 'Casos', icon: 'policy', href: '/admin/casos' },
 ];
 
 export default function DashboardShell({

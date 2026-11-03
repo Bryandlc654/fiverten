@@ -160,6 +160,7 @@ export class ModerationService {
               include: { reason: { select: { label: true } } },
             },
             moderationActions: { orderBy: { createdAt: 'desc' }, take: 10 },
+            case: { select: { id: true, status: true } },
           },
         }),
         tx.review.count({ where: { deletedAt: null, ...statusFilter('under_review') } }),
@@ -181,6 +182,7 @@ export class ModerationService {
           createdAt: review.createdAt,
           publishedAt: review.publishedAt,
           response: review.response?.body ?? null,
+          case: review.case,
           reports: review.reports.map((report) => ({
             id: report.id,
             reason: report.reason?.label ?? null,
@@ -215,6 +217,15 @@ export class ModerationService {
       const review = await tx.review.findFirst({ where: { id: reviewId, deletedAt: null } });
       if (!review) {
         throw new NotFoundException('Reseña no encontrada');
+      }
+      const openCase = await tx.reviewCase.findFirst({
+        where: { reviewId, status: { not: 'closed' } },
+        select: { id: true },
+      });
+      if (openCase) {
+        throw new BadRequestException(
+          'Esta reseña tiene un caso de evidencias abierto. Decide desde la sección Casos.',
+        );
       }
       const from = reviewStatus(review);
       const transition = assertTransition(action, from, dto.reason);

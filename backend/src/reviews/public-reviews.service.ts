@@ -10,6 +10,7 @@ import { hashToken, randomToken } from '../common/tokens';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubmitReviewDto } from './dto/submit-review.dto';
+import { ReviewCasesService } from './cases.service';
 import { dataForStatus, LOW_RATING_MAX } from './review-states';
 import { PUBLIC_REVIEW_SELECT, toPublicReview } from './reviews.mappers';
 import { reviewOrder, type ReviewSort } from './reviews.params';
@@ -65,6 +66,7 @@ export class PublicReviewsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mail: MailService,
+    private readonly cases: ReviewCasesService,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -222,7 +224,7 @@ export class PublicReviewsService {
    * reseña se publica; si las hay, queda en revisión para moderación.
    */
   async confirm(token: string) {
-    return this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
+    const result = await this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
       const review = await tx.review.findUnique({
         where: { confirmTokenHash: hashToken(token) },
         include: { organization: { select: { slug: true, tradeName: true, isPublic: true } } },
@@ -237,7 +239,9 @@ export class PublicReviewsService {
       }
 
       const flags = await this.antifraudFlags(tx, review);
-      const publish = flags.length === 0;
+      // Una reseña de baja valoración no se publica sin revisar sus evidencias.
+      const lowRating = review.rating <= LOW_RATING_MAX;
+      const publish = flags.length === 0 && !lowRating;
       const to = publish ? 'published' : 'under_review';
 
       // Reclamo atómico: el mismo enlace no puede confirmarse dos veces.
@@ -247,7 +251,9 @@ export class PublicReviewsService {
           emailConfirmedAt: new Date(),
           confirmTokenHash: null,
           ...dataForStatus(to, review),
-          ...(publish ? {} : { metadata: { ...(review.metadata as object), antifraud: flags } }),
+          ...(flags.length > 0
+            ? { metadata: { ...(review.metadata as object), antifraud: flags } }
+            : {}),
         },
       });
       if (claimed.count !== 1) {
@@ -260,11 +266,21 @@ export class PublicReviewsService {
           action: publish ? 'publish' : 'flag',
           fromStatus: 'pending',
           toStatus: to,
-          reason: publish ? 'Correo confirmado por el autor' : `Antifraude: ${flags.join(', ')}`,
+          reason: publish
+            ? 'Correo confirmado por el autor'
+            : [
+                lowRating ? 'Baja valoración: caso de evidencias' : null,
+                flags.length ? `Antifraude: ${flags.join(', ')}` : null,
+              ]
+                .filter(Boolean)
+                .join(' · '),
         },
       });
+      const caseId = lowRating ? await this.cases.openForReview(tx, review) : null;
 
       return {
+        caseId,
+        rating: review.rating,
         status: publish ? ('published' as const) : ('under_review' as const),
         organization: {
           slug: review.organization.slug,
@@ -273,6 +289,13 @@ export class PublicReviewsService {
         },
       };
     });
+
+    const { caseId, rating, ...response } = result;
+    if (caseId) {
+      this.cases.alertNewCase(caseId, response.organization.tradeName, rating);
+    }
+    // evidenceRequired: el cliente recibirá un correo pidiéndole pruebas.
+    return { ...response, evidenceRequired: caseId !== null };
   }
 
   // ---------------------------------------------------------------------------

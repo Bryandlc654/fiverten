@@ -130,6 +130,50 @@ export class MailService implements OnModuleInit {
     });
   }
 
+  /** Aviso al super admin sobre un caso de evidencias (enlace al panel de admin). */
+  async sendCaseAdminAlert(to: string, title: string, intro: string, caseId: string): Promise<void> {
+    await this.send({
+      kind: 'caso de evidencias (admin)',
+      to,
+      subject: `${title} - ${BRAND}`,
+      title,
+      intro,
+      action: 'Abrir el caso',
+      link: `${this.frontendUrl}/admin/casos?id=${encodeURIComponent(caseId)}`,
+    });
+  }
+
+  /** Aviso a la empresa afectada por un caso (enlace a su panel). */
+  async sendCaseCompanyNotice(
+    to: string,
+    title: string,
+    intro: string,
+    caseId: string,
+  ): Promise<void> {
+    await this.send({
+      kind: 'caso de evidencias (empresa)',
+      to,
+      subject: `${title} - ${BRAND}`,
+      title,
+      intro,
+      action: 'Ver el caso',
+      link: `${this.frontendUrl}/dashboard/casos?id=${encodeURIComponent(caseId)}`,
+    });
+  }
+
+  /** Aviso al autor de la reseña, con el enlace (token) para participar sin cuenta. */
+  async sendCaseClientNotice(to: string, title: string, intro: string, token: string): Promise<void> {
+    await this.send({
+      kind: 'caso de evidencias (cliente)',
+      to,
+      subject: `${title} - ${BRAND}`,
+      title,
+      intro,
+      action: 'Abrir mi caso',
+      link: `${this.frontendUrl}/caso/${encodeURIComponent(token)}`,
+    });
+  }
+
   async verifyConnection(): Promise<boolean> {
     if (this.mode === 'smtp') {
       return this.getTransporter().verify();

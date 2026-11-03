@@ -5,6 +5,7 @@ import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
 import { MailService } from '../src/mail/mail.service';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { publishAfterCase } from './helpers/cases';
 
 const AUTH = '/api/auth';
 const PUBLIC = '/api/public';
@@ -204,7 +205,12 @@ describe('FIVERTEN Perfil público y reseñas (e2e)', () => {
       const ip1 = await confirm('ip1@cliente.test').expect(200);
       expect(ip1.body.status).toBe('under_review');
       await submit(review({ email: 'mala@cliente.test', name: 'Luis', rating: 2 }), '10.0.1.1');
-      await confirm('mala@cliente.test').expect(200);
+      const mala = await confirm('mala@cliente.test').expect(200);
+      expect(mala.body).toMatchObject({ status: 'under_review', evidenceRequired: true });
+      const luis = await prisma.review.findFirstOrThrow({
+        where: { reviewerEmail: 'mala@cliente.test' },
+      });
+      await publishAfterCase(prisma, luis.id);
     });
 
     it('filtra por estrellas', async () => {
