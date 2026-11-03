@@ -8,8 +8,8 @@ const NAV_ITEMS = [
   { icon: 'storefront', label: 'Empresa', href: '/dashboard/company' },
   { icon: 'group', label: 'Usuarios', href: '/dashboard/users' },
   { icon: 'reviews', label: 'Opiniones', href: '/dashboard/reviews' },
-  { icon: 'verified', label: 'Sello', href: '/dashboard' },
-  { icon: 'settings', label: 'Configuración', href: '/dashboard' },
+  { icon: 'policy', label: 'Casos', href: '/dashboard/casos' },
+  { icon: 'shield_lock', label: 'Seguridad', href: '/dashboard/seguridad' },
 ];
 
 interface TenantSidebarProps {

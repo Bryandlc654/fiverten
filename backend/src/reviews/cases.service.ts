@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { effectiveRole, roleAtLeast } from '../common/roles';
 import { hashToken, randomToken } from '../common/tokens';
 import { MailService } from '../mail/mail.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { safeFilename, type UploadedEvidence } from './case-files';
 import {
@@ -75,6 +76,7 @@ export class ReviewCasesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mail: MailService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -305,6 +307,7 @@ export class ReviewCasesService {
       'Caso cerrado: la reseña se ha publicado',
       'El caso se ha cerrado sin acuerdo entre las partes y la reseña ya es visible en tu perfil.',
     );
+    void this.notifications.reviewPublished(sent.review);
     return this.adminDetail(id);
   }
 
@@ -684,6 +687,13 @@ export class ReviewCasesService {
         email: review.reviewerEmail,
         organizationId: current.organizationId,
         company: review.organization.tradeName,
+        review: {
+          id: review.id,
+          organizationId: current.organizationId,
+          rating: review.rating,
+          reviewerName: review.reviewerName,
+          title: review.title,
+        },
         token: await this.issueClientLink(tx, current.id),
       };
     });

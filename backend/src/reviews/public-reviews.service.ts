@@ -8,6 +8,7 @@ import {
 import { Prisma } from '@prisma/client';
 import { hashToken, randomToken } from '../common/tokens';
 import { MailService } from '../mail/mail.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubmitReviewDto } from './dto/submit-review.dto';
 import { ReviewCasesService } from './cases.service';
@@ -35,7 +36,7 @@ const PUBLISHED: Prisma.ReviewWhereInput = {
   deletedAt: null,
 };
 
-const CONFIRM_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export const CONFIRM_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const DUPLICATE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 const IP_WINDOW_MS = 24 * 60 * 60 * 1000;
 const MAX_REVIEWS_PER_IP = 3;
@@ -67,6 +68,7 @@ export class PublicReviewsService {
     private readonly prisma: PrismaService,
     private readonly mail: MailService,
     private readonly cases: ReviewCasesService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -280,6 +282,15 @@ export class PublicReviewsService {
 
       return {
         caseId,
+        published: publish
+          ? {
+              id: review.id,
+              organizationId: review.organizationId,
+              rating: review.rating,
+              reviewerName: review.reviewerName,
+              title: review.title,
+            }
+          : null,
         rating: review.rating,
         status: publish ? ('published' as const) : ('under_review' as const),
         organization: {
@@ -290,9 +301,12 @@ export class PublicReviewsService {
       };
     });
 
-    const { caseId, rating, ...response } = result;
+    const { caseId, rating, published, ...response } = result;
     if (caseId) {
       this.cases.alertNewCase(caseId, response.organization.tradeName, rating);
+    }
+    if (published) {
+      void this.notifications.reviewPublished(published);
     }
     // evidenceRequired: el cliente recibirá un correo pidiéndole pruebas.
     return { ...response, evidenceRequired: caseId !== null };

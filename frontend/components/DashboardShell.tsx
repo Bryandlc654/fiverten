@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useAuth } from '../lib/auth-context';
 import { ROLE_LABELS } from '../lib/roles';
+import NotificationBell from './NotificationBell';
 
 export type NavKey =
   | 'overview'
@@ -13,6 +14,7 @@ export type NavKey =
   | 'profile'
   | 'reviews'
   | 'cases'
+  | 'security'
   | 'adminOrgs'
   | 'adminUsers'
   | 'adminReviews'
@@ -42,6 +44,7 @@ const TENANT_NAV: NavItem[] = [
   { key: 'reviews', label: 'Opiniones', icon: 'reviews', href: '/dashboard/reviews' },
   { key: 'cases', label: 'Casos', icon: 'policy', href: '/dashboard/casos' },
   { key: 'profile', label: 'Perfil público', icon: 'verified', href: '/empresa' },
+  { key: 'security', label: 'Seguridad', icon: 'shield_lock', href: '/dashboard/seguridad' },
 ];
 
 const ADMIN_NAV: NavItem[] = [
@@ -55,6 +58,7 @@ const ADMIN_NAV: NavItem[] = [
   { key: 'adminUsers', label: 'Usuarios', icon: 'group', href: '/admin?tab=users' },
   { key: 'adminReviews', label: 'Reseñas', icon: 'gavel', href: '/admin/reviews' },
   { key: 'adminCases', label: 'Casos', icon: 'policy', href: '/admin/casos' },
+  { key: 'security', label: 'Seguridad', icon: 'shield_lock', href: '/dashboard/seguridad' },
 ];
 
 export default function DashboardShell({
@@ -212,7 +216,7 @@ export default function DashboardShell({
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-slate-200 bg-white/85 px-6 py-4 backdrop-blur">
+        <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-slate-200 bg-white/85 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
@@ -228,55 +232,72 @@ export default function DashboardShell({
             </div>
           </div>
 
-          <div className="relative" ref={userMenuRef}>
-            <button
-              type="button"
-              onClick={() => setUserMenuOpen((value) => !value)}
-              aria-haspopup="menu"
-              aria-expanded={userMenuOpen}
-              aria-label="Menú de usuario"
-              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white py-1.5 pl-1.5 pr-2 transition hover:border-slate-300"
-            >
-              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-900 text-xs font-bold text-white">
-                {initials}
-              </span>
-              <div className="hidden text-left leading-tight sm:block">
-                <p className="max-w-[140px] truncate text-sm font-semibold text-slate-900">
-                  {fullName}
-                </p>
-                <p className="text-[11px] text-slate-500">{roleLabel}</p>
-              </div>
-              <span className="material-symbols-outlined text-[18px] text-slate-400">
-                expand_more
-              </span>
-            </button>
-            {userMenuOpen && (
-              <div
-                role="menu"
-                className="absolute right-0 top-full z-20 mt-2 w-60 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
+          <div className="flex shrink-0 items-center gap-2">
+            {!isSuperAdmin && organization && <NotificationBell />}
+            <div className="relative" ref={userMenuRef}>
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen((value) => !value)}
+                aria-haspopup="menu"
+                aria-expanded={userMenuOpen}
+                aria-label="Menú de usuario"
+                className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white py-1.5 pl-1.5 pr-2 transition hover:border-slate-300"
               >
-                <div className="border-b border-slate-100 px-4 py-3">
-                  <p className="truncate text-sm font-semibold text-slate-900">{fullName}</p>
-                  <p className="truncate text-xs text-slate-500">{email}</p>
+                <span className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-900 text-xs font-bold text-white">
+                  {initials}
+                </span>
+                <div className="hidden text-left leading-tight sm:block">
+                  <p className="max-w-[140px] truncate text-sm font-semibold text-slate-900">
+                    {fullName}
+                  </p>
+                  <p className="text-[11px] text-slate-500">{roleLabel}</p>
                 </div>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={onLogout}
-                  disabled={signingOut}
-                  className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+                <span className="material-symbols-outlined text-[18px] text-slate-400">
+                  expand_more
+                </span>
+              </button>
+              {userMenuOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full z-20 mt-2 w-60 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
                 >
-                  <span className="material-symbols-outlined text-[20px] text-slate-500">
-                    logout
-                  </span>
-                  {signingOut ? 'Saliendo…' : 'Cerrar sesión'}
-                </button>
-              </div>
-            )}
+                  <div className="border-b border-slate-100 px-4 py-3">
+                    <p className="truncate text-sm font-semibold text-slate-900">{fullName}</p>
+                    <p className="truncate text-xs text-slate-500">{email}</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      router.push('/dashboard/seguridad');
+                    }}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    <span className="material-symbols-outlined text-[20px] text-slate-500">
+                      shield_lock
+                    </span>
+                    Seguridad de la cuenta
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={onLogout}
+                    disabled={signingOut}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+                  >
+                    <span className="material-symbols-outlined text-[20px] text-slate-500">
+                      logout
+                    </span>
+                    {signingOut ? 'Saliendo…' : 'Cerrar sesión'}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
-        <main className="flex-1 px-6 py-6">{children}</main>
+        <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-6">{children}</main>
       </div>
     </div>
   );

@@ -147,8 +147,8 @@ export default function PlatformDashboard() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[680px] text-left text-sm">
-                <thead>
+              <table className="block w-full md:table md:min-w-[680px] text-left text-sm">
+                <thead className="hidden md:table-header-group">
                   <tr className="text-xs uppercase tracking-wide text-slate-400">
                     <th className="px-5 py-3 font-semibold">Empresa</th>
                     <th className="px-5 py-3 font-semibold">Estado</th>
@@ -157,27 +157,30 @@ export default function PlatformDashboard() {
                     <th className="px-5 py-3 text-right font-semibold">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="block divide-y divide-slate-100 md:table-row-group">
                   {orgs.map((org) => (
-                    <tr key={org.id} className="hover:bg-slate-50">
-                      <td className="px-5 py-3">
+                    <tr key={org.id} className="block py-2 md:table-row md:py-0 hover:bg-slate-50">
+                      <td className="block px-5 py-1 md:table-cell md:py-3">
                         <p className="font-semibold text-slate-900">{org.tradeName}</p>
                         <p className="text-xs text-slate-500">{org.publicId}</p>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="block px-5 py-1 md:table-cell md:py-3">
                         <Badge
                           label={organizationStatusLabel(org.status)}
                           tone={STATUS_TONE[org.status] ?? NEUTRAL_TONE}
                         />
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="block px-5 py-1 md:table-cell md:py-3">
                         <Badge
                           label={verificationStatusLabel(org.verificationStatus)}
                           tone={VERIFICATION_TONE[org.verificationStatus] ?? NEUTRAL_TONE}
                         />
                       </td>
-                      <td className="px-5 py-3 text-slate-600">{org.members}</td>
-                      <td className="px-5 py-3 text-right">
+                      <td className="block px-5 py-1 md:table-cell md:py-3 text-slate-600">
+                        <span className="md:hidden">Miembros: </span>
+                        {org.members}
+                      </td>
+                      <td className="block px-5 py-1 md:table-cell md:py-3 md:text-right">
                         <button
                           type="button"
                           onClick={() => router.push(`/admin/organizations/${org.id}`)}

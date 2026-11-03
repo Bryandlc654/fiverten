@@ -207,6 +207,14 @@ CREATE POLICY rls_review_case_files ON review_case_files
     USING (organization_id = app_current_org() OR app_is_platform_admin())
     WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
 
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_notifications ON notifications;
+
+CREATE POLICY rls_notifications ON notifications
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
 DROP POLICY IF EXISTS rls_review_responses_public ON review_responses;
 
 CREATE POLICY rls_review_responses_public ON review_responses FOR SELECT

@@ -574,6 +574,64 @@ export class AuthService {
     return { success: true };
   }
 
+  async changePassword(
+    userId: string,
+    currentSessionId: string | null,
+    currentPassword: string,
+    newPassword: string,
+    ctx: RequestContext,
+  ) {
+    const user = await this.prisma.withContext({ userId }, (tx) =>
+      tx.user.findUnique({ where: { id: userId }, select: { email: true, passwordHash: true } }),
+    );
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+    const { valid } = await verifyPassword(currentPassword, user.passwordHash);
+    if (!valid) {
+      await this.recordAttempt(
+        userId,
+        user.email,
+        'password_change',
+        false,
+        'invalid_password',
+        ctx,
+      );
+      throw new BadRequestException('La contraseña actual no es correcta');
+    }
+    if (currentPassword === newPassword) {
+      throw new BadRequestException('La nueva contraseña debe ser distinta de la actual');
+    }
+
+    const passwordHash = await hashPassword(newPassword);
+    const revoked = await this.prisma.withContext({ userId }, async (tx) => {
+      await tx.user.update({
+        where: { id: userId },
+        data: { passwordHash, passwordChangedAt: new Date() },
+      });
+      // Se cierran las demás sesiones; la actual sigue abierta.
+      const others = currentSessionId
+        ? { userId, isActive: true, id: { not: currentSessionId } }
+        : { userId, isActive: true };
+      const sessions = await tx.session.findMany({ where: others, select: { id: true } });
+      const ids = sessions.map((session) => session.id);
+      if (ids.length > 0) {
+        await tx.session.updateMany({
+          where: { id: { in: ids } },
+          data: { isActive: false, revokedAt: new Date(), revokeReason: 'password_change' },
+        });
+        await tx.refreshToken.updateMany({
+          where: { sessionId: { in: ids }, revokedAt: null },
+          data: { revokedAt: new Date(), revokeReason: 'password_change' },
+        });
+      }
+      return ids.length;
+    });
+
+    await this.recordAttempt(userId, user.email, 'password_change', true, null, ctx);
+    return { success: true, revokedSessions: revoked };
+  }
+
   // ---------------------------------------------------------------------------
   // Gestión de sesiones
   // ---------------------------------------------------------------------------
