@@ -12,7 +12,9 @@ import type { Organization, User } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { generatePublicId } from '../common/ids';
 import { burnPasswordCheck, hashPassword, verifyPassword } from '../common/passwords';
+import { decryptSecret, encryptSecret } from '../common/secret-box';
 import { ensureAllSystemRoles, ensureSystemRole } from '../common/system-roles';
+import { generateTotpSecret, otpauthUrl, verifyTotp } from '../common/totp';
 import { hashToken, randomToken } from '../common/tokens';
 import { buildUniqueSlug, buildUniqueUsername } from '../common/unique';
 import { MailService } from '../mail/mail.service';
@@ -197,6 +199,28 @@ export class AuthService {
       );
     }
 
+    // Si la cuenta tiene 2FA, la contraseña sola no abre sesión: se emite un
+    // reto de corta duración que el cliente resuelve con el código TOTP.
+    if (user.mfaEnabled) {
+      await this.recordAttempt(user.id, email, 'mfa_challenge', true, null, ctx);
+      return {
+        ...this.buildResponse(user, null, null, false, null),
+        requiresEmailVerification: false,
+        mfaRequired: true,
+        mfaToken: await this.signMfaToken(user.id),
+      };
+    }
+
+    return this.finalizeLogin(
+      user,
+      ctx,
+      // Rehash transparente a Argon2id si el hash almacenado es legacy (bcrypt).
+      passwordCheck.needsRehash ? dto.password : undefined,
+    );
+  }
+
+  /** Completa el login (password o 2FA): sesión, contadores y organización. */
+  private async finalizeLogin(user: User, ctx: RequestContext, rehashPassword?: string) {
     // Una sola transaccion agrupa: reset de contadores, lectura de membresía
     // (con su rol) y de la organización primaria (antes eran 3 transacciones).
     const { membership, organization } = await this.prisma.withContext(
@@ -208,8 +232,7 @@ export class AuthService {
             failedLoginCount: 0,
             lockedUntil: null,
             lastLoginAt: new Date(),
-            // Rehash transparente a Argon2id si el hash almacenado es legacy (bcrypt).
-            passwordHash: passwordCheck.needsRehash ? await hashPassword(dto.password) : undefined,
+            passwordHash: rehashPassword ? await hashPassword(rehashPassword) : undefined,
           },
         });
 
@@ -229,7 +252,7 @@ export class AuthService {
     const role = membership?.role.baseRole ?? null;
     const isOwner = membership?.isOwner ?? false;
 
-    await this.recordAttempt(user.id, email, 'login', true, null, ctx);
+    await this.recordAttempt(user.id, user.email, 'login', true, null, ctx);
     const session = await this.createSession(
       {
         userId: user.id,
@@ -244,6 +267,102 @@ export class AuthService {
     );
 
     return this.buildResponse(user, organization, role, isOwner, session);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Verificación en dos pasos (TOTP)
+  // ---------------------------------------------------------------------------
+  /** Genera un secreto nuevo (aún sin activar) y su URL para la app autenticadora. */
+  async startMfa(userId: string) {
+    const user = await this.getMfaUser(userId);
+    if (user.mfaEnabled) {
+      throw new BadRequestException('La verificación en dos pasos ya está activada');
+    }
+    const secret = generateTotpSecret();
+    await this.prisma.withContext({ userId }, (tx) =>
+      tx.user.update({
+        where: { id: userId },
+        data: { mfaSecretEncrypted: encryptSecret(secret) },
+      }),
+    );
+    return {
+      secret,
+      otpauthUrl: otpauthUrl('FIVERTEN', user.email, secret),
+    };
+  }
+
+  /** Confirma el código del autenticador y activa el 2FA. */
+  async enableMfa(userId: string, code: string) {
+    const user = await this.getMfaUser(userId);
+    if (user.mfaEnabled) {
+      throw new BadRequestException('La verificación en dos pasos ya está activada');
+    }
+    if (!user.mfaSecretEncrypted) {
+      throw new BadRequestException('Inicia primero la configuración de la verificación en dos pasos');
+    }
+    if (!this.checkMfaCode(user.mfaSecretEncrypted, code)) {
+      throw new BadRequestException('El código de verificación no es correcto');
+    }
+    await this.prisma.withContext({ userId }, (tx) =>
+      tx.user.update({ where: { id: userId }, data: { mfaEnabled: true } }),
+    );
+    return { enabled: true };
+  }
+
+  /** Desactiva el 2FA (requiere contraseña y un código válido). */
+  async disableMfa(userId: string, password: string, code: string, ctx: RequestContext) {
+    const user = await this.prisma.withContext({ userId }, (tx) =>
+      tx.user.findFirst({
+        where: { id: userId, deletedAt: null },
+        select: { email: true, passwordHash: true, mfaEnabled: true, mfaSecretEncrypted: true },
+      }),
+    );
+    if (!user) {
+      throw new UnauthorizedException('Sesión no válida');
+    }
+    const { valid } = await verifyPassword(password, user.passwordHash);
+    if (!valid) {
+      await this.recordAttempt(userId, user.email, 'mfa_disable', false, 'invalid_password', ctx);
+      throw new BadRequestException('La contraseña no es correcta');
+    }
+    if (!user.mfaEnabled || !user.mfaSecretEncrypted) {
+      throw new BadRequestException('La verificación en dos pasos no está activada');
+    }
+    if (!this.checkMfaCode(user.mfaSecretEncrypted, code)) {
+      throw new BadRequestException('El código de verificación no es correcto');
+    }
+    await this.prisma.withContext({ userId }, (tx) =>
+      tx.user.update({
+        where: { id: userId },
+        data: { mfaEnabled: false, mfaSecretEncrypted: null },
+      }),
+    );
+    await this.recordAttempt(userId, user.email, 'mfa_disable', true, null, ctx);
+    return { enabled: false };
+  }
+
+  /** Segundo factor del login: valida el código y completa la sesión. */
+  async verifyMfaLogin(mfaToken: string, code: string, ctx: RequestContext) {
+    const userId = await this.verifyMfaToken(mfaToken);
+    const user = await this.prisma.withContext({ isPlatformAdmin: true }, (tx) =>
+      tx.user.findFirst({ where: { id: userId, deletedAt: null } }),
+    );
+    if (!user || !user.isActive || !user.mfaEnabled || !user.mfaSecretEncrypted) {
+      throw new UnauthorizedException('La verificación en dos pasos no es válida');
+    }
+
+    const isLocked = !!user.lockedUntil && user.lockedUntil.getTime() > Date.now();
+    if (isLocked) {
+      throw new UnauthorizedException('La cuenta está bloqueada temporalmente. Inténtalo más tarde.');
+    }
+
+    if (!this.checkMfaCode(user.mfaSecretEncrypted, code)) {
+      await this.handleFailedLogin(user.id, user.failedLoginCount, user.email, ctx);
+      throw new UnauthorizedException('El código de verificación no es correcto');
+    }
+
+    await this.recordAttempt(user.id, user.email, 'mfa_verify', true, null, ctx);
+    return this.finalizeLogin(user, ctx);
   }
 
   // ---------------------------------------------------------------------------
@@ -392,6 +511,7 @@ export class AuthService {
         isSuperAdmin: user.isSuperAdmin,
         isFivertenStaff: user.isFivertenStaff,
         isActive: user.isActive,
+        mfaEnabled: user.mfaEnabled,
       },
       organization: organization
         ? {
@@ -718,6 +838,59 @@ export class AuthService {
     await this.recordAttempt(userId, email, 'login', false, 'invalid_password', ctx);
   }
 
+  private async getMfaUser(userId: string) {
+    const user = await this.prisma.withContext({ userId }, (tx) =>
+      tx.user.findFirst({
+        where: { id: userId, deletedAt: null },
+        select: { id: true, email: true, mfaEnabled: true, mfaSecretEncrypted: true },
+      }),
+    );
+    if (!user) {
+      throw new UnauthorizedException('Sesión no válida');
+    }
+    return user;
+  }
+
+  private checkMfaCode(encryptedSecret: string, code: string): boolean {
+    try {
+      return verifyTotp(decryptSecret(encryptedSecret), code);
+    } catch {
+      return false;
+    }
+  }
+
+  private get mfaJwtSecret(): string {
+    const explicit = this.config.get<string>('JWT_MFA_SECRET');
+    if (explicit) {
+      return explicit;
+    }
+    return `${this.config.get<string>('JWT_ACCESS_SECRET') ?? ''}:mfa`;
+  }
+
+  /** Reto de corta duración que solo sirve para completar el segundo factor. */
+  private signMfaToken(userId: string): Promise<string> {
+    return this.jwt.signAsync(
+      { sub: userId, purpose: 'mfa' },
+      { secret: this.mfaJwtSecret, expiresIn: '5m' },
+    );
+  }
+
+  private async verifyMfaToken(token: string): Promise<string> {
+    try {
+      const payload = await this.jwt.verifyAsync<{ sub?: string; purpose?: string }>(token, {
+        secret: this.mfaJwtSecret,
+      });
+      if (!payload.sub || payload.purpose !== 'mfa') {
+        throw new Error('Reto MFA invalido');
+      }
+      return payload.sub;
+    } catch {
+      throw new UnauthorizedException(
+        'El reto de verificación ha caducado. Vuelve a iniciar sesión.',
+      );
+    }
+  }
+
   private async createSession(
     subject: SessionSubject,
     ctx: RequestContext,
@@ -871,6 +1044,7 @@ export class AuthService {
         isVerified: user.isVerified,
         isSuperAdmin: user.isSuperAdmin,
         isFivertenStaff: user.isFivertenStaff,
+        mfaEnabled: user.mfaEnabled,
       },
       organization: organization
         ? {

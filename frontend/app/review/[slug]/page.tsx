@@ -1,12 +1,13 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import PublicShell from '../../../components/public/PublicShell';
 import { StarPicker } from '../../../components/reviews/Stars';
 import { Alert, Field, inputClass } from '../../../components/ui';
-import { ApiError, api, type ReviewForm } from '../../../lib/api';
+import { ApiError, api, type ReviewForm, type ReviewRequestLookup } from '../../../lib/api';
 
 interface FormState {
   rating: number;
@@ -41,6 +42,9 @@ export default function WriteReviewPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const [requestToken, setRequestToken] = useState<string | null>(null);
+  const [request, setRequest] = useState<ReviewRequestLookup | null>(null);
+  const [requestNotice, setRequestNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (!slug) return;
@@ -51,6 +55,37 @@ export default function WriteReviewPage() {
         document.title = `Opina sobre ${data.tradeName} | FIVERTEN`;
       })
       .catch(() => setNotFound(true));
+  }, [slug]);
+
+  // Enlace personalizado (?rt=token): se valida, se marca la apertura y se
+  // rellenan los datos del cliente. Si caducó o ya se usó, se avisa y se deja
+  // escribir una reseña normal.
+  useEffect(() => {
+    if (!slug) return;
+    const token = new URLSearchParams(window.location.search).get('rt');
+    if (!token) return;
+    api
+      .reviewRequestLookup(slug, token)
+      .then((data) => {
+        setRequest(data);
+        setForm((current) => ({
+          ...current,
+          name: data.reviewerName,
+          email: data.reviewerEmail,
+        }));
+        if (data.completed) {
+          setRequestNotice('Este enlace ya se utilizó para dejar una reseña.');
+        } else {
+          setRequestToken(token);
+        }
+      })
+      .catch((err) => {
+        setRequestNotice(
+          err instanceof ApiError
+            ? err.message
+            : 'El enlace personalizado no es válido. Puedes escribir la reseña igualmente.',
+        );
+      });
   }, [slug]);
 
   const today = new Date().toISOString().slice(0, 10);
@@ -74,6 +109,7 @@ export default function WriteReviewPage() {
         orderReference: form.orderReference.trim() || undefined,
         consent: form.consent,
         website: form.website || undefined,
+        requestToken: requestToken || undefined,
       });
       setSentTo(form.email.trim());
     } catch (err) {
@@ -127,10 +163,11 @@ export default function WriteReviewPage() {
       <div className="mx-auto max-w-2xl">
         <div className="flex items-center gap-4">
           {company.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={company.logoUrl}
               alt={company.tradeName}
+              width={56}
+              height={56}
               className="h-14 w-14 rounded-xl border border-slate-200 object-cover"
             />
           ) : (
@@ -159,6 +196,23 @@ export default function WriteReviewPage() {
           className="mt-6 space-y-5 rounded-xl border border-slate-200 bg-white p-6"
           noValidate
         >
+          {request && !request.completed && (
+            <div
+              data-testid="review-request-banner"
+              className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+            >
+              <span className="material-symbols-outlined text-[20px] text-emerald-600">
+                verified
+              </span>
+              <div>
+                <p className="font-semibold">Solicitud personalizada de {request.organization.tradeName}</p>
+                <p className="text-xs text-emerald-700">
+                  Tu nombre y correo ya están rellenados. Solo falta tu valoración y comentario.
+                </p>
+              </div>
+            </div>
+          )}
+          {requestNotice && <Alert tone="info">{requestNotice}</Alert>}
           {error && <Alert tone="error">{error}</Alert>}
 
           <div>

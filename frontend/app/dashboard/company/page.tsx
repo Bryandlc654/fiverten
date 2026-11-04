@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ChangeEvent } from 'react';
 import DashboardShell from '../../../components/DashboardShell';
@@ -253,11 +254,12 @@ export default function CompanyPage() {
                 <div className="overflow-hidden rounded-xl border border-slate-200">
                   <div className="relative aspect-[3/1] w-full bg-slate-100">
                     {form.coverUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Image
                         src={form.coverUrl}
                         alt="Portada de la empresa"
-                        className="h-full w-full object-cover"
+                        fill
+                        sizes="(max-width: 768px) 100vw, 768px"
+                        className="object-cover"
                       />
                     ) : (
                       <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-slate-400">

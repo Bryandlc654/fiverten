@@ -30,7 +30,9 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
-  login: (payload: LoginPayload) => Promise<void>;
+  login: (payload: LoginPayload) => Promise<AuthResponse>;
+  /** Completa el login cuando la cuenta tiene 2FA activado. */
+  verifyMfa: (mfaToken: string, code: string) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<AuthResponse>;
   logout: () => Promise<void>;
   /** Vuelve a pedir la sesión al backend (p. ej. tras unirse a una empresa). */
@@ -79,7 +81,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (payload: LoginPayload) => {
-      apply(await api.login(payload));
+      const response = await api.login(payload);
+      if (!response.mfaRequired) {
+        apply(response);
+      }
+      return response;
+    },
+    [apply],
+  );
+
+  const verifyMfa = useCallback(
+    async (mfaToken: string, code: string) => {
+      apply(await api.verifyMfa(mfaToken, code));
     },
     [apply],
   );
@@ -120,11 +133,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: user !== null,
       isSuperAdmin: user?.isSuperAdmin === true,
       login,
+      verifyMfa,
       register,
       logout,
       reloadSession,
     }),
-    [user, organization, role, isLoading, login, register, logout, reloadSession],
+    [user, organization, role, isLoading, login, verifyMfa, register, logout, reloadSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

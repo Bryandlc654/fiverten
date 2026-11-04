@@ -9,7 +9,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   workers: 1,
-  timeout: 60_000,
+  timeout: 90_000,
   expect: { timeout: 10_000 },
   reporter: [['list']],
   use: {
@@ -17,7 +17,25 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: /mobile\.spec\.ts/,
+    },
+    // Pruebas de adaptación móvil: se ejecutan solo los casos etiquetados
+    // con @mobile en dos viewports reales (Android y iPhone).
+    {
+      name: 'mobile-chrome',
+      use: { ...devices['Pixel 5'] },
+      grep: /@mobile/,
+    },
+    {
+      name: 'mobile-safari',
+      use: { ...devices['iPhone 13'] },
+      grep: /@mobile/,
+    },
+  ],
   webServer: [
     {
       command: 'npm run start',

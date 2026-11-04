@@ -61,6 +61,7 @@ model Organization {
   reviewCases        ReviewCase[]
   reviewCaseMessages ReviewCaseMessage[]
   reviewCaseFiles    ReviewCaseFile[]
+  reviewRequests     ReviewRequest[]
   notifications      Notification[]
 
   @@index([slug])
@@ -251,6 +252,7 @@ model Review {
   moderationActions ModerationAction[]
   resolutions       ReviewResolution[]
   case              ReviewCase?
+  reviewRequest     ReviewRequest?
 
   @@index([organizationId, deletedAt])
   @@index([organizationId, lifecycleStatus, moderationStatus])
@@ -448,6 +450,34 @@ model ReviewCaseFile {
   @@index([caseId])
   @@index([messageId])
   @@map("review_case_files")
+}
+
+// Solicitud personalizada de reseña. Cada fila representa un enlace único
+// enviado a un cliente concreto; permite saber si se abrió y si terminó en
+// reseña (seguimiento y tasa de conversión de las solicitudes).
+model ReviewRequest {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  tokenHash      String    @unique @map("token_hash") @db.VarChar(255)
+  reviewerName   String    @map("reviewer_name") @db.VarChar(200)
+  reviewerEmail  String    @map("reviewer_email") @db.VarChar(255)
+  // sent -> opened -> completed. El vencimiento se calcula con expiresAt.
+  status         String    @default("sent") @db.VarChar(20)
+  sentAt         DateTime  @default(now()) @map("sent_at") @db.Timestamptz(6)
+  openedAt       DateTime? @map("opened_at") @db.Timestamptz(6)
+  completedAt    DateTime? @map("completed_at") @db.Timestamptz(6)
+  expiresAt      DateTime  @map("expires_at") @db.Timestamptz(6)
+  reviewId       String?   @unique @map("review_id") @db.Uuid
+  createdBy      String?   @map("created_by") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  review       Review?      @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status, createdAt])
+  @@index([organizationId, reviewerEmail])
+  @@map("review_requests")
 }
 
 // Notificación del centro de avisos del panel. Una fila por destinatario

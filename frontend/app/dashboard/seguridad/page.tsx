@@ -64,6 +64,14 @@ export default function SecurityPage() {
   const [revoking, setRevoking] = useState<string | null>(null);
   const [closingAll, setClosingAll] = useState(false);
 
+  const [mfaEnabled, setMfaEnabled] = useState<boolean | null>(null);
+  const [mfaSetup, setMfaSetup] = useState<{ secret: string; otpauthUrl: string } | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaPassword, setMfaPassword] = useState('');
+  const [mfaBusy, setMfaBusy] = useState(false);
+  const [mfaError, setMfaError] = useState<string | null>(null);
+  const [mfaNotice, setMfaNotice] = useState<string | null>(null);
+
   const loadSessions = useCallback(() => {
     setSessionsError(null);
     api
@@ -77,6 +85,60 @@ export default function SecurityPage() {
   useEffect(() => {
     loadSessions();
   }, [loadSessions]);
+
+  useEffect(() => {
+    api
+      .me()
+      .then((result) => setMfaEnabled(result.user.mfaEnabled ?? false))
+      .catch(() => setMfaEnabled(null));
+  }, []);
+
+  async function startMfaSetup() {
+    setMfaBusy(true);
+    setMfaError(null);
+    setMfaNotice(null);
+    try {
+      setMfaSetup(await api.mfaSetup());
+    } catch (err) {
+      setMfaError(err instanceof ApiError ? err.message : 'No se pudo iniciar la configuración');
+    } finally {
+      setMfaBusy(false);
+    }
+  }
+
+  async function confirmMfa() {
+    setMfaBusy(true);
+    setMfaError(null);
+    setMfaNotice(null);
+    try {
+      await api.mfaEnable(mfaCode);
+      setMfaEnabled(true);
+      setMfaSetup(null);
+      setMfaCode('');
+      setMfaNotice('Verificación en dos pasos activada. Se pedirá el código al iniciar sesión.');
+    } catch (err) {
+      setMfaError(err instanceof ApiError ? err.message : 'No se pudo activar el 2FA');
+    } finally {
+      setMfaBusy(false);
+    }
+  }
+
+  async function disableMfa() {
+    setMfaBusy(true);
+    setMfaError(null);
+    setMfaNotice(null);
+    try {
+      await api.mfaDisable(mfaPassword, mfaCode);
+      setMfaEnabled(false);
+      setMfaPassword('');
+      setMfaCode('');
+      setMfaNotice('Verificación en dos pasos desactivada.');
+    } catch (err) {
+      setMfaError(err instanceof ApiError ? err.message : 'No se pudo desactivar el 2FA');
+    } finally {
+      setMfaBusy(false);
+    }
+  }
 
   async function onChangePassword(event: FormEvent) {
     event.preventDefault();
@@ -276,6 +338,153 @@ export default function SecurityPage() {
             <p className="mt-2 text-xs text-slate-400">
               No tienes sesiones abiertas en otros dispositivos.
             </p>
+          )}
+        </section>
+
+        <section
+          data-testid="mfa-card"
+          className="min-w-0 rounded-xl border border-slate-200 bg-white p-5 lg:col-span-5"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                <span className="material-symbols-outlined text-[22px]">verified_user</span>
+              </span>
+              <div>
+                <h2 className="text-base font-bold text-slate-900">Verificación en dos pasos</h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  Añade un código temporal de tu aplicación autenticadora al iniciar sesión.
+                </p>
+              </div>
+            </div>
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                mfaEnabled
+                  ? 'bg-emerald-50 text-emerald-600'
+                  : 'bg-slate-100 text-slate-600'
+              }`}
+            >
+              {mfaEnabled === null ? 'Cargando…' : mfaEnabled ? 'Activada' : 'Desactivada'}
+            </span>
+          </div>
+
+          {mfaError && (
+            <div className="mt-4">
+              <Alert tone="error">{mfaError}</Alert>
+            </div>
+          )}
+          {mfaNotice && (
+            <div className="mt-4">
+              <Alert tone="success">{mfaNotice}</Alert>
+            </div>
+          )}
+
+          {mfaEnabled === false && !mfaSetup && (
+            <button
+              type="button"
+              onClick={() => void startMfaSetup()}
+              disabled={mfaBusy}
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
+            >
+              <span className="material-symbols-outlined text-[18px]">qr_code_2</span>
+              {mfaBusy ? 'Preparando…' : 'Activar verificación en dos pasos'}
+            </button>
+          )}
+
+          {mfaEnabled === false && mfaSetup && (
+            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm font-semibold text-slate-800">
+                  1. Añade la cuenta a tu aplicación
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Escanea el código o introduce esta clave manualmente en Google Authenticator,
+                  Authy, 1Password…
+                </p>
+                <code className="mt-3 block break-all rounded-md border border-slate-200 bg-white px-3 py-2 text-center text-sm font-semibold tracking-wider text-slate-900">
+                  {mfaSetup.secret}
+                </code>
+                <a
+                  href={mfaSetup.otpauthUrl}
+                  className="mt-3 inline-flex text-xs font-semibold text-blue-600 hover:underline"
+                >
+                  Abrir en la aplicación autenticadora
+                </a>
+              </div>
+              <div className="rounded-lg border border-slate-200 p-4">
+                <p className="text-sm font-semibold text-slate-800">2. Confirma el código</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Introduce el código de 6 dígitos que muestra la aplicación.
+                </p>
+                <input
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  value={mfaCode}
+                  onChange={(event) =>
+                    setMfaCode(event.target.value.replace(/\D/g, '').slice(0, 6))
+                  }
+                  placeholder="000000"
+                  aria-label="Código de verificación"
+                  className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-center text-lg tracking-[0.4em] text-slate-900 outline-none focus:border-blue-500"
+                />
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void confirmMfa()}
+                    disabled={mfaBusy || mfaCode.length !== 6}
+                    className="inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
+                  >
+                    {mfaBusy ? 'Activando…' : 'Confirmar y activar'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMfaSetup(null);
+                      setMfaCode('');
+                    }}
+                    className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {mfaEnabled && (
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto]">
+              <Field label="Contraseña" className="block">
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  value={mfaPassword}
+                  onChange={(event) => setMfaPassword(event.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Código actual" className="block">
+                <input
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  value={mfaCode}
+                  onChange={(event) =>
+                    setMfaCode(event.target.value.replace(/\D/g, '').slice(0, 6))
+                  }
+                  placeholder="000000"
+                  className={inputClass}
+                />
+              </Field>
+              <button
+                type="button"
+                onClick={() => void disableMfa()}
+                disabled={mfaBusy || !mfaPassword || mfaCode.length !== 6}
+                className="self-end rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+              >
+                {mfaBusy ? 'Desactivando…' : 'Desactivar 2FA'}
+              </button>
+            </div>
           )}
         </section>
       </div>

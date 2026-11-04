@@ -12,6 +12,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubmitReviewDto } from './dto/submit-review.dto';
 import { ReviewCasesService } from './cases.service';
+import { ReviewRequestsService } from './review-requests.service';
 import { dataForStatus, LOW_RATING_MAX } from './review-states';
 import { PUBLIC_REVIEW_SELECT, toPublicReview } from './reviews.mappers';
 import { reviewOrder, type ReviewSort } from './reviews.params';
@@ -69,6 +70,7 @@ export class PublicReviewsService {
     private readonly mail: MailService,
     private readonly cases: ReviewCasesService,
     private readonly notifications: NotificationsService,
+    private readonly requests: ReviewRequestsService,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -196,7 +198,7 @@ export class PublicReviewsService {
         throw new ConflictException(duplicateMessage(duplicate));
       }
 
-      await tx.review.create({
+      const created = await tx.review.create({
         data: {
           organizationId: org.id,
           reviewerName: dto.name.trim(),
@@ -212,6 +214,11 @@ export class PublicReviewsService {
           userAgent: ctx.userAgent?.slice(0, 500) ?? null,
         },
       });
+      // Enlace personalizado: la reseña queda vinculada a la solicitud para
+      // poder medir si el cliente llegó a completarla.
+      if (dto.requestToken) {
+        await this.requests.attachToReview(tx, org.id, dto.requestToken, created.id);
+      }
     });
 
     // No se espera: el envío por SMTP puede tardar y la respuesta debe ser inmediata.
@@ -278,6 +285,7 @@ export class PublicReviewsService {
                 .join(' · '),
         },
       });
+      await this.requests.completeForReview(tx, review.id);
       const caseId = lowRating ? await this.cases.openForReview(tx, review) : null;
 
       return {

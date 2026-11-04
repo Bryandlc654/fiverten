@@ -10,7 +10,7 @@ import { nextPath } from '../../lib/next-path';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated, isLoading } = useAuth();
+  const { login, verifyMfa, isAuthenticated, isLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -19,6 +19,8 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<'success' | 'error' | null>(null);
   const [closing, setClosing] = useState(false);
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && feedback !== 'success') {
@@ -35,7 +37,14 @@ export default function LoginPage() {
     setClosing(false);
     setSubmitting(true);
     try {
-      await login({ email, password });
+      const result = await login({ email, password });
+      if (result.mfaRequired && result.mfaToken) {
+        // La cuenta tiene 2FA: se pide el código antes de abrir sesión.
+        setMfaCode('');
+        setMfaToken(result.mfaToken);
+        setSubmitting(false);
+        return;
+      }
       // Espera a que se vea la animación de éxito antes de entrar al panel.
       setFeedback('success');
       window.setTimeout(() => router.replace(nextPath()), 1100);
@@ -51,9 +60,110 @@ export default function LoginPage() {
     }
   }
 
+  async function onVerifyMfa(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (submitting || !mfaToken) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      await verifyMfa(mfaToken, mfaCode);
+      setMfaToken(null);
+      setFeedback('success');
+      window.setTimeout(() => router.replace(nextPath()), 1100);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo verificar el código');
+      setSubmitting(false);
+    }
+  }
+
   function handleSso(provider: string) {
     setError(null);
     setNotice(`El acceso con ${provider} estará disponible próximamente.`);
+  }
+
+  if (mfaToken) {
+    return (
+      <main className="flex-1 flex flex-col items-center justify-center bg-background px-gutter py-space-xl">
+        <div className="w-full max-w-sm">
+          <div className="flex justify-center mb-space-lg">
+            <Image
+              src="/logo-fiverten.png"
+              alt="FIVERTEN"
+              width={2000}
+              height={347}
+              priority
+              className="h-10 w-auto"
+            />
+          </div>
+          <div className="space-y-space-md">
+            {error && (
+              <div
+                data-testid="auth-error"
+                className="rounded-lg border border-error/30 bg-error-container/20 px-space-md py-space-sm font-body-sm text-body-sm text-on-error-container"
+              >
+                {error}
+              </div>
+            )}
+            <div className="rounded-xl border border-outline-variant/40 bg-surface-container-low p-space-lg">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-[26px] text-primary">
+                  verified_user
+                </span>
+                <div>
+                  <h1 className="font-label-md text-label-md font-semibold text-on-surface">
+                    Verificación en dos pasos
+                  </h1>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant">
+                    Introduce el código de 6 dígitos de tu aplicación autenticadora.
+                  </p>
+                </div>
+              </div>
+              <form className="mt-space-md space-y-space-md" onSubmit={onVerifyMfa} noValidate>
+                <div className="space-y-1.5">
+                  <label
+                    className="block font-label-md text-label-md text-on-surface"
+                    htmlFor="mfaCode"
+                  >
+                    Código de verificación
+                  </label>
+                  <input
+                    id="mfaCode"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    required
+                    value={mfaCode}
+                    onChange={(event) =>
+                      setMfaCode(event.target.value.replace(/\D/g, '').slice(0, 6))
+                    }
+                    placeholder="000000"
+                    className="w-full h-11 px-space-md rounded-lg bg-surface text-on-surface text-center tracking-[0.4em] font-body-md text-body-md border border-outline-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-colors"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={submitting || mfaCode.length !== 6}
+                  className="w-full h-11 rounded-lg bg-primary-container hover:bg-inverse-primary disabled:opacity-60 disabled:cursor-not-allowed text-on-primary-container font-label-md text-label-md font-semibold transition-colors"
+                >
+                  {submitting ? 'Verificando…' : 'Verificar código'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMfaToken(null);
+                    setMfaCode('');
+                    setError(null);
+                  }}
+                  className="w-full h-10 rounded-lg border border-outline-variant/40 font-label-sm text-label-sm text-on-surface-variant transition-colors hover:bg-surface-container-high"
+                >
+                  Volver al inicio de sesión
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (

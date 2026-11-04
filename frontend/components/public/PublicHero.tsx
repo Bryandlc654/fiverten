@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import type { PublicProfile } from '../../lib/api';
 import { formatRating, Stars } from '../reviews/Stars';
@@ -15,8 +16,14 @@ export default function PublicHero({ profile }: { profile: PublicProfile }) {
       {/* Portada */}
       <div className="relative h-36 sm:h-44 lg:h-48">
         {profile.coverUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={profile.coverUrl} alt="" className="h-full w-full object-cover" />
+          <Image
+            src={profile.coverUrl}
+            alt=""
+            fill
+            priority
+            sizes="(max-width: 640px) 100vw, (max-width: 1280px) 90vw, 1100px"
+            className="object-cover"
+          />
         ) : (
           <div
             aria-hidden
@@ -58,13 +65,14 @@ export default function PublicHero({ profile }: { profile: PublicProfile }) {
       <div className="relative px-5 pb-6 sm:px-8">
         <div className="-mt-12 flex flex-wrap items-end justify-between gap-x-6 gap-y-4 sm:-mt-14">
           <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
-            <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-white p-1 shadow-lg ring-4 ring-white sm:h-28 sm:w-28">
+            <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-white p-1 shadow-lg ring-4 ring-white sm:h-28 sm:w-28">
               {profile.logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={profile.logoUrl}
                   alt={`Logo de ${profile.tradeName}`}
-                  className="h-full w-full rounded-xl object-contain"
+                  fill
+                  sizes="112px"
+                  className="rounded-xl object-contain p-1"
                 />
               ) : (
                 <span className="flex h-full w-full items-center justify-center rounded-xl bg-gradient-to-br from-[#2563eb] to-[#1e3a8a] text-4xl font-bold text-white sm:text-5xl">

@@ -18,6 +18,7 @@ import { CurrentUser } from './decorators/current-user.decorator';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
+import { DisableMfaDto, EnableMfaDto, VerifyMfaLoginDto } from './dto/mfa.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
@@ -62,6 +63,48 @@ export class AuthController {
   ) {
     const result = await this.auth.login(dto, this.context(req));
     return this.settle(res, result);
+  }
+
+  /** Segundo factor del login: canjea el reto + código TOTP por una sesión. */
+  @Post('mfa/verify')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  async verifyMfa(
+    @Body() dto: VerifyMfaLoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.auth.verifyMfaLogin(dto.mfaToken, dto.code, this.context(req));
+    return this.settle(res, result);
+  }
+
+  /** Inicia la configuración del 2FA: devuelve el secreto y la URL otpauth. */
+  @Post('mfa/setup')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @UseGuards(JwtAuthGuard)
+  setupMfa(@CurrentUser('userId') userId: string) {
+    return this.auth.startMfa(userId);
+  }
+
+  @Post('mfa/enable')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @UseGuards(JwtAuthGuard)
+  enableMfa(@CurrentUser('userId') userId: string, @Body() dto: EnableMfaDto) {
+    return this.auth.enableMfa(userId, dto.code);
+  }
+
+  @Post('mfa/disable')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @UseGuards(JwtAuthGuard)
+  disableMfa(
+    @CurrentUser('userId') userId: string,
+    @Body() dto: DisableMfaDto,
+    @Req() req: Request,
+  ) {
+    return this.auth.disableMfa(userId, dto.password, dto.code, this.context(req));
   }
 
   @Post('refresh')

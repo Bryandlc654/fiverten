@@ -108,6 +108,28 @@ export class MailService implements OnModuleInit {
     });
   }
 
+  /** Solicitud personalizada de reseña con enlace único por cliente. */
+  async sendReviewRequest(
+    to: string,
+    clientName: string,
+    organizationName: string,
+    url: string,
+    expiresInDays: number,
+  ): Promise<void> {
+    const name = clientName.trim() || 'cliente';
+    await this.send({
+      kind: 'solicitud de reseña',
+      to,
+      subject: `${organizationName} te invita a contar tu experiencia - ${BRAND}`,
+      title: `Hola ${name}, ¿cómo fue tu experiencia con ${organizationName}?`,
+      intro: `${organizationName} te ha enviado un enlace personal para valorar tu experiencia. Solo tienes que elegir de 1 a 5 estrellas y contar brevemente qué tal fue. El enlace caduca en ${expiresInDays} ${
+        expiresInDays === 1 ? 'día' : 'días'
+      } y solo puede usarse una vez.`,
+      action: 'Dejar mi reseña',
+      link: url,
+    });
+  }
+
   /** Enlace para que el cliente siga la resolución de su reseña (sin cuenta). */
   async sendResolutionLink(
     to: string,

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import DashboardShell from '../../../components/DashboardShell';
+import ReviewRequestsPanel from '../../../components/reviews/ReviewRequestsPanel';
 import ShareReviewLink from '../../../components/reviews/ShareReviewLink';
 import TenantReviewItem, {
   REVIEW_STATUS_LABELS,
@@ -55,6 +56,7 @@ export default function ReviewsPage() {
   }, []);
 
   const canRespond = roleAtLeast(role, 'editor');
+  const canRequest = roleAtLeast(role, 'manager');
 
   useEffect(() => {
     api
@@ -150,6 +152,8 @@ export default function ReviewsPage() {
         </section>
 
         {company && <ShareReviewLink slug={company.slug} isPublic={company.isPublic} />}
+
+        <ReviewRequestsPanel canManage={canRequest} />
 
         <section className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">

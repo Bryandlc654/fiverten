@@ -39,6 +39,12 @@ export class SubmitReviewDto {
   @Equals(true, { message: 'Debes aceptar las condiciones para publicar tu reseña' })
   consent!: boolean;
 
+  /** Token del enlace personalizado de solicitud (?rt=...), si lo hay. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(256)
+  requestToken?: string;
+
   // Trampa para bots: el formulario lo oculta, una persona nunca lo rellena.
   @IsOptional()
   @IsString()

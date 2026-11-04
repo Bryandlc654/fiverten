@@ -198,6 +198,8 @@ export const rlsStatements: string[] = [
   // Centro de notificaciones: de la organización (el backend filtra además por
   // destinatario, user_id, para que cada miembro vea solo las suyas).
   ...tenantTablePolicy('notifications'),
+  // Solicitudes personalizadas de reseña: datos de clientes de la organización.
+  ...tenantTablePolicy('review_requests'),
   `DROP POLICY IF EXISTS rls_review_responses_public ON review_responses`,
   `CREATE POLICY rls_review_responses_public ON review_responses FOR SELECT
      USING (

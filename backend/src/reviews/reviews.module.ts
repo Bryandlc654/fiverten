@@ -9,6 +9,8 @@ import { PublicCasesController } from './public-cases.controller';
 import { PublicResolutionsController } from './public-resolutions.controller';
 import { PublicReviewsController } from './public-reviews.controller';
 import { PublicReviewsService } from './public-reviews.service';
+import { ReviewRequestsController } from './review-requests.controller';
+import { ReviewRequestsService } from './review-requests.service';
 import { ResolutionsService } from './resolutions.service';
 import { ReviewsController } from './reviews.controller';
 import { ReviewsService } from './reviews.service';
@@ -23,12 +25,14 @@ import { ReviewStatsService } from './stats.service';
     PublicResolutionsController,
     PublicCasesController,
     ReviewsController,
+    ReviewRequestsController,
     CompanyCasesController,
     AdminReviewsController,
     AdminCasesController,
   ],
   providers: [
     PublicReviewsService,
+    ReviewRequestsService,
     ReviewsService,
     ModerationService,
     ResolutionsService,

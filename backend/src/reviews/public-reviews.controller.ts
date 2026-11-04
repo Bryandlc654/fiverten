@@ -1,8 +1,10 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   DefaultValuePipe,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Param,
@@ -19,6 +21,7 @@ import { ReportReviewDto } from './dto/moderation.dto';
 import { ConfirmReviewDto, SubmitReviewDto } from './dto/submit-review.dto';
 import { ModerationService } from './moderation.service';
 import { PublicReviewsService } from './public-reviews.service';
+import { ReviewRequestsService } from './review-requests.service';
 import { parsePeriod, parseRating, REVIEW_SORTS, type ReviewSort } from './reviews.params';
 
 /** Perfil público y recepción de reseñas (sin sesión). */
@@ -27,14 +30,17 @@ export class PublicReviewsController {
   constructor(
     private readonly reviews: PublicReviewsService,
     private readonly moderation: ModerationService,
+    private readonly requests: ReviewRequestsService,
   ) {}
 
   @Get('organizations/:slug')
+  @Header('Cache-Control', 'public, max-age=30, stale-while-revalidate=120')
   getProfile(@Param('slug') slug: string) {
     return this.reviews.getProfile(slug);
   }
 
   @Get('organizations/:slug/reviews')
+  @Header('Cache-Control', 'public, max-age=30, stale-while-revalidate=120')
   listReviews(
     @Param('slug') slug: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
@@ -54,8 +60,19 @@ export class PublicReviewsController {
   }
 
   @Get('organizations/:slug/review-form')
+  @Header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
   getReviewForm(@Param('slug') slug: string) {
     return this.reviews.getReviewForm(slug);
+  }
+
+  /** Enlace personalizado de solicitud: valida el token y marca la apertura. */
+  @Get('organizations/:slug/review-request')
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  lookupRequest(@Param('slug') slug: string, @Query('token') token?: string) {
+    if (!token) {
+      throw new BadRequestException('Falta el token de la solicitud');
+    }
+    return this.requests.lookup(slug, token);
   }
 
   @Post('organizations/:slug/reviews')
@@ -68,6 +85,7 @@ export class PublicReviewsController {
   }
 
   @Get('report-reasons')
+  @Header('Cache-Control', 'public, max-age=300, stale-while-revalidate=600')
   reportReasons() {
     return this.moderation.listReasons();
   }

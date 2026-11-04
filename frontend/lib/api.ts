@@ -18,6 +18,8 @@ export interface User {
   isVerified: boolean;
   isSuperAdmin?: boolean;
   isFivertenStaff?: boolean;
+  /** Verificación en dos pasos (TOTP). */
+  mfaEnabled?: boolean;
 }
 
 export interface OrganizationDetail {
@@ -142,6 +144,42 @@ export interface SubmitReviewPayload {
   orderReference?: string;
   consent: boolean;
   website?: string;
+  /** Token del enlace personalizado de solicitud (?rt=...). */
+  requestToken?: string;
+}
+
+export type ReviewRequestStatus = 'sent' | 'opened' | 'completed';
+
+export interface ReviewRequestSummary {
+  id: string;
+  reviewerName: string;
+  reviewerEmail: string;
+  status: ReviewRequestStatus;
+  sentAt: string;
+  openedAt: string | null;
+  completedAt: string | null;
+  expiresAt: string;
+  reviewId: string | null;
+  expired: boolean;
+  createdAt: string;
+}
+
+export interface ReviewRequestList extends Paginated<ReviewRequestSummary> {
+  stats: { sent: number; opened: number; completed: number; conversion: number };
+}
+
+export interface ReviewRequestLookup {
+  reviewerName: string;
+  reviewerEmail: string;
+  completed: boolean;
+  expired: boolean;
+  expiresAt: string;
+  organization: { tradeName: string; slug: string; logoUrl: string | null };
+}
+
+export interface CreateReviewRequestPayload {
+  name: string;
+  email: string;
 }
 
 export type ReviewStatus =
@@ -507,6 +545,9 @@ export interface AuthResponse {
   refreshToken?: string | null;
   refreshExpiresAt?: string | null;
   requiresEmailVerification?: boolean;
+  /** La cuenta tiene 2FA: hay que resolver el reto antes de tener sesión. */
+  mfaRequired?: boolean;
+  mfaToken?: string | null;
   user: User;
   organization: Organization | null;
   role: string | null;
@@ -579,10 +620,14 @@ function once<T>(key: string, call: () => Promise<T>): Promise<T> {
 /** Rutas que no necesitan sesión (o que la crean) y no deben esperar. */
 // Rutas de /auth que sí necesitan la sesión restaurada (token de acceso).
 const AUTHENTICATED_AUTH_PATHS = [
+  '/auth/me',
   '/auth/sessions',
   '/auth/logout-all',
   '/auth/password/change',
   '/auth/verify-email/request',
+  '/auth/mfa/setup',
+  '/auth/mfa/enable',
+  '/auth/mfa/disable',
 ];
 
 function isSessionless(path: string): boolean {
@@ -829,6 +874,27 @@ export const api = {
       body: JSON.stringify({ token, newPassword }),
     });
   },
+  verifyMfa(mfaToken: string, code: string): Promise<AuthResponse> {
+    return request<AuthResponse>('/auth/mfa/verify', {
+      method: 'POST',
+      body: JSON.stringify({ mfaToken, code }),
+    });
+  },
+  mfaSetup(): Promise<{ secret: string; otpauthUrl: string }> {
+    return request<{ secret: string; otpauthUrl: string }>('/auth/mfa/setup', { method: 'POST' });
+  },
+  mfaEnable(code: string): Promise<{ enabled: boolean }> {
+    return request<{ enabled: boolean }>('/auth/mfa/enable', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    });
+  },
+  mfaDisable(password: string, code: string): Promise<{ enabled: boolean }> {
+    return request<{ enabled: boolean }>('/auth/mfa/disable', {
+      method: 'POST',
+      body: JSON.stringify({ password, code }),
+    });
+  },
   changePassword(
     currentPassword: string,
     newPassword: string,
@@ -1012,8 +1078,26 @@ export const api = {
   },
 
   // Perfil público y reseñas (sin sesión)
+  listReviewRequests(params: ListParams = {}): Promise<ReviewRequestList> {
+    return request<ReviewRequestList>(
+      `/organizations/me/review-requests${buildQuery(params)}`,
+    );
+  },
+  createReviewRequest(
+    payload: CreateReviewRequestPayload,
+  ): Promise<ReviewRequestSummary & { url: string }> {
+    return request<ReviewRequestSummary & { url: string }>('/organizations/me/review-requests', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
   publicProfile(slug: string): Promise<PublicProfile> {
     return request<PublicProfile>(`/public/organizations/${encodeURIComponent(slug)}`);
+  },
+  reviewRequestLookup(slug: string, token: string): Promise<ReviewRequestLookup> {
+    return request<ReviewRequestLookup>(
+      `/public/organizations/${encodeURIComponent(slug)}/review-request?token=${encodeURIComponent(token)}`,
+    );
   },
   publicReviews(slug: string, params: ReviewListParams = {}): Promise<Paginated<PublicReview>> {
     return request<Paginated<PublicReview>>(
