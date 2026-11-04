@@ -1,4 +1,5 @@
 import { Controller, Get, Header, Param } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -17,7 +18,10 @@ function escapeHtml(value: string): string {
  */
 @Controller('widget')
 export class WidgetController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {}
 
   @Get(':file')
   @Throttle({ default: { limit: 300, ttl: 60_000 } })
@@ -68,7 +72,10 @@ export class WidgetController {
     const stars = '★'.repeat(filled) + '☆'.repeat(Math.max(0, 5 - filled));
     const ratingText = average === null ? 'Sin reseñas' : `${average.toFixed(1)} / 5`;
     const countText = `${total} ${total === 1 ? 'reseña' : 'reseñas'}`;
-    const profileUrl = `https://fiverten.com/empresa/${encodeURIComponent(org.slug)}`;
+    const baseUrl = (
+      this.config.get<string>('FRONTEND_URL') ?? 'https://fiverten.com'
+    ).replace(/\/+$/, '');
+    const profileUrl = `${baseUrl}/empresa/${encodeURIComponent(org.slug)}`;
     const verified = org.verificationStatus === 'verified';
     const name = escapeHtml(org.tradeName);
     const idAttr = escapeHtml(org.publicId);

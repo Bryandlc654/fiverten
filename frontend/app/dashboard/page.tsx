@@ -38,6 +38,11 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<OrganizationStats | null>(null);
   const [orgDetail, setOrgDetail] = useState<OrganizationDetail | null>(null);
   const [statsError, setStatsError] = useState(false);
+  const [origin, setOrigin] = useState('https://fiverten.com');
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -124,8 +129,8 @@ export default function DashboardPage() {
   const company = organization?.tradeName ?? 'Sin organización';
   const isVerified = organization?.verificationStatus === 'verified';
   const publicUrl = organization?.slug
-    ? `https://fiverten.com/${organization.slug}`
-    : 'https://fiverten.com/mi-empresa';
+    ? `${origin}/empresa/${organization.slug}`
+    : `${origin}/mi-empresa`;
 
   return (
     <div className="flex-1 flex min-h-screen bg-slate-50 text-slate-900">
