@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { BillingModule } from '../billing/billing.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { AdminCasesController } from './admin-cases.controller';
 import { AdminReviewsController } from './admin-reviews.controller';
@@ -18,7 +19,7 @@ import { ReviewStatsController } from './stats.controller';
 import { ReviewStatsService } from './stats.service';
 
 @Module({
-  imports: [NotificationsModule],
+  imports: [NotificationsModule, BillingModule],
   controllers: [
     ReviewStatsController,
     PublicReviewsController,
@@ -39,5 +40,6 @@ import { ReviewStatsService } from './stats.service';
     ReviewCasesService,
     ReviewStatsService,
   ],
+  exports: [ModerationService, ReviewStatsService],
 })
 export class ReviewsModule {}

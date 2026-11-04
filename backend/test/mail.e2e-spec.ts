@@ -2,6 +2,8 @@ import { ConfigService } from '@nestjs/config';
 import { AddressInfo } from 'net';
 import { SMTPServer } from 'smtp-server';
 import { MailService } from '../src/mail/mail.service';
+import { PrismaService } from '../src/prisma/prisma.service';
+import { PlatformSettingsService } from '../src/settings/settings.service';
 
 // Quoted-printable: los "=XX" son bytes UTF-8, así que se decodifican a bytes y luego a texto.
 function decode(raw: string): string {
@@ -60,7 +62,14 @@ describe('FIVERTEN Mail SMTP (e2e)', () => {
       get: (key: string): string | undefined => env[key],
     } as unknown as ConfigService;
 
-    service = new MailService(config);
+    const prisma = {
+      withContext: async (
+        _context: unknown,
+        fn: (tx: { emailTemplate: { findUnique: () => Promise<null> } }) => Promise<unknown>,
+      ) => fn({ emailTemplate: { findUnique: async () => null } }),
+    } as unknown as PrismaService;
+    const settings = { get: async () => true } as unknown as PlatformSettingsService;
+    service = new MailService(config, prisma, settings);
     await service.onModuleInit();
   });
 

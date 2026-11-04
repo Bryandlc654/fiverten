@@ -236,6 +236,46 @@ CREATE POLICY rls_review_responses_public ON review_responses FOR SELECT
     )
   );
 
+ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_subscriptions ON subscriptions;
+
+CREATE POLICY rls_subscriptions ON subscriptions
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
+ALTER TABLE subscription_events ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_subscription_events ON subscription_events;
+
+CREATE POLICY rls_subscription_events ON subscription_events
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
+ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_payments ON payments;
+
+CREATE POLICY rls_payments ON payments
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
+ALTER TABLE platform_settings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_platform_settings ON platform_settings;
+
+CREATE POLICY rls_platform_settings ON platform_settings
+    USING (app_is_platform_admin())
+    WITH CHECK (app_is_platform_admin());
+
+ALTER TABLE email_templates ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_email_templates ON email_templates;
+
+CREATE POLICY rls_email_templates ON email_templates
+    USING (app_is_platform_admin())
+    WITH CHECK (app_is_platform_admin());
+
 ALTER TABLE permissions ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS rls_permissions ON permissions;
@@ -259,6 +299,54 @@ CREATE POLICY rls_report_reasons ON report_reasons
 DROP POLICY IF EXISTS rls_report_reasons_select ON report_reasons;
 
 CREATE POLICY rls_report_reasons_select ON report_reasons FOR SELECT USING (true);
+
+ALTER TABLE plans ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_plans ON plans;
+
+CREATE POLICY rls_plans ON plans
+    USING (app_is_platform_admin())
+    WITH CHECK (app_is_platform_admin());
+
+DROP POLICY IF EXISTS rls_plans_select ON plans;
+
+CREATE POLICY rls_plans_select ON plans FOR SELECT USING (true);
+
+ALTER TABLE sectors ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_sectors ON sectors;
+
+CREATE POLICY rls_sectors ON sectors
+    USING (app_is_platform_admin())
+    WITH CHECK (app_is_platform_admin());
+
+DROP POLICY IF EXISTS rls_sectors_select ON sectors;
+
+CREATE POLICY rls_sectors_select ON sectors FOR SELECT USING (true);
+
+ALTER TABLE countries ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_countries ON countries;
+
+CREATE POLICY rls_countries ON countries
+    USING (app_is_platform_admin())
+    WITH CHECK (app_is_platform_admin());
+
+DROP POLICY IF EXISTS rls_countries_select ON countries;
+
+CREATE POLICY rls_countries_select ON countries FOR SELECT USING (true);
+
+ALTER TABLE languages ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_languages ON languages;
+
+CREATE POLICY rls_languages ON languages
+    USING (app_is_platform_admin())
+    WITH CHECK (app_is_platform_admin());
+
+DROP POLICY IF EXISTS rls_languages_select ON languages;
+
+CREATE POLICY rls_languages_select ON languages FOR SELECT USING (true);
 
 ALTER TABLE auth_attempts ENABLE ROW LEVEL SECURITY;
 

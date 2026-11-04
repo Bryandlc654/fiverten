@@ -6,14 +6,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { BillingService } from '../billing/billing.service';
 import { hashToken, randomToken } from '../common/tokens';
 import { MailService } from '../mail/mail.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { PlatformSettingsService } from '../settings/settings.service';
 import { SubmitReviewDto } from './dto/submit-review.dto';
 import { ReviewCasesService } from './cases.service';
 import { ReviewRequestsService } from './review-requests.service';
-import { dataForStatus, LOW_RATING_MAX } from './review-states';
+import { dataForStatus } from './review-states';
 import { PUBLIC_REVIEW_SELECT, toPublicReview } from './reviews.mappers';
 import { reviewOrder, type ReviewSort } from './reviews.params';
 
@@ -71,6 +73,8 @@ export class PublicReviewsService {
     private readonly cases: ReviewCasesService,
     private readonly notifications: NotificationsService,
     private readonly requests: ReviewRequestsService,
+    private readonly billing: BillingService,
+    private readonly settings: PlatformSettingsService,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -106,6 +110,8 @@ export class PublicReviewsService {
       website: org.website,
       email: org.allowContact ? org.email : null,
       phone: org.allowContact ? org.phone : null,
+      sector: org.sector ? { slug: org.sector.slug, name: org.sector.name } : null,
+      country: org.country ? { iso2: org.country.iso2, name: org.country.name } : null,
       verified: org.verificationStatus === 'verified',
       createdAt: org.createdAt,
       // La media y el total siguen incluyendo todas las reseñas publicadas:
@@ -121,6 +127,7 @@ export class PublicReviewsService {
 
   async listReviews(slug: string, query: ListQuery) {
     const org = await this.findOrganization(slug, { requirePublic: true });
+    const lowRatingMax = await this.settings.lowRatingMax();
     const page = Math.max(1, query.page);
     const pageSize = Math.min(50, Math.max(1, query.pageSize));
     const where: Prisma.ReviewWhereInput = { organizationId: org.id, ...PUBLISHED };
@@ -128,7 +135,7 @@ export class PublicReviewsService {
       where.rating = query.rating;
     }
     if (org.hideLowRatings) {
-      where.AND = [{ rating: { gt: LOW_RATING_MAX } }];
+      where.AND = [{ rating: { gt: lowRatingMax } }];
     }
     if (query.since) {
       where.publishedAt = { gte: query.since };
@@ -198,6 +205,8 @@ export class PublicReviewsService {
         throw new ConflictException(duplicateMessage(duplicate));
       }
 
+      await this.billing.assertCanReceiveReview(tx, org.id);
+
       const created = await tx.review.create({
         data: {
           organizationId: org.id,
@@ -233,6 +242,7 @@ export class PublicReviewsService {
    * reseña se publica; si las hay, queda en revisión para moderación.
    */
   async confirm(token: string) {
+    const lowRatingMax = await this.settings.lowRatingMax();
     const result = await this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
       const review = await tx.review.findUnique({
         where: { confirmTokenHash: hashToken(token) },
@@ -249,7 +259,7 @@ export class PublicReviewsService {
 
       const flags = await this.antifraudFlags(tx, review);
       // Una reseña de baja valoración no se publica sin revisar sus evidencias.
-      const lowRating = review.rating <= LOW_RATING_MAX;
+      const lowRating = review.rating <= lowRatingMax;
       const publish = flags.length === 0 && !lowRating;
       const to = publish ? 'published' : 'under_review';
 
@@ -356,7 +366,13 @@ export class PublicReviewsService {
   private async findOrganization(slug: string, options: { requirePublic: boolean }) {
     // La búsqueda por slug es anterior a conocer el tenant: contexto de plataforma.
     const org = await this.prisma.withContext({ isPlatformAdmin: true }, (tx) =>
-      tx.organization.findFirst({ where: { slug: slug.toLowerCase(), deletedAt: null } }),
+      tx.organization.findFirst({
+        where: { slug: slug.toLowerCase(), deletedAt: null },
+        include: {
+          sector: { select: { slug: true, name: true } },
+          country: { select: { iso2: true, name: true } },
+        },
+      }),
     );
     if (
       !org ||

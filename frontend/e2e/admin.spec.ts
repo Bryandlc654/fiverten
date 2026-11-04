@@ -36,7 +36,7 @@ test.describe('Panel de administración general', () => {
 
     await expect(page.getByRole('heading', { name: 'Panel general' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Empresas', exact: true })).toBeVisible();
-    await expect(page.getByText('Verificadas')).toBeVisible();
+    await expect(page.getByText('Verificadas', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Nueva empresa' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Usuarios', exact: true }).click();
@@ -57,6 +57,6 @@ test.describe('Panel de administración general', () => {
 
     await page.waitForURL(/\/admin\/organizations\/(?!new)[0-9a-f-]+$/);
     await expect(page.getByRole('heading', { name: tradeName })).toBeVisible();
-    await expect(page.getByText(/Miembros \(/)).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Miembros', exact: true })).toBeVisible();
   });
 });

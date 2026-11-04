@@ -2,7 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { effectiveRole, roleAtLeast } from '../common/roles';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { LOW_RATING_MAX } from '../reviews/review-states';
+import { PlatformSettingsService } from '../settings/settings.service';
 
 export type NotificationType = 'new_review' | 'negative_review';
 
@@ -33,6 +33,7 @@ export class NotificationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mail: MailService,
+    private readonly settings: PlatformSettingsService,
   ) {}
 
   /**
@@ -41,7 +42,8 @@ export class NotificationsService {
    */
   async reviewPublished(review: PublishedReview): Promise<void> {
     try {
-      const notice = await this.storeReviewNotice(review);
+      const lowRatingMax = await this.settings.lowRatingMax();
+      const notice = await this.storeReviewNotice(review, lowRatingMax);
       if (!notice) return;
       await Promise.all(
         notice.emails.map((email) =>
@@ -125,9 +127,9 @@ export class NotificationsService {
   }
 
   /** Guarda el aviso para cada miembro y devuelve a quién escribir (null si está desactivado). */
-  private async storeReviewNotice(review: PublishedReview) {
+  private async storeReviewNotice(review: PublishedReview, lowRatingMax: number) {
     const orgId = review.organizationId;
-    const negative = review.rating <= LOW_RATING_MAX;
+    const negative = review.rating <= lowRatingMax;
     return this.prisma.withContext({ orgId }, async (tx) => {
       const org = await tx.organization.findUnique({
         where: { id: orgId },

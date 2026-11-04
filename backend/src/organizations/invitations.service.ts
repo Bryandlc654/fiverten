@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
+import { BillingService } from '../billing/billing.service';
 import { hashPassword } from '../common/passwords';
 import * as ROLES from '../common/roles';
 import { ensureSystemRole } from '../common/system-roles';
@@ -41,6 +42,7 @@ export class InvitationsService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     private readonly mail: MailService,
+    private readonly billing: BillingService,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -112,6 +114,34 @@ export class InvitationsService {
       });
       return { success: true };
     });
+  }
+
+  /**
+   * Invitación creada por el super admin: sin límites de rango (la plataforma
+   * puede asignar cualquier rol), pero sí respetando el límite de usuarios del plan.
+   */
+  async inviteAsAdmin(orgId: string, actorId: string, dto: CreateInvitationDto) {
+    const input: InvitationInput = {
+      email: dto.email.trim().toLowerCase(),
+      role: dto.role ?? 'viewer',
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+    };
+    const { invitation, token, orgName } = await this.prisma.withContext(
+      { isPlatformAdmin: true },
+      async (tx) => {
+        const alreadyMember = await tx.organizationMembership.findFirst({
+          where: { organizationId: orgId, user: { email: input.email } },
+          select: { id: true },
+        });
+        if (alreadyMember) {
+          throw new ConflictException('El usuario ya pertenece a la empresa');
+        }
+        return this.createInvitation(tx, orgId, actorId, input);
+      },
+    );
+    void this.sendInvitation(invitation.email, token, orgName, invitation.role);
+    return toInvitation(invitation);
   }
 
   // ---------------------------------------------------------------------------
@@ -237,6 +267,8 @@ export class InvitationsService {
       where: { organizationId: orgId, email: input.email, acceptedAt: null, revokedAt: null },
       data: { revokedAt: new Date() },
     });
+
+    await this.billing.assertCanAddUser(tx, orgId);
 
     const token = randomToken(32);
     const ttlHours = Number(this.config.get<string>('INVITATION_TTL_HOURS') ?? 72);

@@ -2,6 +2,8 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import type { SentMessageInfo, Transporter } from 'nodemailer';
+import { PrismaService } from '../prisma/prisma.service';
+import { PlatformSettingsService } from '../settings/settings.service';
 
 type TransportMode = 'resend' | 'smtp' | 'json' | 'log';
 
@@ -10,13 +12,18 @@ const RESEND_API_URL = 'https://api.resend.com/emails';
 const RESEND_TIMEOUT_MS = 15_000;
 
 interface MailMessage {
+  /** Código estable usado por las plantillas editables del super admin. */
+  code: string;
   kind: string;
+  category: 'transactional' | 'notification';
   to: string;
   subject: string;
   title: string;
   intro: string;
   action: string;
   link: string;
+  /** Variables disponibles para las plantillas ({{organization}}, {{name}}…). */
+  vars?: Record<string, string>;
   /** Aviso destacado sobre el título (p. ej. una reseña negativa). */
   highlight?: string;
 }
@@ -28,7 +35,11 @@ export class MailService implements OnModuleInit {
   private readonly logger = new Logger(MailService.name);
   private transporter: Transporter | null = null;
 
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly config: ConfigService,
+    private readonly prisma: PrismaService,
+    private readonly settings: PlatformSettingsService,
+  ) {}
 
   async onModuleInit(): Promise<void> {
     if (this.mode === 'smtp') {
@@ -54,6 +65,8 @@ export class MailService implements OnModuleInit {
   async sendEmailVerification(to: string, token: string): Promise<void> {
     const link = `${this.frontendUrl}/verify-email?token=${encodeURIComponent(token)}`;
     await this.send({
+      code: 'email_verification',
+      category: 'transactional',
       kind: 'verificacion de correo',
       to,
       subject: `Verifica tu correo en ${BRAND}`,
@@ -67,6 +80,8 @@ export class MailService implements OnModuleInit {
   async sendPasswordReset(to: string, token: string): Promise<void> {
     const link = `${this.frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
     await this.send({
+      code: 'password_reset',
+      category: 'transactional',
       kind: 'recuperacion de contrasena',
       to,
       subject: `Recupera tu contrasena - ${BRAND}`,
@@ -85,7 +100,10 @@ export class MailService implements OnModuleInit {
   ): Promise<void> {
     const link = `${this.frontendUrl}/accept-invitation?token=${encodeURIComponent(token)}`;
     await this.send({
+      code: 'organization_invitation',
+      category: 'transactional',
       kind: 'invitacion a empresa',
+      vars: { organization: organizationName, role: roleLabel },
       to,
       subject: `Te han invitado a ${organizationName} en ${BRAND}`,
       title: `Únete a ${organizationName}`,
@@ -98,7 +116,10 @@ export class MailService implements OnModuleInit {
   async sendReviewConfirmation(to: string, token: string, organizationName: string): Promise<void> {
     const link = `${this.frontendUrl}/confirmar-resena?token=${encodeURIComponent(token)}`;
     await this.send({
+      code: 'review_confirmation',
+      category: 'transactional',
       kind: 'confirmacion de resena',
+      vars: { organization: organizationName },
       to,
       subject: `Confirma tu reseña de ${organizationName} - ${BRAND}`,
       title: 'Confirma tu reseña',
@@ -118,7 +139,10 @@ export class MailService implements OnModuleInit {
   ): Promise<void> {
     const name = clientName.trim() || 'cliente';
     await this.send({
+      code: 'review_request',
+      category: 'notification',
       kind: 'solicitud de reseña',
+      vars: { organization: organizationName, name, days: String(expiresInDays) },
       to,
       subject: `${organizationName} te invita a contar tu experiencia - ${BRAND}`,
       title: `Hola ${name}, ¿cómo fue tu experiencia con ${organizationName}?`,
@@ -140,7 +164,10 @@ export class MailService implements OnModuleInit {
     const link = `${this.frontendUrl}/resolucion/${encodeURIComponent(token)}`;
     const opened = kind === 'open';
     await this.send({
+      code: opened ? 'resolution_open' : 'resolution_message',
+      category: 'notification',
       kind: 'resolucion de incidencia',
+      vars: { organization: organizationName },
       to,
       subject: opened
         ? `${organizationName} quiere resolver tu experiencia - ${BRAND}`
@@ -164,6 +191,8 @@ export class MailService implements OnModuleInit {
     caseId: string,
   ): Promise<void> {
     await this.send({
+      code: 'case_admin',
+      category: 'notification',
       kind: 'caso de evidencias (admin)',
       to,
       subject: `${title} - ${BRAND}`,
@@ -182,6 +211,8 @@ export class MailService implements OnModuleInit {
     caseId: string,
   ): Promise<void> {
     await this.send({
+      code: 'case_company',
+      category: 'notification',
       kind: 'caso de evidencias (empresa)',
       to,
       subject: `${title} - ${BRAND}`,
@@ -200,6 +231,8 @@ export class MailService implements OnModuleInit {
     token: string,
   ): Promise<void> {
     await this.send({
+      code: 'case_client',
+      category: 'notification',
       kind: 'caso de evidencias (cliente)',
       to,
       subject: `${title} - ${BRAND}`,
@@ -218,6 +251,8 @@ export class MailService implements OnModuleInit {
     negative: boolean,
   ): Promise<void> {
     await this.send({
+      code: 'review_notice',
+      category: 'notification',
       kind: negative ? 'reseña negativa (empresa)' : 'nueva reseña (empresa)',
       to,
       subject: `${title} - ${BRAND}`,
@@ -244,7 +279,12 @@ export class MailService implements OnModuleInit {
   // ---------------------------------------------------------------------------
   // Internos
   // ---------------------------------------------------------------------------
-  private async send(message: MailMessage): Promise<void> {
+  private async send(incoming: MailMessage): Promise<void> {
+    const message = await this.withTemplate(incoming);
+    if (!message) {
+      this.logger.log(`[MAIL][${incoming.kind}] omitido: avisos por correo desactivados`);
+      return;
+    }
     if (this.mode === 'log') {
       this.logger.log(`[MAIL][${message.kind}] from=${this.fromAddress} to=${message.to}`);
       // El enlace contiene un token de un solo uso: sólo se registra fuera de
@@ -303,6 +343,43 @@ export class MailService implements OnModuleInit {
     }
     const data = (await response.json()) as { id?: string };
     return data.id ?? 'n/a';
+  }
+
+  /** Aplica la plantilla editable (si existe) y el interruptor global de avisos. */
+  private async withTemplate(message: MailMessage): Promise<MailMessage | null> {
+    if (message.category === 'notification') {
+      try {
+        const enabled = await this.settings.get<boolean>('notifications.email_enabled');
+        if (!enabled) {
+          return null;
+        }
+      } catch {
+        // Si no se puede leer la configuración, se mantiene el envío.
+      }
+    }
+    try {
+      const template = await this.prisma.withContext({ isPlatformAdmin: true }, (tx) =>
+        tx.emailTemplate.findUnique({ where: { code: message.code } }),
+      );
+      if (!template || !template.isActive) {
+        return message;
+      }
+      const vars: Record<string, string> = {
+        link: message.link,
+        action: message.action,
+        site: BRAND,
+        ...(message.vars ?? {}),
+      };
+      return {
+        ...message,
+        subject: renderTemplate(template.subject, vars),
+        title: renderTemplate(template.title, vars),
+        intro: renderTemplate(template.intro, vars),
+        action: renderTemplate(template.action, vars),
+      };
+    } catch {
+      return message;
+    }
   }
 
   private get resendApiKey(): string {
@@ -419,6 +496,10 @@ export class MailService implements OnModuleInit {
   private isTruthy(value: string | undefined): boolean {
     return value === 'true' || value === '1';
   }
+}
+
+function renderTemplate(text: string, vars: Record<string, string>): string {
+  return text.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_match, key: string) => vars[key] ?? '');
 }
 
 function escapeHtml(value: string): string {

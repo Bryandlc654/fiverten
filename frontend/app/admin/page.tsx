@@ -13,6 +13,7 @@ import {
   api,
   type AdminOrganizationSummary,
   type AdminUser,
+  type BillingStats,
   type PlatformStats,
 } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
@@ -41,6 +42,7 @@ function AdminContent() {
   const { isSuperAdmin, isLoading } = useAuth();
   const [tab, setTab] = useState<Tab>('organizations');
   const [stats, setStats] = useState<PlatformStats | null>(null);
+  const [billing, setBilling] = useState<BillingStats | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [orgs, setOrgs] = useState<AdminOrganizationSummary[]>([]);
@@ -68,9 +70,11 @@ function AdminContent() {
 
   useEffect(() => {
     if (!isSuperAdmin) return;
-    api
-      .adminStats()
-      .then(setStats)
+    Promise.all([api.adminStats(), api.adminBillingStats()])
+      .then(([platformStats, billingStats]) => {
+        setStats(platformStats);
+        setBilling(billingStats);
+      })
       .catch((err) =>
         setError(err instanceof ApiError ? err.message : 'No se pudieron cargar los datos'),
       );
@@ -140,6 +144,19 @@ function AdminContent() {
         {error && <Alert tone="error">{error}</Alert>}
 
         <PlatformStatCards stats={stats} />
+
+        <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <BillingMetric label="MRR" value={billing ? `${billing.mrr} €` : '—'} />
+          <BillingMetric
+            label="Ingresos 30 días"
+            value={billing ? `${billing.revenue.last30} €` : '—'}
+          />
+          <BillingMetric
+            label="Suscripciones activas"
+            value={billing?.subscriptions.active ?? '—'}
+          />
+          <BillingMetric label="En prueba" value={billing?.subscriptions.trialing ?? '—'} />
+        </section>
 
         <section className="rounded-xl border border-slate-200 bg-white">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
@@ -226,5 +243,14 @@ function AdminContent() {
         </section>
       </div>
     </DashboardShell>
+  );
+}
+
+function BillingMetric({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <p className="text-2xl font-bold text-slate-900">{value}</p>
+      <p className="text-xs text-slate-500">{label}</p>
+    </div>
   );
 }

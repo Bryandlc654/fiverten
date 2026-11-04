@@ -3,9 +3,11 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import DashboardShell from '../../../../components/DashboardShell';
+import AdminOrganizationInsights from '../../../../components/admin/AdminOrganizationInsights';
+import AdminOrganizationMembers from '../../../../components/admin/AdminOrganizationMembers';
+import AdminOrganizationSubscription from '../../../../components/admin/AdminOrganizationSubscription';
 import CreateOrganizationForm from '../../../../components/admin/CreateOrganizationForm';
 import EditOrganizationForm from '../../../../components/admin/EditOrganizationForm';
-import OrganizationMembers from '../../../../components/admin/OrganizationMembers';
 import { Alert } from '../../../../components/ui';
 import { ApiError, api, type AdminOrganizationDetail } from '../../../../lib/api';
 import { useAuth } from '../../../../lib/auth-context';
@@ -70,10 +72,14 @@ export default function AdminOrganizationPage() {
             organization={organization}
             onSaved={(updated) => setOrganization({ ...organization, ...updated })}
           />
-          <OrganizationMembers
+          <AdminOrganizationMembers
+            organizationId={organization.id}
             members={organization.members}
             invitations={organization.invitations}
+            onChange={() => void load()}
           />
+          <AdminOrganizationInsights organizationId={organization.id} />
+          <AdminOrganizationSubscription organizationId={organization.id} />
         </div>
       ) : (
         <Alert tone="error">{error ?? 'Empresa no encontrada'}</Alert>

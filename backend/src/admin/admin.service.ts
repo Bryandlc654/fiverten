@@ -5,6 +5,8 @@ import * as ROLES from '../common/roles';
 import { ensureAllSystemRoles } from '../common/system-roles';
 import { buildUniqueSlug } from '../common/unique';
 import { InvitationsService } from '../organizations/invitations.service';
+import { CreateInvitationDto } from '../organizations/dto/create-invitation.dto';
+import { UpdateMemberDto } from '../organizations/dto/update-member.dto';
 import {
   toInvitation,
   toMember,
@@ -12,6 +14,9 @@ import {
   toOrganizationSummary,
 } from '../organizations/organizations.mappers';
 import { PrismaService } from '../prisma/prisma.service';
+import { ModerationService } from '../reviews/moderation.service';
+import type { ReviewStatus } from '../reviews/reviews.mappers';
+import { ReviewStatsService } from '../reviews/stats.service';
 import { AdminUpdateOrganizationDto } from './dto/admin-update-organization.dto';
 import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
@@ -34,6 +39,8 @@ export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly invitations: InvitationsService,
+    private readonly moderation: ModerationService,
+    private readonly reviewStats: ReviewStatsService,
   ) {}
 
   // Caché en proceso de las métricas de plataforma (evita agregados costosos en
@@ -145,6 +152,91 @@ export class AdminService {
         invitations: org.invitations.map((invitation) => toInvitation(invitation)),
       };
     });
+  }
+
+  /** Reseñas de una empresa concreta, para la ficha del super admin. */
+  organizationReviews(
+    id: string,
+    query: { page: number; pageSize: number; status?: string; search?: string },
+  ) {
+    return this.moderation.adminList({
+      organizationId: id,
+      page: query.page,
+      pageSize: query.pageSize,
+      status: query.status as ReviewStatus | undefined,
+      search: query.search,
+    });
+  }
+
+  /** Estadísticas de reputación de una empresa concreta. */
+  organizationStats(id: string, months: number) {
+    return this.reviewStats.overview(id, months);
+  }
+
+  async updateOrganizationMember(
+    orgId: string,
+    membershipId: string,
+    dto: UpdateMemberDto,
+  ) {
+    return this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
+      const membership = await tx.organizationMembership.findFirst({
+        where: { id: membershipId, organizationId: orgId },
+        include: { role: true },
+      });
+      if (!membership) throw new NotFoundException('Miembro no encontrado');
+      const data: Prisma.OrganizationMembershipUpdateInput = {};
+
+      if (dto.role) {
+        const role = await tx.role.findFirst({
+          where: { organizationId: orgId, baseRole: dto.role },
+        });
+        if (!role) throw new NotFoundException('Rol no encontrado');
+        data.role = { connect: { id: role.id } };
+        data.isOwner = dto.role === 'owner';
+      }
+      if (dto.isActive !== undefined) {
+        data.isActive = dto.isActive;
+      }
+
+      if (membership.isOwner && (dto.role !== 'owner' || dto.isActive === false)) {
+        const owners = await tx.organizationMembership.count({
+          where: { organizationId: orgId, isOwner: true, isActive: true },
+        });
+        if (owners <= 1) {
+          throw new BadRequestException('La empresa debe tener al menos un propietario');
+        }
+      }
+
+      const updated = await tx.organizationMembership.update({
+        where: { id: membershipId },
+        data,
+        include: { user: true, role: true },
+      });
+      return toMember(updated);
+    });
+  }
+
+  async removeOrganizationMember(orgId: string, membershipId: string) {
+    return this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
+      const membership = await tx.organizationMembership.findFirst({
+        where: { id: membershipId, organizationId: orgId },
+      });
+      if (!membership) throw new NotFoundException('Miembro no encontrado');
+      if (membership.isOwner) {
+        const owners = await tx.organizationMembership.count({
+          where: { organizationId: orgId, isOwner: true, isActive: true },
+        });
+        if (owners <= 1) {
+          throw new BadRequestException('La empresa debe tener al menos un propietario');
+        }
+      }
+      await tx.organizationMembership.delete({ where: { id: membershipId } });
+      return { success: true };
+    });
+  }
+
+  organizationInvite(orgId: string, actorId: string, dto: CreateInvitationDto) {
+    return this.invitations.inviteAsAdmin(orgId, actorId, dto);
   }
 
   async createOrganization(dto: CreateOrganizationDto, actorId: string) {

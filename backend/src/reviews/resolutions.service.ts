@@ -9,8 +9,9 @@ import { Prisma } from '@prisma/client';
 import { hashToken, randomToken } from '../common/tokens';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { PlatformSettingsService } from '../settings/settings.service';
 import { ClientRejectDto, ClientReviewUpdateDto } from './dto/resolution.dto';
-import { ACTIVE_RESOLUTION_STATUSES, LOW_RATING_MAX } from './review-states';
+import { ACTIVE_RESOLUTION_STATUSES } from './review-states';
 import { reviewStatus } from './reviews.mappers';
 
 const RESOLUTION_TTL_DAYS = 30;
@@ -32,6 +33,7 @@ export class ResolutionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mail: MailService,
+    private readonly settings: PlatformSettingsService,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -53,6 +55,12 @@ export class ResolutionsService {
 
   /** Abre una resolución: crea el enlace para el cliente y le envía el primer mensaje. */
   async open(orgId: string, actorId: string, reviewId: string, message: string) {
+    if (!(await this.settings.allowLowRatingResolution())) {
+      throw new BadRequestException(
+        'La resolución de incidencias está desactivada por la plataforma',
+      );
+    }
+    const lowRatingMax = await this.settings.lowRatingMax();
     const token = randomToken(32);
     const text = message.trim();
 
@@ -63,9 +71,9 @@ export class ResolutionsService {
         if (reviewStatus(review) !== 'published') {
           throw new BadRequestException('Solo se puede resolver una reseña publicada');
         }
-        if (review.rating > LOW_RATING_MAX) {
+        if (review.rating > lowRatingMax) {
           throw new BadRequestException(
-            `Solo se pueden resolver reseñas de ${LOW_RATING_MAX} estrellas o menos`,
+            `Solo se pueden resolver reseñas de ${lowRatingMax} estrellas o menos`,
           );
         }
         const active = await tx.reviewResolution.findFirst({

@@ -1,4 +1,4 @@
-import { IsBoolean, IsEmail, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
 /** Campos que un administrador de la empresa puede editar por si mismo. */
 export class UpdateOrganizationDto {
@@ -73,4 +73,12 @@ export class UpdateOrganizationDto {
   @IsString()
   @MaxLength(10)
   locale?: string;
+
+  @IsOptional()
+  @IsUUID()
+  sectorId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  countryId?: string;
 }

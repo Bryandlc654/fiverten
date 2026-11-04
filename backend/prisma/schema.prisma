@@ -64,6 +64,12 @@ model Organization {
   reviewRequests     ReviewRequest[]
   notifications      Notification[]
 
+  sector             Sector?               @relation(fields: [sectorId], references: [id])
+  country            Country?              @relation(fields: [countryId], references: [id])
+  subscription       Subscription?
+  subscriptionEvents SubscriptionEvent[]
+  payments           Payment[]
+
   @@index([slug])
   @@index([status, isActive, deletedAt])
   @@index([verificationStatus, deletedAt])
@@ -604,3 +610,173 @@ model AuthAttempt {
   @@index([userId, createdAt])
   @@map("auth_attempts")
 }
+
+// ============================================================================
+// Membresías, suscripciones, pagos y configuración de plataforma
+// ============================================================================
+
+model Plan {
+  id           String   @id @default(uuid()) @db.Uuid
+  code         String   @unique @db.VarChar(40)
+  name         String   @db.VarChar(100)
+  description  String?  @db.Text
+  priceMonthly Decimal  @default(0) @map("price_monthly") @db.Decimal(10, 2)
+  priceYearly  Decimal  @default(0) @map("price_yearly") @db.Decimal(10, 2)
+  currency     String   @default("EUR") @db.Char(3)
+  // null = sin límite.
+  reviewLimit  Int?     @map("review_limit")
+  userLimit    Int?     @map("user_limit")
+  features     Json     @default("{}") @db.JsonB
+  isActive     Boolean  @default(true) @map("is_active")
+  isPublic     Boolean  @default(true) @map("is_public")
+  sortOrder    Int      @default(0) @map("sort_order")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  subscriptions Subscription[]
+
+  @@index([isActive, sortOrder])
+  @@map("plans")
+}
+
+model Subscription {
+  id                 String    @id @default(uuid()) @db.Uuid
+  organizationId     String    @unique @map("organization_id") @db.Uuid
+  planId             String    @map("plan_id") @db.Uuid
+  // trialing | active | past_due | cancelled | expired
+  status             String    @default("trialing") @db.VarChar(20)
+  // monthly | yearly
+  billingCycle       String    @default("monthly") @map("billing_cycle") @db.VarChar(20)
+  currentPeriodStart DateTime  @map("current_period_start") @db.Timestamptz(6)
+  currentPeriodEnd   DateTime  @map("current_period_end") @db.Timestamptz(6)
+  trialEndsAt        DateTime? @map("trial_ends_at") @db.Timestamptz(6)
+  cancelAtPeriodEnd  Boolean   @default(false) @map("cancel_at_period_end")
+  cancelledAt        DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  startedAt          DateTime  @default(now()) @map("started_at") @db.Timestamptz(6)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan         Plan                @relation(fields: [planId], references: [id])
+  events       SubscriptionEvent[]
+  payments     Payment[]
+
+  @@index([planId, status])
+  @@index([status, currentPeriodEnd])
+  @@map("subscriptions")
+}
+
+model SubscriptionEvent {
+  id             String   @id @default(uuid()) @db.Uuid
+  subscriptionId String   @map("subscription_id") @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  // created | plan_changed | status_changed | cancelled | renewed
+  type           String   @db.VarChar(30)
+  fromPlanId     String?  @map("from_plan_id") @db.Uuid
+  toPlanId       String?  @map("to_plan_id") @db.Uuid
+  fromStatus     String?  @map("from_status") @db.VarChar(20)
+  toStatus       String?  @map("to_status") @db.VarChar(20)
+  note           String?  @db.Text
+  actorUserId    String?  @map("actor_user_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId, createdAt])
+  @@index([organizationId, createdAt])
+  @@map("subscription_events")
+}
+
+model Payment {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  subscriptionId String?   @map("subscription_id") @db.Uuid
+  amount         Decimal   @db.Decimal(10, 2)
+  currency       String    @default("EUR") @db.Char(3)
+  // paid | pending | failed | refunded
+  status         String    @default("paid") @db.VarChar(20)
+  // manual | card | transfer | other
+  method         String    @default("manual") @db.VarChar(20)
+  reference      String?   @db.VarChar(120)
+  periodStart    DateTime? @map("period_start") @db.Date
+  periodEnd      DateTime? @map("period_end") @db.Date
+  paidAt         DateTime? @map("paid_at") @db.Timestamptz(6)
+  createdBy      String?   @map("created_by") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([status, createdAt])
+  @@map("payments")
+}
+
+model PlatformSetting {
+  key         String   @id @db.VarChar(100)
+  value       Json     @db.JsonB
+  description String?  @db.VarChar(255)
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("platform_settings")
+}
+
+// Catálogos globales editables por el super admin.
+model Sector {
+  id          String   @id @default(uuid()) @db.Uuid
+  slug        String   @unique @db.VarChar(120)
+  name        String   @db.VarChar(150)
+  description String?  @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organizations Organization[]
+
+  @@index([isActive, sortOrder])
+  @@map("sectors")
+}
+
+model Country {
+  id        String   @id @default(uuid()) @db.Uuid
+  iso2      String   @unique @db.Char(2)
+  name      String   @db.VarChar(150)
+  isActive  Boolean  @default(true) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organizations Organization[]
+
+  @@index([isActive, sortOrder])
+  @@map("countries")
+}
+
+model Language {
+  code      String   @id @db.VarChar(10)
+  name      String   @db.VarChar(100)
+  isActive  Boolean  @default(true) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([isActive, sortOrder])
+  @@map("languages")
+}
+
+model EmailTemplate {
+  code      String   @id @db.VarChar(60)
+  subject   String   @db.VarChar(200)
+  title     String   @db.VarChar(200)
+  intro     String   @db.Text
+  action    String   @db.VarChar(80)
+  isActive  Boolean  @default(true) @map("is_active")
+  updatedBy String?  @map("updated_by") @db.Uuid
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("email_templates")
+}
+

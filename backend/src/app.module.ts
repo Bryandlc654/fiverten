@@ -4,6 +4,8 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
+import { BillingModule } from './billing/billing.module';
+import { ConfigurationModule } from './configuration/configuration.module';
 import { validateEnvironment } from './config/env.validation';
 import { HealthController } from './health/health.controller';
 import { MailModule } from './mail/mail.module';
@@ -11,6 +13,7 @@ import { MediaModule } from './media/media.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -25,12 +28,15 @@ import { ReviewsModule } from './reviews/reviews.module';
       errorMessage: 'Demasiadas solicitudes. Inténtalo de nuevo mas tarde.',
     }),
     PrismaModule,
+    SettingsModule,
     MailModule,
     AuthModule,
     OrganizationsModule,
     AdminModule,
     MediaModule,
     ReviewsModule,
+    BillingModule,
+    ConfigurationModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

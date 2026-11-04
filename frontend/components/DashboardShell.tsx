@@ -14,11 +14,14 @@ export type NavKey =
   | 'profile'
   | 'reviews'
   | 'cases'
+  | 'membership'
   | 'security'
   | 'adminOrgs'
   | 'adminUsers'
   | 'adminReviews'
-  | 'adminCases';
+  | 'adminCases'
+  | 'adminBilling'
+  | 'adminConfig';
 
 interface DashboardShellProps {
   active: NavKey;
@@ -43,6 +46,7 @@ const TENANT_NAV: NavItem[] = [
   { key: 'users', label: 'Usuarios', icon: 'group', href: '/dashboard/users' },
   { key: 'reviews', label: 'Opiniones', icon: 'reviews', href: '/dashboard/reviews' },
   { key: 'cases', label: 'Casos', icon: 'policy', href: '/dashboard/casos' },
+  { key: 'membership', label: 'Mi plan', icon: 'workspace_premium', href: '/dashboard/membresia' },
   { key: 'profile', label: 'Perfil público', icon: 'verified', href: '/empresa' },
   { key: 'security', label: 'Seguridad', icon: 'shield_lock', href: '/dashboard/seguridad' },
 ];
@@ -58,6 +62,8 @@ const ADMIN_NAV: NavItem[] = [
   { key: 'adminUsers', label: 'Usuarios', icon: 'group', href: '/admin?tab=users' },
   { key: 'adminReviews', label: 'Reseñas', icon: 'gavel', href: '/admin/reviews' },
   { key: 'adminCases', label: 'Casos', icon: 'policy', href: '/admin/casos' },
+  { key: 'adminBilling', label: 'Membresías', icon: 'payments', href: '/admin/suscripciones' },
+  { key: 'adminConfig', label: 'Configuración', icon: 'settings', href: '/admin/configuracion' },
   { key: 'security', label: 'Seguridad', icon: 'shield_lock', href: '/dashboard/seguridad' },
 ];
 

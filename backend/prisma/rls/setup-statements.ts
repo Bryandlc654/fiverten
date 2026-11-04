@@ -212,9 +212,22 @@ export const rlsStatements: string[] = [
        )
      )`,
 
+  // Membresías, suscripciones y pagos: datos de la organización.
+  ...tenantTablePolicy('subscriptions'),
+  ...tenantTablePolicy('subscription_events'),
+  ...tenantTablePolicy('payments'),
+
+  // Configuración y plantillas: solo plataforma.
+  ...platformTablePolicy('platform_settings'),
+  ...platformTablePolicy('email_templates'),
+
   // Catálogos globales: lectura para todos, escritura solo plataforma.
   ...catalogTablePolicy('permissions'),
   ...catalogTablePolicy('report_reasons'),
+  ...catalogTablePolicy('plans'),
+  ...catalogTablePolicy('sectors'),
+  ...catalogTablePolicy('countries'),
+  ...catalogTablePolicy('languages'),
 
   // Uso interno de la plataforma: auditoría de autenticación, reportes de
   // reseñas e historial de moderación (el backend los escribe como sistema).

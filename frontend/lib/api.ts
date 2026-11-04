@@ -47,6 +47,8 @@ export interface OrganizationDetail {
   notifyNewReviews: boolean;
   /** Aviso destacado de las reseñas de 1 y 2 estrellas. */
   notifyNegativeReviews: boolean;
+  sectorId: string | null;
+  countryId: string | null;
   createdAt: string;
   verifiedAt: string | null;
 }
@@ -101,6 +103,8 @@ export interface PublicProfile {
   website: string | null;
   email: string | null;
   phone: string | null;
+  sector: { slug: string; name: string } | null;
+  country: { iso2: string; name: string } | null;
   verified: boolean;
   createdAt: string;
   /** La empresa no muestra las reseñas de 1 y 2 estrellas (siguen en la media). */
@@ -510,6 +514,168 @@ export interface PlatformStats {
   organizations: { total: number; active: number; verified: number; pending: number };
   users: { total: number; active: number; admins: number };
   reviews: { published: number; underReview: number; reported: number };
+}
+
+export type SubscriptionStatus =
+  | 'trialing'
+  | 'active'
+  | 'past_due'
+  | 'cancelled'
+  | 'expired';
+export type BillingCycle = 'monthly' | 'yearly';
+export type PaymentStatus = 'paid' | 'pending' | 'failed' | 'refunded';
+
+export interface AdminPlan {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  priceMonthly: number;
+  priceYearly: number;
+  currency: string;
+  reviewLimit: number | null;
+  userLimit: number | null;
+  features: Record<string, unknown>;
+  isActive: boolean;
+  isPublic: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminSubscription {
+  id: string;
+  organizationId: string;
+  organization: { id: string; tradeName: string; slug: string; email: string | null };
+  plan: AdminPlan;
+  status: SubscriptionStatus;
+  billingCycle: BillingCycle;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  trialEndsAt: string | null;
+  cancelAtPeriodEnd: boolean;
+  cancelledAt: string | null;
+  startedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  events?: SubscriptionEvent[];
+}
+
+export interface SubscriptionEvent {
+  id: string;
+  type: string;
+  fromPlanId: string | null;
+  toPlanId: string | null;
+  fromStatus: string | null;
+  toStatus: string | null;
+  note: string | null;
+  actorUserId: string | null;
+  createdAt: string;
+}
+
+export interface AdminPayment {
+  id: string;
+  organizationId: string;
+  subscriptionId: string | null;
+  amount: number;
+  currency: string;
+  status: PaymentStatus;
+  method: string;
+  reference: string | null;
+  periodStart: string | null;
+  periodEnd: string | null;
+  paidAt: string | null;
+  createdAt: string;
+  organization?: { id: string; tradeName: string; slug: string };
+}
+
+export interface BillingStats {
+  subscriptions: {
+    total: number;
+    active: number;
+    trialing: number;
+    pastDue: number;
+    cancelled: number;
+    expired: number;
+  };
+  mrr: number;
+  revenue: {
+    total: number;
+    last30: number;
+    series: { month: string; amount: number }[];
+  };
+}
+
+export interface CompanySubscription {
+  subscription: AdminSubscription | null;
+  plan: AdminPlan | null;
+  usage: { users: number; reviews: number };
+}
+
+export interface PlatformSettingItem {
+  key: string;
+  value: unknown;
+  description: string;
+}
+
+export interface SectorItem {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export interface CountryItem {
+  id: string;
+  iso2: string;
+  name: string;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export interface LanguageItem {
+  code: string;
+  name: string;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export interface EmailTemplateItem {
+  code: string;
+  subject: string;
+  title: string;
+  intro: string;
+  action: string;
+  isActive: boolean;
+  updatedAt: string;
+}
+
+export interface ReportReasonItem {
+  id: string;
+  code: string;
+  label: string;
+  description: string | null;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export interface PublicCatalogs {
+  sectors: SectorItem[];
+  countries: CountryItem[];
+  languages: LanguageItem[];
+}
+
+export interface PublicConfig {
+  siteName: string;
+  supportEmail: string;
+  defaultLocale: string;
+  defaultCurrency: string;
+  registrationsEnabled: boolean;
+  maintenanceMode: boolean;
+  lowRatingMax: number;
+  allowLowRatingResolution: boolean;
 }
 
 export interface Paginated<T> {
@@ -1283,6 +1449,221 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(payload),
     });
+  },
+
+  // Membresías, suscripciones y pagos (super admin)
+  adminBillingStats(): Promise<BillingStats> {
+    return request<BillingStats>('/admin/billing/stats');
+  },
+  adminListPlans(): Promise<{ plans: AdminPlan[] }> {
+    return request<{ plans: AdminPlan[] }>('/admin/plans');
+  },
+  adminCreatePlan(payload: Record<string, unknown>): Promise<AdminPlan> {
+    return request<AdminPlan>('/admin/plans', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  adminUpdatePlan(id: string, payload: Record<string, unknown>): Promise<AdminPlan> {
+    return request<AdminPlan>(`/admin/plans/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+  adminListSubscriptions(params: ListParams = {}): Promise<Paginated<AdminSubscription>> {
+    return request<Paginated<AdminSubscription>>(`/admin/subscriptions${buildQuery(params)}`);
+  },
+  adminGetOrganizationSubscription(
+    orgId: string,
+  ): Promise<{ subscription: AdminSubscription | null }> {
+    return request<{ subscription: AdminSubscription | null }>(
+      `/admin/organizations/${orgId}/subscription`,
+    );
+  },
+  adminUpsertOrganizationSubscription(
+    orgId: string,
+    payload: Record<string, unknown>,
+  ): Promise<AdminSubscription> {
+    return request<AdminSubscription>(`/admin/organizations/${orgId}/subscription`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  },
+  adminUpdateSubscription(id: string, payload: Record<string, unknown>): Promise<AdminSubscription> {
+    return request<AdminSubscription>(`/admin/subscriptions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+  adminCancelSubscription(
+    id: string,
+    payload: { immediate?: boolean; note?: string },
+  ): Promise<AdminSubscription> {
+    return request<AdminSubscription>(`/admin/subscriptions/${id}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  adminListPayments(
+    params: ListParams & { organizationId?: string } = {},
+  ): Promise<Paginated<AdminPayment>> {
+    return request<Paginated<AdminPayment>>(`/admin/payments${buildQuery(params)}`);
+  },
+  adminCreatePayment(payload: Record<string, unknown>): Promise<AdminPayment> {
+    return request<AdminPayment>('/admin/payments', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  adminUpdatePayment(id: string, payload: { status: PaymentStatus }): Promise<AdminPayment> {
+    return request<AdminPayment>(`/admin/payments/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  // Configuración de plataforma
+  adminListSettings(): Promise<PlatformSettingItem[]> {
+    return request<PlatformSettingItem[]>('/admin/settings');
+  },
+  adminUpdateSettings(settings: Record<string, unknown>): Promise<PlatformSettingItem[]> {
+    return request<PlatformSettingItem[]>('/admin/settings', {
+      method: 'PATCH',
+      body: JSON.stringify({ settings }),
+    });
+  },
+  adminListSectors(): Promise<SectorItem[]> {
+    return request<SectorItem[]>('/admin/sectors');
+  },
+  adminCreateSector(payload: Record<string, unknown>): Promise<SectorItem> {
+    return request<SectorItem>('/admin/sectors', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  adminUpdateSector(id: string, payload: Record<string, unknown>): Promise<SectorItem> {
+    return request<SectorItem>(`/admin/sectors/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+  adminDeleteSector(id: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(`/admin/sectors/${id}`, { method: 'DELETE' });
+  },
+  adminListCountries(): Promise<CountryItem[]> {
+    return request<CountryItem[]>('/admin/countries');
+  },
+  adminCreateCountry(payload: Record<string, unknown>): Promise<CountryItem> {
+    return request<CountryItem>('/admin/countries', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  adminUpdateCountry(id: string, payload: Record<string, unknown>): Promise<CountryItem> {
+    return request<CountryItem>(`/admin/countries/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+  adminDeleteCountry(id: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(`/admin/countries/${id}`, { method: 'DELETE' });
+  },
+  adminListLanguages(): Promise<LanguageItem[]> {
+    return request<LanguageItem[]>('/admin/languages');
+  },
+  adminCreateLanguage(payload: Record<string, unknown>): Promise<LanguageItem> {
+    return request<LanguageItem>('/admin/languages', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  adminUpdateLanguage(code: string, payload: Record<string, unknown>): Promise<LanguageItem> {
+    return request<LanguageItem>(`/admin/languages/${code}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+  adminDeleteLanguage(code: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(`/admin/languages/${code}`, { method: 'DELETE' });
+  },
+  adminListEmailTemplates(): Promise<EmailTemplateItem[]> {
+    return request<EmailTemplateItem[]>('/admin/email-templates');
+  },
+  adminUpsertEmailTemplate(
+    code: string,
+    payload: Record<string, unknown>,
+  ): Promise<EmailTemplateItem> {
+    return request<EmailTemplateItem>(`/admin/email-templates/${code}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+  adminDeleteEmailTemplate(code: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(`/admin/email-templates/${code}`, { method: 'DELETE' });
+  },
+  adminListReportReasons(): Promise<ReportReasonItem[]> {
+    return request<ReportReasonItem[]>('/admin/report-reasons');
+  },
+  adminCreateReportReason(payload: Record<string, unknown>): Promise<ReportReasonItem> {
+    return request<ReportReasonItem>('/admin/report-reasons', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  adminUpdateReportReason(id: string, payload: Record<string, unknown>): Promise<ReportReasonItem> {
+    return request<ReportReasonItem>(`/admin/report-reasons/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+  adminDeleteReportReason(id: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(`/admin/report-reasons/${id}`, { method: 'DELETE' });
+  },
+
+  // Ficha de empresa del super admin
+  adminOrganizationReviews(
+    id: string,
+    params: ListParams = {},
+  ): Promise<AdminReviewList> {
+    return request<AdminReviewList>(`/admin/organizations/${id}/reviews${buildQuery(params)}`);
+  },
+  adminOrganizationStats(id: string, months = 12): Promise<OrganizationStats> {
+    return request<OrganizationStats>(`/admin/organizations/${id}/stats?months=${months}`);
+  },
+  adminUpdateOrganizationMember(
+    orgId: string,
+    membershipId: string,
+    payload: { role?: string; isActive?: boolean },
+  ): Promise<Member> {
+    return request<Member>(`/admin/organizations/${orgId}/members/${membershipId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+  adminRemoveOrganizationMember(orgId: string, membershipId: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(`/admin/organizations/${orgId}/members/${membershipId}`, {
+      method: 'DELETE',
+    });
+  },
+  adminInviteOrganizationMember(
+    orgId: string,
+    payload: { email: string; role?: string; firstName?: string; lastName?: string },
+  ): Promise<Invitation> {
+    return request<Invitation>(`/admin/organizations/${orgId}/invitations`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  // Catálogos y suscripción de la empresa
+  publicCatalogs(): Promise<PublicCatalogs> {
+    return request<PublicCatalogs>('/public/catalogs');
+  },
+  publicConfig(): Promise<PublicConfig> {
+    return request<PublicConfig>('/public/config');
+  },
+  publicPlans(): Promise<{ plans: AdminPlan[] }> {
+    return request<{ plans: AdminPlan[] }>('/public/plans');
+  },
+  mySubscription(): Promise<CompanySubscription> {
+    return request<CompanySubscription>('/organizations/me/subscription');
+  },
+  myPayments(params: ListParams = {}): Promise<Paginated<AdminPayment>> {
+    return request<Paginated<AdminPayment>>(`/organizations/me/payments${buildQuery(params)}`);
   },
 };
 

@@ -95,6 +95,25 @@ describe('FIVERTEN Estados y moderación de reseñas (e2e)', () => {
       'TRUNCATE TABLE "organizations","users","roles","organization_memberships","reviews","review_responses","review_reports","moderation_actions","sessions","refresh_tokens","email_verifications","auth_attempts" RESTART IDENTITY CASCADE',
     );
 
+    // Catálogo de motivos del alcance (cada suite debe poder ejecutarse sola).
+    const reasons = [
+      ['spam', 'Spam'],
+      ['offensive', 'Contenido ofensivo'],
+      ['personal_info', 'Información personal'],
+      ['conflict_of_interest', 'Conflicto de intereses'],
+      ['not_real_experience', 'No corresponde a una experiencia real'],
+      ['advertising', 'Publicidad'],
+      ['illegal', 'Contenido ilegal'],
+      ['other', 'Otro'],
+    ] as const;
+    await prisma.$executeRawUnsafe('TRUNCATE TABLE "report_reasons" RESTART IDENTITY CASCADE');
+    for (let index = 0; index < reasons.length; index += 1) {
+      const [code, label] = reasons[index];
+      await prisma.reportReason.create({
+        data: { code, label, isActive: true, sortOrder: index * 10 },
+      });
+    }
+
     const registered = await http()
       .post('/api/auth/register')
       .send({ email: 'owner@mod.test', password: PASSWORD, companyName: 'Moderada S.L.' })

@@ -1,4 +1,4 @@
-import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
 export const ORGANIZATION_STATUSES = ['pending', 'active', 'suspended', 'inactive'] as const;
 export const VERIFICATION_STATUSES = [
@@ -69,4 +69,12 @@ export class AdminUpdateOrganizationDto {
   @IsOptional()
   @IsBoolean()
   allowContact?: boolean;
+
+  @IsOptional()
+  @IsUUID()
+  sectorId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  countryId?: string;
 }

@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ChangeEvent } from 'react';
 import DashboardShell from '../../../components/DashboardShell';
-import { ApiError, api, type OrganizationDetail } from '../../../lib/api';
+import { ApiError, api, type OrganizationDetail, type PublicCatalogs } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
 import { roleAtLeast } from '../../../lib/roles';
 
@@ -22,6 +22,8 @@ interface FormState {
   hideLowRatings: boolean;
   notifyNewReviews: boolean;
   notifyNegativeReviews: boolean;
+  sectorId: string;
+  countryId: string;
 }
 
 function toForm(org: OrganizationDetail): FormState {
@@ -39,6 +41,8 @@ function toForm(org: OrganizationDetail): FormState {
     hideLowRatings: org.hideLowRatings,
     notifyNewReviews: org.notifyNewReviews,
     notifyNegativeReviews: org.notifyNegativeReviews,
+    sectorId: org.sectorId ?? '',
+    countryId: org.countryId ?? '',
   };
 }
 
@@ -95,6 +99,15 @@ export default function CompanyPage() {
 
   const canEdit = isSuperAdmin || roleAtLeast(role, 'admin');
 
+  const [catalogs, setCatalogs] = useState<PublicCatalogs | null>(null);
+
+  useEffect(() => {
+    api
+      .publicCatalogs()
+      .then(setCatalogs)
+      .catch(() => setCatalogs(null));
+  }, []);
+
   useEffect(() => {
     let active = true;
     api
@@ -144,6 +157,8 @@ export default function CompanyPage() {
       payload.hideLowRatings = form.hideLowRatings;
       payload.notifyNewReviews = form.notifyNewReviews;
       payload.notifyNegativeReviews = form.notifyNegativeReviews;
+      if (form.sectorId) payload.sectorId = form.sectorId;
+      if (form.countryId) payload.countryId = form.countryId;
 
       const updated = await api.updateMyOrganization(payload);
       setOrg(updated);
@@ -375,6 +390,40 @@ export default function CompanyPage() {
                   disabled={!canEdit}
                   className={INPUT_CLASS}
                 />
+              </label>
+
+              <label>
+                <span className="mb-1 block text-xs font-semibold text-slate-600">Categoría</span>
+                <select
+                  value={form.sectorId}
+                  onChange={(e) => update('sectorId', e.target.value)}
+                  disabled={!canEdit}
+                  className={INPUT_CLASS}
+                >
+                  <option value="">Sin categoría</option>
+                  {catalogs?.sectors.map((sector) => (
+                    <option key={sector.id} value={sector.id}>
+                      {sector.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                <span className="mb-1 block text-xs font-semibold text-slate-600">País</span>
+                <select
+                  value={form.countryId}
+                  onChange={(e) => update('countryId', e.target.value)}
+                  disabled={!canEdit}
+                  className={INPUT_CLASS}
+                >
+                  <option value="">Sin país</option>
+                  {catalogs?.countries.map((country) => (
+                    <option key={country.id} value={country.id}>
+                      {country.name}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               <label className="sm:col-span-2">

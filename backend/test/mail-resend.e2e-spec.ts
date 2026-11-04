@@ -1,9 +1,18 @@
 import { ConfigService } from '@nestjs/config';
 import { MailService } from '../src/mail/mail.service';
+import { PrismaService } from '../src/prisma/prisma.service';
+import { PlatformSettingsService } from '../src/settings/settings.service';
 
 function serviceWith(env: Record<string, string>): MailService {
   const config = { get: (key: string): string | undefined => env[key] } as unknown as ConfigService;
-  return new MailService(config);
+  const prisma = {
+    withContext: async (
+      _context: unknown,
+      fn: (tx: { emailTemplate: { findUnique: () => Promise<null> } }) => Promise<unknown>,
+    ) => fn({ emailTemplate: { findUnique: async () => null } }),
+  } as unknown as PrismaService;
+  const settings = { get: async () => true } as unknown as PlatformSettingsService;
+  return new MailService(config, prisma, settings);
 }
 
 describe('FIVERTEN Mail con Resend (API HTTPS)', () => {

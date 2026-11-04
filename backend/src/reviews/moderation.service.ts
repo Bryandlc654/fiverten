@@ -9,6 +9,7 @@ import { reviewStatus, statusFilter, type ReviewStatus } from './reviews.mappers
 interface AdminListQuery {
   status?: ReviewStatus;
   search?: string;
+  organizationId?: string;
   page: number;
   pageSize: number;
 }
@@ -140,6 +141,7 @@ export class ModerationService {
     const where: Prisma.ReviewWhereInput = {
       deletedAt: null,
       ...(query.status ? statusFilter(query.status) : {}),
+      ...(query.organizationId ? { organizationId: query.organizationId } : {}),
     };
     const search = query.search?.trim();
     if (search) {

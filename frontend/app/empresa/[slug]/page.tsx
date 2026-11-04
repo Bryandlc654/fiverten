@@ -199,6 +199,22 @@ export default function PublicProfilePage() {
                   <span>{profile.phone}</span>
                 </li>
               )}
+              {profile.sector && (
+                <li className="flex items-center gap-3 p-1.5 -m-1.5">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                    <span className="material-symbols-outlined text-[18px]">category</span>
+                  </span>
+                  <span>{profile.sector.name}</span>
+                </li>
+              )}
+              {profile.country && (
+                <li className="flex items-center gap-3 p-1.5 -m-1.5">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                    <span className="material-symbols-outlined text-[18px]">location_on</span>
+                  </span>
+                  <span>{profile.country.name}</span>
+                </li>
+              )}
               <li className="flex items-center gap-3 border-t border-slate-100 pt-3 text-xs text-slate-400">
                 <span className="material-symbols-outlined text-[16px]">calendar_month</span>
                 En FIVERTEN desde {new Date(profile.createdAt).getFullYear()}

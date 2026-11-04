@@ -33,6 +33,8 @@ export function toOrganizationDetail(org: {
   hideLowRatings: boolean;
   notifyNewReviews: boolean;
   notifyNegativeReviews: boolean;
+  sectorId: string | null;
+  countryId: string | null;
   createdAt: Date;
   verifiedAt: Date | null;
 }) {
@@ -59,6 +61,8 @@ export function toOrganizationDetail(org: {
     hideLowRatings: org.hideLowRatings,
     notifyNewReviews: org.notifyNewReviews,
     notifyNegativeReviews: org.notifyNegativeReviews,
+    sectorId: org.sectorId,
+    countryId: org.countryId,
     createdAt: org.createdAt,
     verifiedAt: org.verifiedAt,
   };

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -19,6 +20,7 @@ import { hashToken, randomToken } from '../common/tokens';
 import { buildUniqueSlug, buildUniqueUsername } from '../common/unique';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { PlatformSettingsService } from '../settings/settings.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
@@ -52,12 +54,16 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly mail: MailService,
+    private readonly settings: PlatformSettingsService,
   ) {}
 
   // ---------------------------------------------------------------------------
   // Registro: crea usuario + organización + rol admin + membresía (owner)
   // ---------------------------------------------------------------------------
   async register(dto: RegisterDto, ctx: RequestContext) {
+    if (!(await this.settings.registrationsEnabled())) {
+      throw new ForbiddenException('El registro de nuevas empresas está desactivado');
+    }
     const email = dto.email.trim().toLowerCase();
 
     // El hash se calcula antes de comprobar si el correo existe para que ambos
@@ -97,6 +103,24 @@ export class AuthService {
 
       await ensureAllSystemRoles(tx, organization.id);
       const role = await ensureSystemRole(tx, organization.id, 'admin');
+
+      // Plan Free por defecto si la plataforma lo tiene configurado.
+      const freePlan = await tx.plan.findFirst({ where: { code: 'free', isActive: true } });
+      if (freePlan) {
+        const start = new Date();
+        const end = new Date(start);
+        end.setUTCMonth(end.getUTCMonth() + 1);
+        await tx.subscription.create({
+          data: {
+            organizationId: organization.id,
+            planId: freePlan.id,
+            status: 'active',
+            billingCycle: 'monthly',
+            currentPeriodStart: start,
+            currentPeriodEnd: end,
+          },
+        });
+      }
 
       const username = dto.username ?? (await buildUniqueUsername(tx, email));
       const user = await tx.user.create({
