@@ -69,10 +69,11 @@ export class MailService implements OnModuleInit {
       category: 'transactional',
       kind: 'verificacion de correo',
       to,
-      subject: `Verifica tu correo en ${BRAND}`,
-      title: 'Confirma tu direccion de correo',
-      intro: 'Gracias por registrarte en FIVERTEN. Confirma tu correo para activar tu cuenta.',
-      action: 'Verificar mi correo',
+      subject: `Verifica tu correo y activa tu cuenta · ${BRAND}`,
+      title: 'Solo falta confirmar tu correo',
+      intro:
+        'Hola. Gracias por registrarte en FIVERTEN. Pulsa el botón para confirmar que este correo es tuyo y dejar tu cuenta lista. Por seguridad, el enlace caduca en unas horas.',
+      action: 'Confirmar mi correo',
       link,
     });
   }
@@ -84,10 +85,11 @@ export class MailService implements OnModuleInit {
       category: 'transactional',
       kind: 'recuperacion de contrasena',
       to,
-      subject: `Recupera tu contrasena - ${BRAND}`,
-      title: 'Restablece tu contrasena',
-      intro: 'Recibimos una solicitud para restablecer tu contrasena.',
-      action: 'Restablecer contrasena',
+      subject: `Restablece tu contraseña · ${BRAND}`,
+      title: '¿Olvidaste tu contraseña?',
+      intro:
+        'Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en FIVERTEN. Pulsa el botón para elegir una nueva. Si no fuiste tú, ignora este correo: tu contraseña no cambiará.',
+      action: 'Crear nueva contraseña',
       link,
     });
   }
@@ -105,10 +107,10 @@ export class MailService implements OnModuleInit {
       kind: 'invitacion a empresa',
       vars: { organization: organizationName, role: roleLabel },
       to,
-      subject: `Te han invitado a ${organizationName} en ${BRAND}`,
-      title: `Únete a ${organizationName}`,
-      intro: `Te han invitado a unirte a ${organizationName} en FIVERTEN con el rol "${roleLabel}". Si no esperabas esta invitación, ignora este correo: no se creará ninguna cuenta ni se te añadirá a la empresa.`,
-      action: 'Ver la invitación',
+      subject: `${organizationName} te ha invitado a ${BRAND}`,
+      title: `Tienes una invitación para unirte a ${organizationName}`,
+      intro: `Te han invitado a formar parte de ${organizationName} en FIVERTEN con el rol de ${roleLabel}. Acepta la invitación para acceder al panel de la empresa. Si no esperabas este correo, puedes ignorarlo.`,
+      action: 'Ver mi invitación',
       link,
     });
   }
@@ -121,10 +123,10 @@ export class MailService implements OnModuleInit {
       kind: 'confirmacion de resena',
       vars: { organization: organizationName },
       to,
-      subject: `Confirma tu reseña de ${organizationName} - ${BRAND}`,
-      title: 'Confirma tu reseña',
-      intro: `Gracias por compartir tu experiencia con ${organizationName}. Confirma tu correo para que publiquemos tu reseña. Si no la has escrito tú, ignora este mensaje y no se publicará.`,
-      action: 'Confirmar y publicar',
+      subject: `Confirma tu reseña de ${organizationName} · ${BRAND}`,
+      title: 'Tu opinión está casi lista',
+      intro: `Gracias por compartir tu experiencia con ${organizationName}. Confirma tu correo para que podamos publicar tu reseña y ayudar a otros clientes a decidir. Si no la escribiste tú, ignora este mensaje.`,
+      action: 'Publicar mi reseña',
       link,
     });
   }
@@ -144,9 +146,9 @@ export class MailService implements OnModuleInit {
       kind: 'solicitud de reseña',
       vars: { organization: organizationName, name, days: String(expiresInDays) },
       to,
-      subject: `${organizationName} te invita a contar tu experiencia - ${BRAND}`,
-      title: `Hola ${name}, ¿cómo fue tu experiencia con ${organizationName}?`,
-      intro: `${organizationName} te ha enviado un enlace personal para valorar tu experiencia. Solo tienes que elegir de 1 a 5 estrellas y contar brevemente qué tal fue. El enlace caduca en ${expiresInDays} ${
+      subject: `${organizationName} quiere conocer tu experiencia · ${BRAND}`,
+      title: `Hola ${name}, ¿nos cuentas cómo fue?`,
+      intro: `${organizationName} te ha preparado un enlace personal para valorar tu experiencia. Elige de 1 a 5 estrellas y cuéntanos brevemente qué tal fue. El enlace caduca en ${expiresInDays} ${
         expiresInDays === 1 ? 'día' : 'días'
       } y solo puede usarse una vez.`,
       action: 'Dejar mi reseña',
@@ -412,6 +414,7 @@ export class MailService implements OnModuleInit {
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;">
       <tr><td align="center" style="padding:32px 16px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;">
+          <tr><td style="height:4px;background:#2563eb;background-image:linear-gradient(90deg,#2563eb,#0ea5e9);font-size:0;line-height:0;">&nbsp;</td></tr>
           <tr><td style="background:#0b101b;padding:22px 32px;">
             <span style="${font}font-size:20px;font-weight:800;letter-spacing:3px;color:#ffffff;">${BRAND}</span>
             <span style="${font}font-size:12px;color:#94a3b8;padding-left:10px;">Reseñas y reputación</span>
@@ -421,15 +424,15 @@ export class MailService implements OnModuleInit {
             <h1 style="margin:0 0 14px;${font}font-size:24px;line-height:32px;font-weight:700;color:#0f172a;">${title}</h1>
             <p style="margin:0 0 28px;${font}font-size:15px;line-height:24px;color:#475569;">${intro}</p>
             <table role="presentation" cellpadding="0" cellspacing="0">
-              <tr><td bgcolor="#2563eb" style="border-radius:10px;">
-                <a href="${link}" style="display:inline-block;padding:14px 28px;${font}font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:10px;">${action}</a>
+              <tr><td bgcolor="#2563eb" style="border-radius:10px;box-shadow:0 6px 16px rgba(37,99,235,0.28);">
+                <a href="${link}" style="display:inline-block;padding:14px 30px;${font}font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px;">${action} →</a>
               </td></tr>
             </table>
           </td></tr>
           <tr><td style="padding:28px 32px 32px;">
             <p style="margin:0 0 6px;${font}font-size:13px;line-height:20px;color:#64748b;">¿El botón no funciona? Copia y pega este enlace en tu navegador:</p>
             <p style="margin:0 0 24px;${font}font-size:13px;line-height:20px;word-break:break-all;"><a href="${link}" style="color:#2563eb;text-decoration:underline;">${link}</a></p>
-            <p style="margin:0;padding-top:20px;border-top:1px solid #e2e8f0;${font}font-size:12px;line-height:18px;color:#94a3b8;">Si no solicitaste este correo, puedes ignorarlo con tranquilidad.</p>
+            <p style="margin:0;padding-top:20px;border-top:1px solid #e2e8f0;${font}font-size:12px;line-height:18px;color:#94a3b8;">Si no solicitaste este correo, puedes ignorarlo con tranquilidad. Nunca te pediremos tu contraseña por email.</p>
           </td></tr>
         </table>
         <p style="margin:20px 0 0;${font}font-size:12px;line-height:18px;color:#94a3b8;">© ${year} ${BRAND} · Plataforma de reseñas verificadas</p>

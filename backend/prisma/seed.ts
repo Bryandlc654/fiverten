@@ -193,41 +193,42 @@ async function seedPlatform(): Promise<void> {
   const templates = [
     {
       code: 'email_verification',
-      subject: 'Verifica tu correo en {{site}}',
-      title: 'Confirma tu dirección de correo',
+      subject: 'Verifica tu correo y activa tu cuenta · {{site}}',
+      title: 'Solo falta confirmar tu correo',
       intro:
-        'Gracias por registrarte en {{site}}. Confirma tu correo para activar tu cuenta.',
-      action: 'Verificar mi correo',
+        'Hola. Gracias por registrarte en {{site}}. Pulsa el botón para confirmar que este correo es tuyo y dejar tu cuenta lista. Por seguridad, el enlace caduca en unas horas.',
+      action: 'Confirmar mi correo',
     },
     {
       code: 'password_reset',
-      subject: 'Recupera tu contraseña - {{site}}',
-      title: 'Restablece tu contraseña',
-      intro: 'Recibimos una solicitud para restablecer tu contraseña.',
-      action: 'Restablecer contraseña',
+      subject: 'Restablece tu contraseña · {{site}}',
+      title: '¿Olvidaste tu contraseña?',
+      intro:
+        'Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en {{site}}. Pulsa el botón para elegir una nueva. Si no fuiste tú, ignora este correo: tu contraseña no cambiará.',
+      action: 'Crear nueva contraseña',
     },
     {
       code: 'organization_invitation',
-      subject: 'Te han invitado a {{organization}} en {{site}}',
-      title: 'Únete a {{organization}}',
+      subject: '{{organization}} te ha invitado a {{site}}',
+      title: 'Tienes una invitación para unirte a {{organization}}',
       intro:
-        'Te han invitado a unirte a {{organization}} en {{site}} con el rol "{{role}}". Si no esperabas esta invitación, ignora este correo.',
-      action: 'Ver la invitación',
+        'Te han invitado a formar parte de {{organization}} en {{site}} con el rol de {{role}}. Acepta la invitación para acceder al panel de la empresa. Si no esperabas este correo, puedes ignorarlo.',
+      action: 'Ver mi invitación',
     },
     {
       code: 'review_confirmation',
-      subject: 'Confirma tu reseña de {{organization}} - {{site}}',
-      title: 'Confirma tu reseña',
+      subject: 'Confirma tu reseña de {{organization}} · {{site}}',
+      title: 'Tu opinión está casi lista',
       intro:
-        'Gracias por compartir tu experiencia con {{organization}}. Confirma tu correo para que publiquemos tu reseña.',
-      action: 'Confirmar y publicar',
+        'Gracias por compartir tu experiencia con {{organization}}. Confirma tu correo para que podamos publicar tu reseña y ayudar a otros clientes a decidir. Si no la escribiste tú, ignora este mensaje.',
+      action: 'Publicar mi reseña',
     },
     {
       code: 'review_request',
-      subject: '{{organization}} te invita a contar tu experiencia - {{site}}',
-      title: 'Hola {{name}}, ¿cómo fue tu experiencia con {{organization}}?',
+      subject: '{{organization}} quiere conocer tu experiencia · {{site}}',
+      title: 'Hola {{name}}, ¿nos cuentas cómo fue?',
       intro:
-        '{{organization}} te ha enviado un enlace personal para valorar tu experiencia. El enlace caduca en {{days}} días y solo puede usarse una vez.',
+        '{{organization}} te ha preparado un enlace personal para valorar tu experiencia. Elige de 1 a 5 estrellas y cuéntanos brevemente qué tal fue. El enlace caduca en {{days}} días y solo puede usarse una vez.',
       action: 'Dejar mi reseña',
     },
   ];
