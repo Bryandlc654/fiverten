@@ -16,6 +16,7 @@ export type NavKey =
   | 'cases'
   | 'membership'
   | 'support'
+  | 'campaigns'
   | 'adminSupport'
   | 'security'
   | 'adminOrgs'
@@ -49,6 +50,7 @@ const TENANT_NAV: NavItem[] = [
   { key: 'reviews', label: 'Opiniones', icon: 'reviews', href: '/dashboard/reviews' },
   { key: 'cases', label: 'Casos', icon: 'policy', href: '/dashboard/casos' },
   { key: 'membership', label: 'Mi plan', icon: 'workspace_premium', href: '/dashboard/membresia' },
+  { key: 'campaigns', label: 'Campañas', icon: 'campaign', href: '/dashboard/campanas' },
   { key: 'support', label: 'Soporte', icon: 'support_agent', href: '/dashboard/soporte' },
   { key: 'profile', label: 'Perfil público', icon: 'verified', href: '/empresa' },
   { key: 'security', label: 'Seguridad', icon: 'shield_lock', href: '/dashboard/seguridad' },

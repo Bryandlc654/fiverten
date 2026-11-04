@@ -223,6 +223,14 @@ CREATE POLICY rls_review_requests ON review_requests
     USING (organization_id = app_current_org() OR app_is_platform_admin())
     WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
 
+ALTER TABLE review_campaigns ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_review_campaigns ON review_campaigns;
+
+CREATE POLICY rls_review_campaigns ON review_campaigns
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
 ALTER TABLE support_tickets ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS rls_support_tickets ON support_tickets;

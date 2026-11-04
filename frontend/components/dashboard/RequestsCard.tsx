@@ -11,6 +11,12 @@ export default function RequestsCard({ stats }: { stats: OrganizationStats | nul
     return <div className="h-80 animate-pulse rounded-xl border border-slate-200 bg-white" />;
   }
   const { resolutions, cases, pendingConfirmation, underReview } = stats.requests;
+  const reviewRequests = stats.requests.reviewRequests ?? {
+    sent: 0,
+    opened: 0,
+    completed: 0,
+    conversion: 0,
+  };
 
   return (
     <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-5">
@@ -25,6 +31,17 @@ export default function RequestsCard({ stats }: { stats: OrganizationStats | nul
         <Metric label="En revisión" value={underReview} hint="Moderación o caso de evidencias" />
       </dl>
 
+      <Section
+        title="Solicitudes de reseña"
+        href="/dashboard/campanas"
+        rate={reviewRequests.conversion}
+        rateLabel="conversión"
+        items={[
+          { label: 'Enviadas', value: reviewRequests.sent, tone: 'text-slate-700' },
+          { label: 'Abiertas', value: reviewRequests.opened, tone: 'text-blue-600' },
+          { label: 'Completadas', value: reviewRequests.completed, tone: 'text-emerald-600' },
+        ]}
+      />
       <Section
         title="Incidencias con clientes"
         href="/dashboard/reviews?lowRating=true"

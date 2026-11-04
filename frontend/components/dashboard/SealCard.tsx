@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import QRCode from 'qrcode';
 
 type SealTab = 'link' | 'widget' | 'qr';
 
@@ -12,14 +13,47 @@ export default function SealCard({
   publicId: string | undefined;
 }) {
   const [activeTab, setActiveTab] = useState<SealTab>('link');
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [qrError, setQrError] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  function copyEmbed() {
-    const value =
-      activeTab === 'widget'
-        ? `<script src="https://fiverten.com/seal/${publicId ?? ''}.js"></script>`
-        : publicUrl;
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      void navigator.clipboard.writeText(value);
+  const origin = typeof window === 'undefined' ? 'https://fiverten.com' : window.location.origin;
+  const widgetUrl = publicId ? `${origin}/api/widget/${publicId}.js` : '';
+  const embed =
+    activeTab === 'widget'
+      ? `<script src="${widgetUrl}" async></script>`
+      : publicUrl;
+
+  useEffect(() => {
+    if (activeTab !== 'qr') return;
+    let active = true;
+    QRCode.toDataURL(publicUrl, {
+      width: 512,
+      margin: 1,
+      color: { dark: '#0b101b', light: '#ffffff' },
+      errorCorrectionLevel: 'M',
+    })
+      .then((url) => {
+        if (active) {
+          setQrDataUrl(url);
+          setQrError(false);
+        }
+      })
+      .catch(() => {
+        if (active) setQrError(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [activeTab, publicUrl]);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(embed);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
     }
   }
 
@@ -49,27 +83,63 @@ export default function SealCard({
         ))}
       </div>
 
-      <div className="mt-4 flex items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 py-6">
-        <div className="flex items-center gap-2 rounded-lg bg-[#0b101b] px-3 py-2 text-white">
-          <span className="material-symbols-outlined text-[20px] text-emerald-400">verified</span>
-          <div className="leading-none">
-            <p className="text-[11px] font-bold">FIVERTEN</p>
-            <p className="text-[9px] text-slate-400">Empresa verificada</p>
+      {activeTab === 'qr' ? (
+        <div className="mt-4">
+          <div className="flex items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4">
+            {qrDataUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={qrDataUrl}
+                alt={`Código QR del perfil de ${publicUrl}`}
+                className="h-44 w-44 rounded-md bg-white p-1"
+              />
+            ) : qrError ? (
+              <p className="text-sm text-red-600">No se pudo generar el QR.</p>
+            ) : (
+              <p className="text-sm text-slate-500">Generando QR…</p>
+            )}
+          </div>
+          <p className="mt-2 text-center text-xs text-slate-500">
+            Escanea para dejar una reseña
+          </p>
+          {qrDataUrl && (
+            <a
+              href={qrDataUrl}
+              download={`fiverten-qr-${publicId ?? 'empresa'}.png`}
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#2563eb] px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-600"
+            >
+              <span className="material-symbols-outlined text-[16px]">download</span>
+              Descargar QR
+            </a>
+          )}
+        </div>
+      ) : (
+        <div className="mt-4 flex items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 py-6">
+          <div className="flex items-center gap-2 rounded-lg bg-[#0b101b] px-3 py-2 text-white">
+            <span className="material-symbols-outlined text-[20px] text-emerald-400">
+              verified
+            </span>
+            <div className="leading-none">
+              <p className="text-[11px] font-bold">FIVERTEN</p>
+              <p className="text-[9px] text-slate-400">Empresa verificada</p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="mt-4 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-        <span className="material-symbols-outlined text-[16px] text-slate-400">link</span>
+        <span className="material-symbols-outlined text-[16px] text-slate-400">
+          {activeTab === 'qr' ? 'qr_code_2' : 'link'}
+        </span>
         <span className="truncate text-xs text-slate-500">
-          {activeTab === 'widget' ? 'Código de inserción HTML' : publicUrl}
+          {activeTab === 'widget' ? embed : publicUrl}
         </span>
         <button
           type="button"
-          onClick={copyEmbed}
+          onClick={() => void copy()}
           className="ml-auto shrink-0 rounded-md bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white transition hover:bg-slate-700"
         >
-          Copiar
+          {copied ? 'Copiado' : 'Copiar'}
         </button>
       </div>
     </div>

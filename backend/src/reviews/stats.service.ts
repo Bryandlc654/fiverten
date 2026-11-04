@@ -39,8 +39,17 @@ export class ReviewStatsService {
     const ago = (days: number) => new Date(now.getTime() - days * DAY_MS);
 
     return this.prisma.withContext({ orgId }, async (tx) => {
-      const [distribution, periods, monthly, responses, pending, underReview, resolutions, cases] =
-        await Promise.all([
+      const [
+        distribution,
+        periods,
+        monthly,
+        responses,
+        pending,
+        underReview,
+        resolutions,
+        cases,
+        requestRows,
+      ] = await Promise.all([
           tx.review.groupBy({
             by: ['rating'],
             where: { organizationId: orgId, ...PUBLISHED },
@@ -92,6 +101,11 @@ export class ReviewStatsService {
           tx.reviewCase.groupBy({
             by: ['status', 'outcome'],
             where: { organizationId: orgId, companyNotifiedAt: { not: null } },
+            _count: { _all: true },
+          }),
+          tx.reviewRequest.groupBy({
+            by: ['status'],
+            where: { organizationId: orgId },
             _count: { _all: true },
           }),
         ]);
@@ -160,6 +174,20 @@ export class ReviewStatsService {
         requests: {
           pendingConfirmation: pending,
           underReview,
+          reviewRequests: (() => {
+            const counts: Record<string, number> = { sent: 0, opened: 0, completed: 0 };
+            for (const row of requestRows) {
+              counts[row.status] = row._count._all;
+            }
+            const sent = counts.sent + counts.opened + counts.completed;
+            const opened = counts.opened + counts.completed;
+            return {
+              sent,
+              opened,
+              completed: counts.completed,
+              conversion: sent > 0 ? Math.round((counts.completed / sent) * 1000) / 1000 : 0,
+            };
+          })(),
           resolutions: {
             ...resolutionCounts,
             total: resolutionTotal,

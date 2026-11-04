@@ -200,6 +200,7 @@ export const rlsStatements: string[] = [
   ...tenantTablePolicy('notifications'),
   // Solicitudes personalizadas de reseña: datos de clientes de la organización.
   ...tenantTablePolicy('review_requests'),
+  ...tenantTablePolicy('review_campaigns'),
   // Soporte: la empresa ve sus tickets; el staff de soporte consulta con
   // contexto de plataforma.
   ...tenantTablePolicy('support_tickets'),

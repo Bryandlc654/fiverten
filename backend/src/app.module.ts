@@ -15,6 +15,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { SettingsModule } from './settings/settings.module';
 import { SupportModule } from './support/support.module';
+import { WidgetModule } from './widget/widget.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { SupportModule } from './support/support.module';
     BillingModule,
     ConfigurationModule,
     SupportModule,
+    WidgetModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

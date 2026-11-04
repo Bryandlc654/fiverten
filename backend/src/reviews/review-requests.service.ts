@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 import { hashToken, randomToken } from '../common/tokens';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateReviewRequestDto } from './dto/review-request.dto';
+import { CreateCampaignDto, CreateReviewRequestDto } from './dto/review-request.dto';
 
 const DEFAULT_TTL_DAYS = 30;
 
@@ -110,6 +110,170 @@ export class ReviewRequestsService {
     };
   }
 
+  // ---------------------------------------------------------------------------
+  // Campañas
+  // ---------------------------------------------------------------------------
+  async createCampaign(orgId: string, userId: string, dto: CreateCampaignDto) {
+    const organization = await this.prisma.withContext({ orgId }, (tx) =>
+      tx.organization.findFirst({
+        where: { id: orgId, deletedAt: null },
+        select: { tradeName: true, slug: true },
+      }),
+    );
+    if (!organization) throw new NotFoundException('Empresa no encontrada');
+
+    const seen = new Set<string>();
+    const recipients = dto.recipients
+      .map((recipient) => ({
+        name: recipient.name.trim() || recipient.email.split('@')[0],
+        email: recipient.email.trim().toLowerCase(),
+      }))
+      .filter((recipient) => {
+        if (!recipient.email || seen.has(recipient.email)) return false;
+        seen.add(recipient.email);
+        return true;
+      });
+    if (recipients.length === 0) {
+      throw new BadRequestException('Añade al menos un destinatario válido');
+    }
+
+    const expiresAt = this.expiryDate();
+    const result = await this.prisma.withContext({ orgId }, async (tx) => {
+      const campaign = await tx.reviewCampaign.create({
+        data: {
+          organizationId: orgId,
+          name: dto.name.trim(),
+          status: 'active',
+          createdBy: userId,
+          sentAt: new Date(),
+        },
+      });
+      const created: { token: string; name: string; email: string }[] = [];
+      for (const recipient of recipients) {
+        const token = randomToken(32);
+        await tx.reviewRequest.create({
+          data: {
+            organizationId: orgId,
+            tokenHash: hashToken(token),
+            reviewerName: recipient.name,
+            reviewerEmail: recipient.email,
+            expiresAt,
+            createdBy: userId,
+            campaignId: campaign.id,
+          },
+        });
+        created.push({ token, ...recipient });
+      }
+      return { campaign, created };
+    });
+
+    for (const recipient of result.created) {
+      this.mail
+        .sendReviewRequest(
+          recipient.email,
+          recipient.name,
+          organization.tradeName,
+          this.buildUrl(organization.slug, recipient.token),
+          this.ttlDays,
+        )
+        .catch(() => undefined);
+    }
+
+    return {
+      id: result.campaign.id,
+      name: result.campaign.name,
+      status: result.campaign.status,
+      sentAt: result.campaign.sentAt,
+      createdAt: result.campaign.createdAt,
+      stats: {
+        sent: result.created.length,
+        opened: 0,
+        completed: 0,
+        conversion: 0,
+      },
+    };
+  }
+
+  async listCampaigns(orgId: string, query: { page: number; pageSize: number; status?: string }) {
+    const page = Math.max(1, query.page);
+    const pageSize = Math.min(50, Math.max(1, query.pageSize));
+    return this.prisma.withContext({ orgId }, async (tx) => {
+      const where = {
+        organizationId: orgId,
+        ...(query.status ? { status: query.status } : {}),
+      };
+      const [total, rows] = await Promise.all([
+        tx.reviewCampaign.count({ where }),
+        tx.reviewCampaign.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+      ]);
+      const ids = rows.map((row) => row.id);
+      const grouped = ids.length
+        ? await tx.reviewRequest.groupBy({
+            by: ['campaignId', 'status'],
+            where: { organizationId: orgId, campaignId: { in: ids } },
+            _count: { _all: true },
+          })
+        : [];
+      const byCampaign = new Map<string, { status: string; _count: { _all: number } }[]>();
+      for (const row of grouped) {
+        if (!row.campaignId) continue;
+        const list = byCampaign.get(row.campaignId) ?? [];
+        list.push({ status: row.status, _count: row._count });
+        byCampaign.set(row.campaignId, list);
+      }
+      return {
+        items: rows.map((row) => ({
+          id: row.id,
+          name: row.name,
+          status: row.status,
+          sentAt: row.sentAt,
+          createdAt: row.createdAt,
+          stats: this.campaignStats(byCampaign.get(row.id) ?? []),
+        })),
+        total,
+        page,
+        pageSize,
+      };
+    });
+  }
+
+  async getCampaign(orgId: string, id: string) {
+    return this.prisma.withContext({ orgId }, async (tx) => {
+      const campaign = await tx.reviewCampaign.findFirst({
+        where: { id, organizationId: orgId },
+        include: { requests: { orderBy: { createdAt: 'desc' } } },
+      });
+      if (!campaign) throw new NotFoundException('Campaña no encontrada');
+      let sent = 0;
+      let opened = 0;
+      let completed = 0;
+      for (const request of campaign.requests) {
+        sent += 1;
+        if (request.status === 'opened' || request.status === 'completed') opened += 1;
+        if (request.status === 'completed') completed += 1;
+      }
+      return {
+        id: campaign.id,
+        name: campaign.name,
+        status: campaign.status,
+        sentAt: campaign.sentAt,
+        createdAt: campaign.createdAt,
+        stats: {
+          sent,
+          opened,
+          completed,
+          conversion: sent > 0 ? Math.round((completed / sent) * 1000) / 1000 : 0,
+        },
+        requests: campaign.requests.map((request) => this.toDto(request)),
+      };
+    });
+  }
+
   /** Valida el token público y marca la primera apertura. */
   async lookup(slug: string, token: string) {
     const now = new Date();
@@ -187,6 +351,23 @@ export class ReviewRequestsService {
       where: { reviewId, status: { not: 'completed' } },
       data: { status: 'completed', completedAt: new Date() },
     });
+  }
+
+  private campaignStats(rows: { status: string; _count: { _all: number } }[]) {
+    let sent = 0;
+    let opened = 0;
+    let completed = 0;
+    for (const row of rows) {
+      sent += row._count._all;
+      if (row.status === 'opened' || row.status === 'completed') opened += row._count._all;
+      if (row.status === 'completed') completed += row._count._all;
+    }
+    return {
+      sent,
+      opened,
+      completed,
+      conversion: sent > 0 ? Math.round((completed / sent) * 1000) / 1000 : 0,
+    };
   }
 
   private toDto(row: {

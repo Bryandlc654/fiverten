@@ -188,6 +188,31 @@ export interface CreateReviewRequestPayload {
   email: string;
 }
 
+export interface CampaignStats {
+  sent: number;
+  opened: number;
+  completed: number;
+  conversion: number;
+}
+
+export interface ReviewCampaignSummary {
+  id: string;
+  name: string;
+  status: 'draft' | 'active' | 'completed';
+  sentAt: string | null;
+  createdAt: string;
+  stats: CampaignStats;
+}
+
+export interface ReviewCampaignDetail extends ReviewCampaignSummary {
+  requests: ReviewRequestSummary[];
+}
+
+export interface CreateCampaignPayload {
+  name: string;
+  recipients: { name: string; email: string }[];
+}
+
 export type ReviewStatus =
   'pending' | 'published' | 'under_review' | 'reported' | 'hidden' | 'rejected';
 
@@ -479,6 +504,7 @@ export interface OrganizationStats {
   requests: {
     pendingConfirmation: number;
     underReview: number;
+    reviewRequests: CampaignStats;
     resolutions: {
       open: number;
       resolved: number;
@@ -1333,6 +1359,20 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     });
+  },
+  listReviewCampaigns(params: ListParams = {}): Promise<Paginated<ReviewCampaignSummary>> {
+    return request<Paginated<ReviewCampaignSummary>>(
+      `/organizations/me/review-requests/campaigns${buildQuery(params)}`,
+    );
+  },
+  createReviewCampaign(payload: CreateCampaignPayload): Promise<ReviewCampaignSummary> {
+    return request<ReviewCampaignSummary>('/organizations/me/review-requests/campaigns', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  getReviewCampaign(id: string): Promise<ReviewCampaignDetail> {
+    return request<ReviewCampaignDetail>(`/organizations/me/review-requests/campaigns/${id}`);
   },
   publicProfile(slug: string): Promise<PublicProfile> {
     return request<PublicProfile>(`/public/organizations/${encodeURIComponent(slug)}`);
