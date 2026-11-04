@@ -59,6 +59,16 @@ export class UpdateOrganizationDto {
   @IsBoolean()
   hideLowRatings?: boolean;
 
+  /** Aviso (en la app y por correo) de cada reseña nueva de 3 a 5 estrellas. */
+  @IsOptional()
+  @IsBoolean()
+  notifyNewReviews?: boolean;
+
+  /** Aviso destacado de las reseñas de 1 y 2 estrellas al publicarse. */
+  @IsOptional()
+  @IsBoolean()
+  notifyNegativeReviews?: boolean;
+
   @IsOptional()
   @IsString()
   @MaxLength(10)

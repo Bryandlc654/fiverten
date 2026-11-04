@@ -5,14 +5,16 @@ import { useEffect, useState } from 'react';
 import PlatformDashboard from '../../components/PlatformDashboard';
 import LatestReviews from '../../components/dashboard/LatestReviews';
 import PerformanceChart from '../../components/dashboard/PerformanceChart';
+import RatingDistribution from '../../components/dashboard/RatingDistribution';
 import RecentActivity from '../../components/dashboard/RecentActivity';
+import RequestsCard from '../../components/dashboard/RequestsCard';
 import SealCard from '../../components/dashboard/SealCard';
 import StatsGrid from '../../components/dashboard/StatsGrid';
 import TasksCard from '../../components/dashboard/TasksCard';
 import TenantHeader from '../../components/dashboard/TenantHeader';
 import TenantSidebar from '../../components/dashboard/TenantSidebar';
 import WelcomeBanner from '../../components/dashboard/WelcomeBanner';
-import { ApiError, api } from '../../lib/api';
+import { ApiError, api, type OrganizationDetail, type OrganizationStats } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
 import { roleLabel } from '../../lib/roles';
 
@@ -24,12 +26,29 @@ export default function DashboardPage() {
   const [sendingVerification, setSendingVerification] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
+  const [stats, setStats] = useState<OrganizationStats | null>(null);
+  const [orgDetail, setOrgDetail] = useState<OrganizationDetail | null>(null);
+  const [statsError, setStatsError] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.replace('/login');
     }
   }, [isLoading, isAuthenticated, router]);
+
+  // Una sola petición para todas las cifras del resumen (las del super admin van aparte).
+  const hasOrganization = Boolean(organization);
+  useEffect(() => {
+    if (isLoading || !isAuthenticated || isSuperAdmin || !hasOrganization) return;
+    api
+      .getOrganizationStats(12)
+      .then(setStats)
+      .catch(() => setStatsError(true));
+    api
+      .getMyOrganization()
+      .then(setOrgDetail)
+      .catch(() => undefined);
+  }, [isLoading, isAuthenticated, isSuperAdmin, hasOrganization]);
 
   function toggleSidebar() {
     if (typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches) {
@@ -114,7 +133,7 @@ export default function DashboardPage() {
           onLogout={() => void onLogout()}
         />
 
-        <main className="flex-1 px-6 py-6">
+        <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-6">
           {notice && (
             <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
               {notice}
@@ -145,19 +164,29 @@ export default function DashboardPage() {
             slug={organization?.slug}
           />
 
-          <StatsGrid />
+          {statsError && (
+            <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              No se pudieron cargar las estadísticas. Recarga la página para intentarlo de nuevo.
+            </div>
+          )}
+
+          <StatsGrid stats={stats} />
 
           <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
-            <PerformanceChart />
-            <SealCard publicUrl={publicUrl} publicId={organization?.publicId} />
+            <PerformanceChart monthly={stats?.monthly ?? null} />
+            <RatingDistribution stats={stats} />
           </section>
 
           <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
-            <TasksCard />
+            <RequestsCard stats={stats} />
             <LatestReviews />
           </section>
 
-          <RecentActivity />
+          <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
+            <TasksCard org={orgDetail} stats={stats} />
+            <RecentActivity />
+            <SealCard publicUrl={publicUrl} publicId={organization?.publicId} />
+          </section>
         </main>
       </div>
     </div>

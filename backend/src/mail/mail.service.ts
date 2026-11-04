@@ -17,6 +17,8 @@ interface MailMessage {
   intro: string;
   action: string;
   link: string;
+  /** Aviso destacado sobre el título (p. ej. una reseña negativa). */
+  highlight?: string;
 }
 
 const BRAND = 'FIVERTEN';
@@ -121,7 +123,9 @@ export class MailService implements OnModuleInit {
       subject: opened
         ? `${organizationName} quiere resolver tu experiencia - ${BRAND}`
         : `Tienes un nuevo mensaje de ${organizationName} - ${BRAND}`,
-      title: opened ? `${organizationName} quiere resolverlo contigo` : `Nuevo mensaje de ${organizationName}`,
+      title: opened
+        ? `${organizationName} quiere resolverlo contigo`
+        : `Nuevo mensaje de ${organizationName}`,
       intro: opened
         ? `Has dejado una reseña y ${organizationName} quiere solucionar lo ocurrido. Desde el enlace puedes responder, actualizar tu reseña o aceptar la solución propuesta. No necesitas crear una cuenta.`
         : `${organizationName} te ha escrito sobre tu reseña. Desde el enlace puedes responder o decidir si la incidencia está resuelta.`,
@@ -131,7 +135,12 @@ export class MailService implements OnModuleInit {
   }
 
   /** Aviso al super admin sobre un caso de evidencias (enlace al panel de admin). */
-  async sendCaseAdminAlert(to: string, title: string, intro: string, caseId: string): Promise<void> {
+  async sendCaseAdminAlert(
+    to: string,
+    title: string,
+    intro: string,
+    caseId: string,
+  ): Promise<void> {
     await this.send({
       kind: 'caso de evidencias (admin)',
       to,
@@ -162,7 +171,12 @@ export class MailService implements OnModuleInit {
   }
 
   /** Aviso al autor de la reseña, con el enlace (token) para participar sin cuenta. */
-  async sendCaseClientNotice(to: string, title: string, intro: string, token: string): Promise<void> {
+  async sendCaseClientNotice(
+    to: string,
+    title: string,
+    intro: string,
+    token: string,
+  ): Promise<void> {
     await this.send({
       kind: 'caso de evidencias (cliente)',
       to,
@@ -171,6 +185,27 @@ export class MailService implements OnModuleInit {
       intro,
       action: 'Abrir mi caso',
       link: `${this.frontendUrl}/caso/${encodeURIComponent(token)}`,
+    });
+  }
+
+  /** Aviso a los responsables de la empresa de una reseña recién publicada. */
+  async sendReviewNotice(
+    to: string,
+    title: string,
+    intro: string,
+    negative: boolean,
+  ): Promise<void> {
+    await this.send({
+      kind: negative ? 'reseña negativa (empresa)' : 'nueva reseña (empresa)',
+      to,
+      subject: `${title} - ${BRAND}`,
+      title,
+      intro,
+      action: negative ? 'Atender la reseña' : 'Ver la reseña',
+      link: `${this.frontendUrl}/dashboard/reviews${negative ? '?lowRating=true' : ''}`,
+      highlight: negative
+        ? 'Reseña de baja valoración: te recomendamos responder cuanto antes.'
+        : undefined,
     });
   }
 
@@ -260,6 +295,9 @@ export class MailService implements OnModuleInit {
     const link = escapeHtml(message.link);
     const year = new Date().getFullYear();
     const font = "font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;";
+    const highlight = message.highlight
+      ? `<p style="margin:0 0 18px;padding:12px 16px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;${font}font-size:14px;line-height:20px;font-weight:600;color:#b91c1c;">${escapeHtml(message.highlight)}</p>`
+      : '';
     // HTML de correo: tablas y estilos en línea (muchos clientes ignoran <style>
     // y CSS moderno). El botón es una tabla para que se vea también en Outlook.
     return `<!doctype html>
@@ -280,6 +318,7 @@ export class MailService implements OnModuleInit {
             <span style="${font}font-size:12px;color:#94a3b8;padding-left:10px;">Reseñas y reputación</span>
           </td></tr>
           <tr><td style="padding:36px 32px 8px;">
+            ${highlight}
             <h1 style="margin:0 0 14px;${font}font-size:24px;line-height:32px;font-weight:700;color:#0f172a;">${title}</h1>
             <p style="margin:0 0 28px;${font}font-size:15px;line-height:24px;color:#475569;">${intro}</p>
             <table role="presentation" cellpadding="0" cellspacing="0">
@@ -301,8 +340,10 @@ export class MailService implements OnModuleInit {
 </html>`;
   }
 
-  private renderText({ title, intro, action, link }: MailMessage): string {
-    return [`${BRAND} - ${title}`, '', intro, '', `${action}: ${link}`].join('\n');
+  private renderText({ title, intro, action, link, highlight }: MailMessage): string {
+    const lines = [`${BRAND} - ${title}`, ''];
+    if (highlight) lines.push(highlight, '');
+    return [...lines, intro, '', `${action}: ${link}`].join('\n');
   }
 
   private get mode(): TransportMode {

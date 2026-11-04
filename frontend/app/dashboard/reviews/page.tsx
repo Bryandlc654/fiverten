@@ -40,6 +40,19 @@ export default function ReviewsPage() {
   const [lowRating, setLowRating] = useState<'' | 'true'>('');
   const [sort, setSort] = useState<ReviewSort>('recent');
   const [page, setPage] = useState(1);
+  // Los enlaces del panel y de las notificaciones llegan con filtros en la URL
+  // (?lowRating=true, ?rating=4, ?answered=no): se aplican antes de la primera carga.
+  const [filtersReady, setFiltersReady] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('lowRating') === 'true') setLowRating('true');
+    const fromUrl = params.get('rating');
+    if (fromUrl && /^[1-5]$/.test(fromUrl)) setRating(fromUrl);
+    const answeredParam = params.get('answered');
+    if (answeredParam === 'yes' || answeredParam === 'no') setAnswered(answeredParam);
+    setFiltersReady(true);
+  }, []);
 
   const canRespond = roleAtLeast(role, 'editor');
 
@@ -51,6 +64,7 @@ export default function ReviewsPage() {
   }, []);
 
   const load = useCallback(async () => {
+    if (!filtersReady) return;
     setLoading(true);
     setError(null);
     try {
@@ -71,7 +85,7 @@ export default function ReviewsPage() {
     } finally {
       setLoading(false);
     }
-  }, [status, rating, period, answered, lowRating, sort, page]);
+  }, [filtersReady, status, rating, period, answered, lowRating, sort, page]);
 
   useEffect(() => {
     void load();

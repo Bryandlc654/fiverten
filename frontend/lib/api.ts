@@ -41,6 +41,10 @@ export interface OrganizationDetail {
   isPublic: boolean;
   allowContact: boolean;
   hideLowRatings: boolean;
+  /** Aviso de cada reseña nueva de 3 a 5 estrellas (app y correo). */
+  notifyNewReviews: boolean;
+  /** Aviso destacado de las reseñas de 1 y 2 estrellas. */
+  notifyNegativeReviews: boolean;
   createdAt: string;
   verifiedAt: string | null;
 }
@@ -413,6 +417,57 @@ export interface AdminUser {
   role: string | null;
 }
 
+/** Estadísticas de reputación del panel de la empresa. */
+export interface OrganizationStats {
+  rating: RatingSummary;
+  /** Reseñas publicadas en los últimos 30/90/365 días y en los 30 anteriores. */
+  periods: { last30: number; previous30: number; last90: number; last365: number };
+  /** Un punto por mes (YYYY-MM), del más antiguo al actual. */
+  monthly: { month: string; count: number; average: number | null }[];
+  responses: {
+    published: number;
+    answered: number;
+    /** 0-1, o null sin reseñas publicadas. */
+    rate: number | null;
+    averageHours: number | null;
+  };
+  requests: {
+    pendingConfirmation: number;
+    underReview: number;
+    resolutions: {
+      open: number;
+      resolved: number;
+      unresolved: number;
+      total: number;
+      resolutionRate: number | null;
+    };
+    cases: {
+      open: number;
+      published: number;
+      rejected: number;
+      withdrawn: number;
+      total: number;
+      resolutionRate: number | null;
+    };
+  };
+}
+
+export type NotificationType = 'new_review' | 'negative_review';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  link: string | null;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface NotificationList extends Paginated<AppNotification> {
+  unread: number;
+}
+
 export interface PlatformStats {
   organizations: { total: number; active: number; verified: number; pending: number };
   users: { total: number; active: number; admins: number };
@@ -522,7 +577,18 @@ function once<T>(key: string, call: () => Promise<T>): Promise<T> {
 }
 
 /** Rutas que no necesitan sesión (o que la crean) y no deben esperar. */
+// Rutas de /auth que sí necesitan la sesión restaurada (token de acceso).
+const AUTHENTICATED_AUTH_PATHS = [
+  '/auth/sessions',
+  '/auth/logout-all',
+  '/auth/password/change',
+  '/auth/verify-email/request',
+];
+
 function isSessionless(path: string): boolean {
+  if (AUTHENTICATED_AUTH_PATHS.some((prefix) => path.startsWith(prefix))) {
+    return false;
+  }
   return (
     path.startsWith('/auth/') || path.startsWith('/public/') || path.startsWith('/invitations/')
   );
@@ -763,6 +829,15 @@ export const api = {
       body: JSON.stringify({ token, newPassword }),
     });
   },
+  changePassword(
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ success: boolean; revokedSessions: number }> {
+    return request<{ success: boolean; revokedSessions: number }>('/auth/password/change', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  },
   listSessions(): Promise<{ sessions: SessionInfo[] }> {
     return request<{ sessions: SessionInfo[] }>('/auth/sessions');
   },
@@ -848,6 +923,27 @@ export const api = {
     return request<{ success: boolean }>(`/organizations/me/members/${membershipId}`, {
       method: 'DELETE',
     });
+  },
+
+  // Estadísticas y notificaciones (empresa)
+  getOrganizationStats(months = 12): Promise<OrganizationStats> {
+    return request<OrganizationStats>(`/organizations/me/stats?months=${months}`);
+  },
+  listNotifications(
+    params: { page?: number; pageSize?: number; unread?: boolean } = {},
+  ): Promise<NotificationList> {
+    return request<NotificationList>(
+      `/notifications${buildQuery({ ...params, unread: params.unread ? 'true' : undefined })}`,
+    );
+  },
+  unreadNotifications(): Promise<{ unread: number }> {
+    return request<{ unread: number }>('/notifications/unread-count');
+  },
+  markNotificationRead(id: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(`/notifications/${id}/read`, { method: 'POST' });
+  },
+  markAllNotificationsRead(): Promise<{ updated: number }> {
+    return request<{ updated: number }>('/notifications/read-all', { method: 'POST' });
   },
 
   // Reseñas (empresa)
@@ -1106,7 +1202,7 @@ export const api = {
   },
 };
 
-function buildQuery(params: ListParams | ReviewListParams): string {
+function buildQuery(params: object): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null && value !== '') {

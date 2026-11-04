@@ -1,38 +1,76 @@
-'use client';
+import Link from 'next/link';
+import type { OrganizationDetail, OrganizationStats } from '../../lib/api';
 
-import { useState } from 'react';
-import { TASKS } from './sample-data';
+interface Task {
+  label: string;
+  done: boolean;
+  href: string;
+}
 
-export default function TasksCard() {
-  const [tasks, setTasks] = useState(TASKS);
-  const completedTasks = tasks.filter((task) => task.done).length;
+/** Pasos para completar el perfil, calculados con los datos reales de la empresa. */
+function buildTasks(org: OrganizationDetail, stats: OrganizationStats): Task[] {
+  return [
+    {
+      label: 'Completa los datos fiscales de la empresa',
+      done: Boolean(org.legalName && org.taxId),
+      href: '/dashboard/company',
+    },
+    {
+      label: 'Añade una descripción y una portada',
+      done: Boolean(org.description && org.coverUrl),
+      href: '/dashboard/company',
+    },
+    { label: 'Publica tu perfil público', done: org.isPublic, href: '/dashboard/company' },
+    {
+      label: 'Consigue tu primera reseña',
+      done: stats.rating.total > 0,
+      href: '/dashboard/reviews',
+    },
+    {
+      label: 'Responde a todas tus reseñas',
+      done: stats.responses.published > 0 && stats.responses.answered === stats.responses.published,
+      href: '/dashboard/reviews?answered=no',
+    },
+    {
+      label: 'Obtén el sello de empresa verificada',
+      done: org.verificationStatus === 'verified',
+      href: '/dashboard/company',
+    },
+  ];
+}
 
-  function toggleTask(index: number) {
-    setTasks((current) =>
-      current.map((task, i) => (i === index ? { ...task, done: !task.done } : task)),
-    );
+export default function TasksCard({
+  org,
+  stats,
+}: {
+  org: OrganizationDetail | null;
+  stats: OrganizationStats | null;
+}) {
+  if (!org || !stats) {
+    return <div className="h-72 animate-pulse rounded-xl border border-slate-200 bg-white" />;
   }
+  const tasks = buildTasks(org, stats);
+  const completed = tasks.filter((task) => task.done).length;
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
+    <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-5">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-bold text-slate-900">Tareas pendientes</h3>
         <span className="text-xs font-semibold text-slate-500">
-          {completedTasks}/{tasks.length}
+          {completed}/{tasks.length}
         </span>
       </div>
       <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
         <div
           className="h-full rounded-full bg-[#2563eb] transition-all"
-          style={{ width: `${(completedTasks / tasks.length) * 100}%` }}
+          style={{ width: `${(completed / tasks.length) * 100}%` }}
         />
       </div>
-      <ul className="mt-4 space-y-2">
-        {tasks.map((task, index) => (
+      <ul className="mt-4 space-y-1">
+        {tasks.map((task) => (
           <li key={task.label}>
-            <button
-              type="button"
-              onClick={() => toggleTask(index)}
+            <Link
+              href={task.href}
               className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition hover:bg-slate-50"
             >
               <span
@@ -43,13 +81,11 @@ export default function TasksCard() {
                 {task.done ? 'check_circle' : 'radio_button_unchecked'}
               </span>
               <span
-                className={`text-sm ${
-                  task.done ? 'text-slate-400 line-through' : 'text-slate-700'
-                }`}
+                className={`text-sm ${task.done ? 'text-slate-400 line-through' : 'text-slate-700'}`}
               >
                 {task.label}
               </span>
-            </button>
+            </Link>
           </li>
         ))}
       </ul>

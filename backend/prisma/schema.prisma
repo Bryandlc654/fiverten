@@ -39,6 +39,9 @@ model Organization {
   isPublic               Boolean   @default(false) @map("is_public")
   allowContact           Boolean   @default(false) @map("allow_contact")
   hideLowRatings         Boolean   @default(false) @map("hide_low_ratings")
+  // Avisos al publicarse una reseña (en la app y por correo a los responsables).
+  notifyNewReviews       Boolean   @default(true) @map("notify_new_reviews")
+  notifyNegativeReviews  Boolean   @default(true) @map("notify_negative_reviews")
   metadata               Json      @default("{}") @db.JsonB
   createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt              DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -58,6 +61,7 @@ model Organization {
   reviewCases        ReviewCase[]
   reviewCaseMessages ReviewCaseMessage[]
   reviewCaseFiles    ReviewCaseFile[]
+  notifications      Notification[]
 
   @@index([slug])
   @@index([status, isActive, deletedAt])
@@ -105,6 +109,7 @@ model User {
   authAttempts        AuthAttempt[]
   emailVerifications  EmailVerification[]
   passwordResets      PasswordResetToken[]
+  notifications       Notification[]
 
   @@index([isActive, deletedAt])
   @@index([isFivertenStaff])
@@ -250,6 +255,8 @@ model Review {
   @@index([organizationId, deletedAt])
   @@index([organizationId, lifecycleStatus, moderationStatus])
   @@index([organizationId, rating])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, publishedAt])
   @@index([publishedAt])
   @@index([ipAddress])
   @@index([organizationId, reviewerEmail])
@@ -350,7 +357,7 @@ model ReviewResolution {
   messages     ResolutionMessage[]
 
   @@index([reviewId, status])
-  @@index([organizationId])
+  @@index([organizationId, status])
   @@map("review_resolutions")
 }
 
@@ -398,7 +405,7 @@ model ReviewCase {
   files        ReviewCaseFile[]
 
   @@index([status])
-  @@index([organizationId])
+  @@index([organizationId, status])
   @@map("review_cases")
 }
 
@@ -441,6 +448,28 @@ model ReviewCaseFile {
   @@index([caseId])
   @@index([messageId])
   @@map("review_case_files")
+}
+
+// Notificación del centro de avisos del panel. Una fila por destinatario
+// (miembro de la empresa), para que cada uno marque sus leídas.
+model Notification {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  type           String    @db.VarChar(30)
+  title          String    @db.VarChar(200)
+  body           String    @db.Text
+  link           String?   @db.VarChar(500)
+  reviewId       String?   @map("review_id") @db.Uuid
+  readAt         DateTime? @map("read_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, userId, createdAt])
+  @@index([organizationId, userId, readAt])
+  @@map("notifications")
 }
 
 model Session {
@@ -491,6 +520,7 @@ model RefreshToken {
 
   @@index([userId, isUsed, revokedAt])
   @@index([familyId])
+  @@index([sessionId])
   @@map("refresh_tokens")
 }
 

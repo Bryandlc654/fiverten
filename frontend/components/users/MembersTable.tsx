@@ -36,8 +36,8 @@ export default function MembersTable({
         <LoadingRow label="Cargando usuarios…" />
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] border-t border-slate-100 text-left text-sm">
-            <thead>
+          <table className="block w-full md:table md:min-w-[720px] border-t border-slate-100 text-left text-sm">
+            <thead className="hidden md:table-header-group">
               <tr className="text-xs uppercase tracking-wide text-slate-400">
                 <th className="px-5 py-3 font-semibold">Usuario</th>
                 <th className="px-5 py-3 font-semibold">Rol</th>
@@ -46,7 +46,7 @@ export default function MembersTable({
                 <th className="px-5 py-3 text-right font-semibold">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="block divide-y divide-slate-100 md:table-row-group">
               {members.map((member) => (
                 <MemberRow
                   key={member.membershipId}
@@ -78,8 +78,8 @@ function MemberRow({
 }: Omit<MembersTableProps, 'members' | 'loading' | 'busyId'> & { member: Member; busy: boolean }) {
   const name = [member.firstName, member.lastName].filter(Boolean).join(' ') || member.username;
   return (
-    <tr className="align-middle">
-      <td className="px-5 py-3">
+    <tr className="block py-2 md:table-row md:py-0 align-middle">
+      <td className="block px-5 py-1 md:table-cell md:py-3">
         <div className="flex items-center gap-3">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
             {initialsOf(name)}
@@ -97,7 +97,7 @@ function MemberRow({
           </div>
         </div>
       </td>
-      <td className="px-5 py-3">
+      <td className="block px-5 py-1 md:table-cell md:py-3">
         {canManage && !member.isOwner ? (
           <select
             value={member.role ?? 'viewer'}
@@ -117,7 +117,7 @@ function MemberRow({
           </span>
         )}
       </td>
-      <td className="px-5 py-3">
+      <td className="block px-5 py-1 md:table-cell md:py-3">
         <span
           className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
             member.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'
@@ -130,11 +130,12 @@ function MemberRow({
           <span className="ml-2 text-[11px] text-amber-500">sin verificar</span>
         )}
       </td>
-      <td className="px-5 py-3 text-xs text-slate-500">
+      <td className="block px-5 py-1 md:table-cell md:py-3 text-xs text-slate-500">
+        <span className="md:hidden">Alta: </span>
         {new Date(member.joinedAt).toLocaleDateString('es-ES')}
       </td>
-      <td className="px-5 py-3">
-        <div className="flex items-center justify-end gap-2">
+      <td className="block px-5 py-1 md:table-cell md:py-3">
+        <div className="flex items-center gap-2 md:justify-end">
           {canManage && !member.isOwner && (
             <button
               type="button"
