@@ -6,7 +6,8 @@ import { formatRating, Stars } from './Stars';
 
 /**
  * Media, total y distribución por estrellas; cada barra filtra el listado.
- * Si la empresa oculta las reseñas bajas, sus barras se ven pero no filtran.
+ * Si la empresa oculta las reseñas bajas, sus barras se ven pero no filtran
+ * (sin mostrar ningún aviso público sobre esa configuración).
  */
 export default function RatingBreakdown({
   rating,
@@ -46,7 +47,6 @@ export default function RatingBreakdown({
                 onClick={() => onSelect(active ? null : stars)}
                 aria-pressed={active}
                 disabled={hidden}
-                title={hidden ? 'La empresa no muestra estas reseñas' : undefined}
                 className={`flex w-full items-center gap-3 rounded-md px-1.5 py-1 text-left text-xs transition ${
                   active ? 'bg-blue-50' : hidden ? 'cursor-default' : 'hover:bg-slate-50'
                 }`}

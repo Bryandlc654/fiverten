@@ -22,6 +22,24 @@ test.describe('Reseñas', () => {
     await expect(page.getByRole('heading', { name: 'Información' })).toBeVisible();
   });
 
+  test('no publica un aviso cuando la empresa oculta las reseñas bajas', async ({
+    page,
+    request,
+  }) => {
+    const organization = await seedOrganization(request, 'Perfil Sin Aviso E2E');
+    await makeProfilePublic(request, organization);
+    const updated = await request.patch(`${BACKEND_URL}/api/organizations/me`, {
+      headers: { Authorization: `Bearer ${organization.accessToken}` },
+      data: { hideLowRatings: true },
+    });
+    expect(updated.ok(), await updated.text()).toBeTruthy();
+
+    await page.goto(`/empresa/${organization.slug}`);
+    await expect(page.getByRole('heading', { name: 'Perfil Sin Aviso E2E' })).toBeVisible();
+    await expect(page.getByText(/ha elegido no mostrar/i)).toHaveCount(0);
+    await expect(page.getByText(/La empresa no muestra estas reseñas/i)).toHaveCount(0);
+  });
+
   test('un cliente puede enviar una reseña desde el formulario público', async ({
     page,
     request,
