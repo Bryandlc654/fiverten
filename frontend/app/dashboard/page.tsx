@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import DashboardShell from '../../components/DashboardShell';
 import PlatformDashboard from '../../components/PlatformDashboard';
 import LatestReviews from '../../components/dashboard/LatestReviews';
 import PerformanceChart from '../../components/dashboard/PerformanceChart';
@@ -11,8 +12,6 @@ import RequestsCard from '../../components/dashboard/RequestsCard';
 import SealCard from '../../components/dashboard/SealCard';
 import StatsGrid from '../../components/dashboard/StatsGrid';
 import TasksCard from '../../components/dashboard/TasksCard';
-import TenantHeader from '../../components/dashboard/TenantHeader';
-import TenantSidebar from '../../components/dashboard/TenantSidebar';
 import WelcomeBanner from '../../components/dashboard/WelcomeBanner';
 import { ApiError, api, type OrganizationDetail, type OrganizationStats } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
@@ -28,13 +27,9 @@ export default function DashboardPage() {
     isLoading,
     isSuperAdmin,
     isSupportAgent,
-    logout,
   } = useAuth();
-  const [signingOut, setSigningOut] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [sendingVerification, setSendingVerification] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [stats, setStats] = useState<OrganizationStats | null>(null);
   const [orgDetail, setOrgDetail] = useState<OrganizationDetail | null>(null);
   const [statsError, setStatsError] = useState(false);
@@ -66,20 +61,6 @@ export default function DashboardPage() {
       .then(setOrgDetail)
       .catch(() => undefined);
   }, [isLoading, isAuthenticated, isSuperAdmin, hasOrganization]);
-
-  function toggleSidebar() {
-    if (typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches) {
-      setDesktopCollapsed((value) => !value);
-    } else {
-      setMobileOpen((value) => !value);
-    }
-  }
-
-  async function onLogout() {
-    setSigningOut(true);
-    await logout();
-    router.replace('/login');
-  }
 
   async function onResendVerification() {
     setSendingVerification(true);
@@ -120,11 +101,6 @@ export default function DashboardPage() {
     );
   }
 
-  const fullName =
-    [user.firstName, user.lastName].filter(Boolean).join(' ') || user.username || user.email;
-  const initials = (
-    [user.firstName?.[0], user.lastName?.[0]].filter(Boolean).join('') || user.email[0]
-  ).toUpperCase();
   const roleText = roleLabel(role);
   const company = organization?.tradeName ?? 'Sin organización';
   const isVerified = organization?.verificationStatus === 'verified';
@@ -133,35 +109,13 @@ export default function DashboardPage() {
     : `${origin}/mi-empresa`;
 
   return (
-    <div className="flex-1 flex min-h-screen bg-slate-50 text-slate-900">
-      <TenantSidebar
-        initials={initials}
-        company={company}
-        publicId={organization?.publicId}
-        isVerified={isVerified}
-        mobileOpen={mobileOpen}
-        desktopCollapsed={desktopCollapsed}
-        signingOut={signingOut}
-        onCloseMobile={() => setMobileOpen(false)}
-        onLogout={() => void onLogout()}
-      />
-
-      <div className="flex-1 flex flex-col min-w-0">
-        <TenantHeader
-          company={company}
-          slug={organization?.slug}
-          isVerified={isVerified}
-          roleText={roleText}
-          initials={initials}
-          fullName={fullName}
-          email={user.email}
-          signingOut={signingOut}
-          onToggleSidebar={toggleSidebar}
-          onLogout={() => void onLogout()}
-        />
-
-        <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-6">
-          {notice && (
+    <DashboardShell
+      active="overview"
+      title={company}
+      subtitle={`Panel de gestión · ${roleText}`}
+    >
+      <div>
+        {notice && (
             <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
               {notice}
             </div>
@@ -214,8 +168,7 @@ export default function DashboardPage() {
             <RecentActivity />
             <SealCard publicUrl={publicUrl} publicId={organization?.publicId} />
           </section>
-        </main>
       </div>
-    </div>
+    </DashboardShell>
   );
 }

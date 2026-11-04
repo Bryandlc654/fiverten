@@ -26,9 +26,10 @@ test.describe('Configuración del super admin', () => {
 
     await page.getByRole('button', { name: 'Motivos de reporte' }).click();
     const reasonCode = `motivo-${Date.now()}`;
-    await page.getByLabel('Etiqueta').fill('Motivo E2E');
+    const reasonLabel = `Motivo E2E ${Date.now()}`;
+    await page.getByLabel('Etiqueta').fill(reasonLabel);
     await page.getByLabel('Código', { exact: true }).fill(reasonCode);
     await page.getByRole('button', { name: 'Añadir' }).click();
-    await expect(page.getByText('Motivo E2E')).toBeVisible();
+    await expect(page.getByText(reasonLabel)).toBeVisible();
   });
 });
