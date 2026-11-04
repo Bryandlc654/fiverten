@@ -16,6 +16,7 @@ interface FormState {
   phone: string;
   website: string;
   description: string;
+  logoUrl: string;
   coverUrl: string;
   isPublic: boolean;
   allowContact: boolean;
@@ -35,6 +36,7 @@ function toForm(org: OrganizationDetail): FormState {
     phone: org.phone ?? '',
     website: org.website ?? '',
     description: org.description ?? '',
+    logoUrl: org.logoUrl ?? '',
     coverUrl: org.coverUrl ?? '',
     isPublic: org.isPublic,
     allowContact: org.allowContact,
@@ -92,6 +94,7 @@ export default function CompanyPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -151,6 +154,7 @@ export default function CompanyPage() {
       if (form.phone.trim()) payload.phone = form.phone.trim();
       if (form.website.trim()) payload.website = form.website.trim();
       payload.description = form.description.trim();
+      payload.logoUrl = form.logoUrl ? form.logoUrl : null;
       payload.coverUrl = form.coverUrl ? form.coverUrl : null;
       payload.isPublic = form.isPublic;
       payload.allowContact = form.allowContact;
@@ -197,6 +201,35 @@ export default function CompanyPage() {
       setUploadError(err instanceof ApiError ? err.message : 'No se pudo subir la imagen');
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function onLogoChange(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.target;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || !form) {
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      setUploadError('El archivo debe ser una imagen');
+      return;
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setUploadError('La imagen supera el máximo de 5 MB');
+      return;
+    }
+
+    setUploadError(null);
+    setUploadingLogo(true);
+    try {
+      const prepared = await prepareCoverImage(file);
+      const { url } = await api.uploadOrganizationLogo(prepared);
+      setForm((prev) => (prev ? { ...prev, logoUrl: url } : prev));
+    } catch (err) {
+      setUploadError(err instanceof ApiError ? err.message : 'No se pudo subir el logo');
+    } finally {
+      setUploadingLogo(false);
     }
   }
 
@@ -262,6 +295,70 @@ export default function CompanyPage() {
             )}
 
             <form onSubmit={onSubmit} className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <span className="mb-1 block text-xs font-semibold text-slate-600">
+                  Logo de la empresa
+                </span>
+                <div className="flex flex-wrap items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                    {form.logoUrl ? (
+                      <Image
+                        src={form.logoUrl}
+                        alt="Logo de la empresa"
+                        fill
+                        sizes="80px"
+                        className="object-contain p-1"
+                      />
+                    ) : (
+                      <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#2563eb] to-[#1e3a8a] text-2xl font-bold text-white">
+                        {form.tradeName.trim()[0]?.toUpperCase() ?? '?'}
+                      </span>
+                    )}
+                    {uploadingLogo && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-white/70 text-[11px] text-slate-600">
+                        Subiendo…
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label
+                      className={`inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-white ${
+                        !canEdit || uploadingLogo
+                          ? 'pointer-events-none opacity-60'
+                          : 'cursor-pointer'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[18px]">upload</span>
+                      {form.logoUrl ? 'Cambiar logo' : 'Subir logo'}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
+                        className="hidden"
+                        onChange={onLogoChange}
+                        disabled={!canEdit || uploadingLogo}
+                      />
+                    </label>
+                    {form.logoUrl && canEdit && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUploadError(null);
+                          setForm((prev) => (prev ? { ...prev, logoUrl: '' } : prev));
+                        }}
+                        className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                        Quitar logo
+                      </button>
+                    )}
+                  </div>
+                  <p className="w-full text-xs text-slate-400">
+                    Recomendado cuadrado (por ejemplo 512×512). PNG, JPG, WEBP, GIF o AVIF, hasta
+                    5 MB. Se guarda al pulsar &quot;Guardar cambios&quot;.
+                  </p>
+                </div>
+              </div>
+
               <div className="sm:col-span-2">
                 <span className="mb-1 block text-xs font-semibold text-slate-600">
                   Imagen de portada

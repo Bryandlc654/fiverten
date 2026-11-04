@@ -47,6 +47,10 @@ export class MediaService {
     return this.upload(`users/${userId}/avatar`, file);
   }
 
+  async uploadOrganizationLogo(orgId: string, file: UploadedImage): Promise<string> {
+    return this.upload(`organizations/${orgId}/logo`, file);
+  }
+
   private async upload(prefix: string, file: UploadedImage): Promise<string> {
     const client = this.getClient();
     const extension = MIME_EXTENSIONS[file.mimetype] ?? 'jpg';

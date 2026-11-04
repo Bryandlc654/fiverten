@@ -1215,9 +1215,14 @@ export const api = {
     });
   },
   uploadOrganizationCover(file: File): Promise<{ url: string }> {
-    const formData = new FormData();
-    formData.append('file', file);
-    return requestForm<{ url: string }>('/media/organization-cover', formData);
+    const form = new FormData();
+    form.append('file', file);
+    return requestForm<{ url: string }>('/media/organization-cover', form);
+  },
+  uploadOrganizationLogo(file: File): Promise<{ url: string }> {
+    const form = new FormData();
+    form.append('file', file);
+    return requestForm<{ url: string }>('/media/organization-logo', form);
   },
   listMembers(): Promise<{ members: Member[] }> {
     return request<{ members: Member[] }>('/organizations/me/members');
