@@ -21,15 +21,19 @@ test.describe('Sello y verificación', () => {
 
     for (const category of ['identity', 'tax', 'address']) {
       await page.getByLabel('Tipo de documento').selectOption(category);
-      await page.locator('input[type="file"]').setInputFiles(PDF);
+      await page.getByLabel(/Archivo \(PDF o imagen/).setInputFiles(PDF);
       await expect(page.getByText('Documento añadido', { exact: false })).toBeVisible();
     }
 
     await page.getByLabel('Nombre del proyecto').fill('Proyecto E2E');
     await page.getByLabel('URL del proyecto').fill('https://example.com/e2e');
     await page.getByLabel('Descripción del proyecto').fill('Evidencia del servicio');
+    await page
+      .getByLabel(/Archivos de evidencia/)
+      .setInputFiles({ name: 'evidencia.pdf', mimeType: 'application/pdf', buffer: PDF.buffer });
     await page.getByRole('button', { name: 'Añadir proyecto' }).click();
-    await expect(page.getByText('Proyecto añadido')).toBeVisible();
+    await expect(page.getByText('Proyecto añadido', { exact: false })).toBeVisible();
+    await expect(page.getByText(/Evidencias: evidencia\.pdf/)).toBeVisible();
 
     page.on('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', { name: 'Enviar solicitud a FIVERTEN' }).click();

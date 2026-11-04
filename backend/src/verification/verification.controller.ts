@@ -97,6 +97,26 @@ export class CompanyVerificationController {
     return this.verification.addProject(this.requireOrg(orgId), userId, dto);
   }
 
+  @Post('projects/:id/documents')
+  @Roles('admin')
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_VERIFICATION_FILE_BYTES } }),
+  )
+  uploadProjectDocument(
+    @CurrentUser('organizationId') orgId: string | null,
+    @CurrentUser('userId') userId: string,
+    @Param('id', ParseUUIDPipe) projectId: string,
+    @UploadedFile() file?: VerificationUpload,
+  ) {
+    if (!file) throw new BadRequestException('No se recibió ningún archivo');
+    return this.verification.uploadProjectDocument(
+      this.requireOrg(orgId),
+      userId,
+      projectId,
+      file,
+    );
+  }
+
   @Delete('projects/:id')
   @Roles('admin')
   @HttpCode(HttpStatus.OK)

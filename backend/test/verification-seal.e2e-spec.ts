@@ -97,13 +97,22 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
     await upload('tax').expect(201);
     await upload('address').expect(201);
 
-    await http()
+    const project = await http()
       .post(`${VERIFY}/projects`)
       .set(company())
       .send({
         name: 'Proyecto de prueba',
         description: 'Evidencia del servicio prestado',
         url: 'https://example.com/proyecto',
+      })
+      .expect(201);
+
+    await http()
+      .post(`${VERIFY}/projects/${project.body.id}/documents`)
+      .set(company())
+      .attach('file', Buffer.from('%PDF-1.4 evidencia'), {
+        filename: 'evidencia.pdf',
+        contentType: 'application/pdf',
       })
       .expect(201);
 
@@ -124,8 +133,10 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
       .get(`${ADMIN}/${requestId}`)
       .set(admin())
       .expect(200);
-    expect(detail.body.documents).toHaveLength(3);
+    expect(detail.body.documents).toHaveLength(4);
     expect(detail.body.projects).toHaveLength(1);
+    expect(detail.body.projects[0].documents).toHaveLength(1);
+    expect(detail.body.projects[0].documents[0].filename).toBe('evidencia.pdf');
 
     const approved = await http()
       .post(`${ADMIN}/${requestId}/approve`)

@@ -815,6 +815,7 @@ export type VerificationDocumentCategory =
 export interface VerificationDocument {
   id: string;
   category: VerificationDocumentCategory;
+  projectId: string | null;
   filename: string;
   mimeType: string;
   size: number;
@@ -827,6 +828,7 @@ export interface VerificationProject {
   description: string | null;
   url: string | null;
   createdAt: string;
+  documents: VerificationDocument[];
 }
 
 export interface VerificationRequest {
@@ -1796,6 +1798,17 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     });
+  },
+  uploadProjectVerificationDocument(
+    projectId: string,
+    file: File,
+  ): Promise<VerificationDocument> {
+    const form = new FormData();
+    form.append('file', file);
+    return requestForm<VerificationDocument>(
+      `/organizations/me/verification/projects/${projectId}/documents`,
+      form,
+    );
   },
   deleteVerificationProject(id: string): Promise<{ success: boolean }> {
     return request<{ success: boolean }>(`/organizations/me/verification/projects/${id}`, {

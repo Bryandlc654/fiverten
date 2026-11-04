@@ -919,6 +919,7 @@ model VerificationDocument {
   id             String   @id @default(uuid()) @db.Uuid
   organizationId String   @map("organization_id") @db.Uuid
   requestId      String?  @map("request_id") @db.Uuid
+  projectId      String?  @map("project_id") @db.Uuid
   // identity | tax | address | project | other
   category       String   @db.VarChar(30)
   filename       String   @db.VarChar(255)
@@ -930,9 +931,11 @@ model VerificationDocument {
 
   organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   request      VerificationRequest? @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  project      VerificationProject? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, createdAt])
   @@index([requestId])
+  @@index([projectId])
   @@map("verification_documents")
 }
 
@@ -946,8 +949,9 @@ model VerificationProject {
   createdBy      String?  @map("created_by") @db.Uuid
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  request      VerificationRequest? @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  request      VerificationRequest?   @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  documents    VerificationDocument[]
 
   @@index([organizationId, createdAt])
   @@index([requestId])

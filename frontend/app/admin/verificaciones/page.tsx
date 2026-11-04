@@ -280,6 +280,28 @@ export default function AdminVerificationsPage() {
                               {project.url}
                             </a>
                           )}
+                          {project.documents.length > 0 && (
+                            <ul className="mt-2 space-y-1">
+                              {project.documents.map((document) => (
+                                <li
+                                  key={document.id}
+                                  className="flex items-center justify-between gap-2 text-xs"
+                                >
+                                  <span className="truncate text-slate-600">
+                                    {document.filename} ·{' '}
+                                    {(document.size / 1024).toFixed(0)} KB
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => void viewDocument(document.id)}
+                                    className="rounded border border-slate-200 bg-white px-2 py-0.5 font-semibold text-slate-600 hover:bg-slate-50"
+                                  >
+                                    Ver
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
                         </li>
                       ))}
                     </ul>

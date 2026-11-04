@@ -47,6 +47,7 @@ const REQUEST_INCLUDE = {
     select: {
       id: true,
       category: true,
+      projectId: true,
       filename: true,
       mimeType: true,
       size: true,
@@ -54,7 +55,23 @@ const REQUEST_INCLUDE = {
     },
     orderBy: { createdAt: 'asc' as const },
   },
-  projects: { orderBy: { createdAt: 'asc' as const } },
+  projects: {
+    orderBy: { createdAt: 'asc' as const },
+    include: {
+      documents: {
+        select: {
+          id: true,
+          category: true,
+          projectId: true,
+          filename: true,
+          mimeType: true,
+          size: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'asc' as const },
+      },
+    },
+  },
   _count: { select: { documents: true, projects: true } },
 } satisfies Prisma.VerificationRequestInclude;
 
@@ -153,6 +170,7 @@ export class VerificationService {
         select: {
           id: true,
           category: true,
+          projectId: true,
           filename: true,
           mimeType: true,
           size: true,
@@ -160,6 +178,50 @@ export class VerificationService {
         },
       });
       return document;
+    });
+  }
+
+  /** Evidencia adjunta a un proyecto concreto (imagen o PDF). */
+  async uploadProjectDocument(
+    orgId: string,
+    userId: string,
+    projectId: string,
+    file: VerificationUpload,
+  ) {
+    if (!ALLOWED_MIME.has(file.mimetype)) {
+      throw new BadRequestException('Formato no permitido. Usa PDF, JPG, PNG, WEBP o AVIF.');
+    }
+    return this.prisma.withContext({ orgId, userId }, async (tx) => {
+      const project = await tx.verificationProject.findFirst({
+        where: { id: projectId, organizationId: orgId },
+        include: { request: { select: { id: true, status: true } } },
+      });
+      if (!project) throw new NotFoundException('Proyecto no encontrado');
+      if (project.request && project.request.status !== 'draft') {
+        throw new BadRequestException('La solicitud ya está enviada y no se puede modificar');
+      }
+      return tx.verificationDocument.create({
+        data: {
+          organizationId: orgId,
+          requestId: project.requestId,
+          projectId,
+          category: 'project',
+          filename: file.originalname.slice(0, 255),
+          mimeType: file.mimetype,
+          size: file.size,
+          data: file.buffer,
+          createdBy: userId,
+        },
+        select: {
+          id: true,
+          category: true,
+          projectId: true,
+          filename: true,
+          mimeType: true,
+          size: true,
+          createdAt: true,
+        },
+      });
     });
   }
 
@@ -547,6 +609,7 @@ export class VerificationService {
         description: project.description,
         url: project.url,
         createdAt: project.createdAt,
+        documents: project.documents,
       })),
     };
   }

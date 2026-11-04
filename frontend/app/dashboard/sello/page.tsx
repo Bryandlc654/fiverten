@@ -74,6 +74,7 @@ export default function VerificationPage() {
   const [projectName, setProjectName] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
   const [projectUrl, setProjectUrl] = useState('');
+  const [projectFiles, setProjectFiles] = useState<File[]>([]);
   const [copied, setCopied] = useState(false);
 
   const load = useCallback(async () => {
@@ -123,18 +124,38 @@ export default function VerificationPage() {
   async function addProject(event: FormEvent) {
     event.preventDefault();
     if (!projectName.trim()) return;
-    await run(
-      () =>
-        api.addVerificationProject({
-          name: projectName.trim(),
-          description: projectDescription.trim() || undefined,
-          url: projectUrl.trim() || undefined,
-        }),
-      'Proyecto añadido',
-    );
-    setProjectName('');
-    setProjectDescription('');
-    setProjectUrl('');
+    if (projectFiles.some((file) => file.size > 10 * 1024 * 1024)) {
+      setError('Cada archivo de evidencia debe pesar como máximo 10 MB');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const project = await api.addVerificationProject({
+        name: projectName.trim(),
+        description: projectDescription.trim() || undefined,
+        url: projectUrl.trim() || undefined,
+      });
+      for (const file of projectFiles) {
+        await api.uploadProjectVerificationDocument(project.id, file);
+      }
+      setNotice(
+        projectFiles.length > 0
+          ? `Proyecto añadido con ${projectFiles.length} archivo(s) de evidencia`
+          : 'Proyecto añadido',
+      );
+      setProjectName('');
+      setProjectDescription('');
+      setProjectUrl('');
+      setProjectFiles([]);
+      (event.target as HTMLFormElement).reset();
+      await load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo añadir el proyecto');
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function submit() {
@@ -388,6 +409,25 @@ export default function VerificationPage() {
                 aria-label="Descripción del proyecto"
                 className={`${inputClass} mt-2`}
               />
+              <div className="mt-2">
+                <label className="block text-xs font-semibold text-slate-600">
+                  Archivos de evidencia (imágenes o PDF, máx. 10 MB cada uno)
+                  <input
+                    type="file"
+                    multiple
+                    accept="application/pdf,image/jpeg,image/png,image/webp,image/avif"
+                    onChange={(event) =>
+                      setProjectFiles(Array.from(event.target.files ?? []))
+                    }
+                    className={`${inputClass} mt-1`}
+                  />
+                </label>
+                {projectFiles.length > 0 && (
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    {projectFiles.map((file) => file.name).join(' · ')}
+                  </p>
+                )}
+              </div>
             </form>
 
             <ul className="mt-3 divide-y divide-slate-100">
@@ -397,6 +437,11 @@ export default function VerificationPage() {
                     <p className="truncate font-medium text-slate-900">{project.name}</p>
                     {project.description && (
                       <p className="truncate text-xs text-slate-500">{project.description}</p>
+                    )}
+                    {project.documents.length > 0 && (
+                      <p className="mt-0.5 truncate text-[11px] text-slate-400">
+                        Evidencias: {project.documents.map((file) => file.filename).join(' · ')}
+                      </p>
                     )}
                   </div>
                   <button
