@@ -11,12 +11,30 @@ export function membershipRole(membership: {
 }
 
 export function toOrganizationDetail(org: {
-  id: string; publicId: string; tradeName: string; legalName: string | null; slug: string;
-  taxId: string | null; description: string | null; logoUrl: string | null; coverUrl: string | null;
+  id: string;
+  publicId: string;
+  tradeName: string;
+  legalName: string | null;
+  slug: string;
+  taxId: string | null;
+  description: string | null;
+  logoUrl: string | null;
+  coverUrl: string | null;
   website: string | null;
-  email: string | null; phone: string | null; locale: string; billingCurrency: string;
-  status: string; verificationStatus: string; isActive: boolean; isPublic: boolean;
-  allowContact: boolean; hideLowRatings: boolean; createdAt: Date; verifiedAt: Date | null;
+  email: string | null;
+  phone: string | null;
+  locale: string;
+  billingCurrency: string;
+  status: string;
+  verificationStatus: string;
+  isActive: boolean;
+  isPublic: boolean;
+  allowContact: boolean;
+  hideLowRatings: boolean;
+  notifyNewReviews: boolean;
+  notifyNegativeReviews: boolean;
+  createdAt: Date;
+  verifiedAt: Date | null;
 }) {
   return {
     id: org.id,
@@ -39,14 +57,22 @@ export function toOrganizationDetail(org: {
     isPublic: org.isPublic,
     allowContact: org.allowContact,
     hideLowRatings: org.hideLowRatings,
+    notifyNewReviews: org.notifyNewReviews,
+    notifyNegativeReviews: org.notifyNegativeReviews,
     createdAt: org.createdAt,
     verifiedAt: org.verifiedAt,
   };
 }
 
 export function toOrganizationSummary(org: {
-  id: string; publicId: string; tradeName: string; slug: string; status: string;
-  verificationStatus: string; isActive: boolean; createdAt: Date;
+  id: string;
+  publicId: string;
+  tradeName: string;
+  slug: string;
+  status: string;
+  verificationStatus: string;
+  isActive: boolean;
+  createdAt: Date;
 }) {
   return {
     id: org.id,
@@ -61,8 +87,20 @@ export function toOrganizationSummary(org: {
 }
 
 export function toMember(membership: {
-  id: string; userId: string; isOwner: boolean; isActive: boolean; joinedAt: Date;
-  user: { id: string; email: string; username: string; firstName: string | null; lastName: string | null; isVerified: boolean; isActive: boolean };
+  id: string;
+  userId: string;
+  isOwner: boolean;
+  isActive: boolean;
+  joinedAt: Date;
+  user: {
+    id: string;
+    email: string;
+    username: string;
+    firstName: string | null;
+    lastName: string | null;
+    isVerified: boolean;
+    isActive: boolean;
+  };
   role: { name: string; baseRole: string | null };
 }) {
   return {
@@ -82,8 +120,13 @@ export function toMember(membership: {
 }
 
 export function toInvitation(invitation: {
-  id: string; email: string; role: string; firstName: string | null; lastName: string | null;
-  expiresAt: Date; createdAt: Date;
+  id: string;
+  email: string;
+  role: string;
+  firstName: string | null;
+  lastName: string | null;
+  expiresAt: Date;
+  createdAt: Date;
 }) {
   return {
     id: invitation.id,

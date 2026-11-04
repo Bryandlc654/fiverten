@@ -68,6 +68,7 @@ export default function ModerationItem({
   const [showHistory, setShowHistory] = useState(false);
 
   const status = REVIEW_STATUS_LABELS[review.status];
+  const openCase = review.case && review.case.status !== 'closed' ? review.case : null;
 
   async function run(def: ActionDef, why?: string) {
     setBusy(true);
@@ -118,22 +119,33 @@ export default function ModerationItem({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {(ACTIONS[review.status] ?? []).map((def) => (
-            <button
-              key={def.action}
-              type="button"
-              disabled={busy}
-              onClick={() => start(def)}
-              className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
-                def.danger
-                  ? 'border-red-200 text-red-600 hover:bg-red-50'
-                  : 'border-slate-200 text-slate-700 hover:border-slate-300'
-              }`}
+          {/* Con un caso de evidencias abierto, la decisión se toma desde Casos. */}
+          {openCase && (
+            <Link
+              href={`/admin/casos?id=${openCase.id}`}
+              className="inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-1.5 text-xs font-semibold text-[#2563eb] transition hover:bg-blue-50"
             >
-              <span className="material-symbols-outlined text-[16px]">{def.icon}</span>
-              {def.label}
-            </button>
-          ))}
+              <span className="material-symbols-outlined text-[16px]">policy</span>
+              Ver caso de evidencias
+            </Link>
+          )}
+          {!openCase &&
+            (ACTIONS[review.status] ?? []).map((def) => (
+              <button
+                key={def.action}
+                type="button"
+                disabled={busy}
+                onClick={() => start(def)}
+                className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
+                  def.danger
+                    ? 'border-red-200 text-red-600 hover:bg-red-50'
+                    : 'border-slate-200 text-slate-700 hover:border-slate-300'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">{def.icon}</span>
+                {def.label}
+              </button>
+            ))}
         </div>
       </header>
 

@@ -99,16 +99,23 @@ export class ReviewsService {
     });
   }
 
+  /** Contadores del panel en una sola consulta (antes eran cinco COUNT). */
   private async summary(tx: Prisma.TransactionClient, orgId: string) {
-    const base = { organizationId: orgId, deletedAt: null };
-    const [total, published, pending, unanswered, negative] = await Promise.all([
-      tx.review.count({ where: { ...base, emailConfirmedAt: { not: null } } }),
-      tx.review.count({ where: { ...base, ...statusFilter('published') } }),
-      tx.review.count({ where: { ...base, ...statusFilter('pending') } }),
-      tx.review.count({ where: { ...base, ...statusFilter('published'), response: null } }),
-      tx.review.count({ where: { ...base, ...statusFilter('published'), rating: { lte: 2 } } }),
-    ]);
-    return { total, published, pending, unanswered, negative };
+    // Mismo criterio que statusFilter('published').
+    const published = Prisma.sql`r.lifecycle_status = 'published' AND r.visibility = 'public' AND r.moderation_status = 'none'`;
+    const [row] = await tx.$queryRaw<
+      { total: number; published: number; pending: number; unanswered: number; negative: number }[]
+    >`
+      SELECT
+        COUNT(*) FILTER (WHERE r.email_confirmed_at IS NOT NULL)::int AS total,
+        COUNT(*) FILTER (WHERE ${published})::int AS published,
+        COUNT(*) FILTER (WHERE r.email_confirmed_at IS NULL)::int AS pending,
+        COUNT(*) FILTER (WHERE ${published} AND rr.id IS NULL)::int AS unanswered,
+        COUNT(*) FILTER (WHERE ${published} AND r.rating <= ${LOW_RATING_MAX})::int AS negative
+      FROM reviews r
+      LEFT JOIN review_responses rr ON rr.review_id = r.id
+      WHERE r.organization_id = ${orgId}::uuid AND r.deleted_at IS NULL`;
+    return row;
   }
 
   private async findConfirmed(tx: Prisma.TransactionClient, orgId: string, reviewId: string) {

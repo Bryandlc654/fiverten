@@ -192,6 +192,12 @@ export const rlsStatements: string[] = [
   // Resoluciones de incidencias y sus mensajes: solo la organización titular.
   ...tenantTablePolicy('review_resolutions'),
   ...tenantTablePolicy('resolution_messages'),
+  ...tenantTablePolicy('review_cases'),
+  ...tenantTablePolicy('review_case_messages'),
+  ...tenantTablePolicy('review_case_files'),
+  // Centro de notificaciones: de la organización (el backend filtra además por
+  // destinatario, user_id, para que cada miembro vea solo las suyas).
+  ...tenantTablePolicy('notifications'),
   `DROP POLICY IF EXISTS rls_review_responses_public ON review_responses`,
   `CREATE POLICY rls_review_responses_public ON review_responses FOR SELECT
      USING (
@@ -227,7 +233,9 @@ export const rlsStatements: string[] = [
 ];
 
 export function renderSql(): string {
-  return ['-- FIVERTEN RLS setup (rol fiverten_app)', '', ...rlsStatements.map((s) => `${s};`)].join(
-    '\n\n',
-  );
+  return [
+    '-- FIVERTEN RLS setup (rol fiverten_app)',
+    '',
+    ...rlsStatements.map((s) => `${s};`),
+  ].join('\n\n');
 }

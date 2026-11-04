@@ -1,12 +1,9 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ModerateReviewDto, ReportReviewDto } from './dto/moderation.dto';
-import {
-  assertTransition,
-  dataForStatus,
-  type ModerationActionName,
-} from './review-states';
+import { assertTransition, dataForStatus, type ModerationActionName } from './review-states';
 import { reviewStatus, statusFilter, type ReviewStatus } from './reviews.mappers';
 
 interface AdminListQuery {
@@ -31,7 +28,10 @@ const REPORTABLE: ReviewStatus[] = ['published', 'reported'];
  */
 @Injectable()
 export class ModerationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   listReasons() {
     return this.prisma.withContext({}, async (tx) => {
@@ -48,7 +48,12 @@ export class ModerationService {
   // Reportes
   // ---------------------------------------------------------------------------
   /** Una empresa reporta una reseña propia (p. ej. no corresponde a un cliente real). */
-  async reportAsOrganization(orgId: string, userId: string, reviewId: string, dto: ReportReviewDto) {
+  async reportAsOrganization(
+    orgId: string,
+    userId: string,
+    reviewId: string,
+    dto: ReportReviewDto,
+  ) {
     return this.report(reviewId, dto, { userId, organizationId: orgId }, orgId);
   }
 
@@ -107,7 +112,10 @@ export class ModerationService {
       }
 
       if (reviewStatus(review) === 'published') {
-        await tx.review.update({ where: { id: reviewId }, data: dataForStatus('reported', review) });
+        await tx.review.update({
+          where: { id: reviewId },
+          data: dataForStatus('reported', review),
+        });
         await tx.moderationAction.create({
           data: {
             reviewId,
@@ -160,6 +168,7 @@ export class ModerationService {
               include: { reason: { select: { label: true } } },
             },
             moderationActions: { orderBy: { createdAt: 'desc' }, take: 10 },
+            case: { select: { id: true, status: true } },
           },
         }),
         tx.review.count({ where: { deletedAt: null, ...statusFilter('under_review') } }),
@@ -181,6 +190,7 @@ export class ModerationService {
           createdAt: review.createdAt,
           publishedAt: review.publishedAt,
           response: review.response?.body ?? null,
+          case: review.case,
           reports: review.reports.map((report) => ({
             id: report.id,
             reason: report.reason?.label ?? null,
@@ -211,10 +221,19 @@ export class ModerationService {
     action: ModerationActionName,
     dto: ModerateReviewDto,
   ) {
-    return this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
+    const result = await this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
       const review = await tx.review.findFirst({ where: { id: reviewId, deletedAt: null } });
       if (!review) {
         throw new NotFoundException('Reseña no encontrada');
+      }
+      const openCase = await tx.reviewCase.findFirst({
+        where: { reviewId, status: { not: 'closed' } },
+        select: { id: true },
+      });
+      if (openCase) {
+        throw new BadRequestException(
+          'Esta reseña tiene un caso de evidencias abierto. Decide desde la sección Casos.',
+        );
       }
       const from = reviewStatus(review);
       const transition = assertTransition(action, from, dto.reason);
@@ -251,7 +270,15 @@ export class ModerationService {
           reason: dto.reason?.trim() || null,
         },
       });
-      return { id: reviewId, status: transition.to };
+      // Solo la primera publicación avisa a la empresa (no al restaurarla).
+      const firstPublication = transition.to === 'published' && !review.publishedAt;
+      return { id: reviewId, status: transition.to, review: firstPublication ? review : null };
     });
+
+    const { review, ...response } = result;
+    if (review) {
+      void this.notifications.reviewPublished(review);
+    }
+    return response;
   }
 }

@@ -39,6 +39,9 @@ model Organization {
   isPublic               Boolean   @default(false) @map("is_public")
   allowContact           Boolean   @default(false) @map("allow_contact")
   hideLowRatings         Boolean   @default(false) @map("hide_low_ratings")
+  // Avisos al publicarse una reseña (en la app y por correo a los responsables).
+  notifyNewReviews       Boolean   @default(true) @map("notify_new_reviews")
+  notifyNegativeReviews  Boolean   @default(true) @map("notify_negative_reviews")
   metadata               Json      @default("{}") @db.JsonB
   createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt              DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -55,6 +58,10 @@ model Organization {
   reviews            Review[]
   reviewResolutions  ReviewResolution[]
   resolutionMessages ResolutionMessage[]
+  reviewCases        ReviewCase[]
+  reviewCaseMessages ReviewCaseMessage[]
+  reviewCaseFiles    ReviewCaseFile[]
+  notifications      Notification[]
 
   @@index([slug])
   @@index([status, isActive, deletedAt])
@@ -102,6 +109,7 @@ model User {
   authAttempts        AuthAttempt[]
   emailVerifications  EmailVerification[]
   passwordResets      PasswordResetToken[]
+  notifications       Notification[]
 
   @@index([isActive, deletedAt])
   @@index([isFivertenStaff])
@@ -242,10 +250,13 @@ model Review {
   reports           ReviewReport[]
   moderationActions ModerationAction[]
   resolutions       ReviewResolution[]
+  case              ReviewCase?
 
   @@index([organizationId, deletedAt])
   @@index([organizationId, lifecycleStatus, moderationStatus])
   @@index([organizationId, rating])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, publishedAt])
   @@index([publishedAt])
   @@index([ipAddress])
   @@index([organizationId, reviewerEmail])
@@ -346,7 +357,7 @@ model ReviewResolution {
   messages     ResolutionMessage[]
 
   @@index([reviewId, status])
-  @@index([organizationId])
+  @@index([organizationId, status])
   @@map("review_resolutions")
 }
 
@@ -366,6 +377,99 @@ model ResolutionMessage {
 
   @@index([resolutionId, createdAt])
   @@map("resolution_messages")
+}
+
+// Caso de evidencias de una reseña de baja valoración. El super admin pide
+// pruebas al cliente, las valida, da voz a la empresa y decide: rechazar la
+// reseña, publicarla o retirarla si las tres partes llegan a un acuerdo.
+model ReviewCase {
+  id                   String    @id @default(uuid()) @db.Uuid
+  reviewId             String    @unique @map("review_id") @db.Uuid
+  organizationId       String    @map("organization_id") @db.Uuid
+  status               String    @default("awaiting_admin") @db.VarChar(30)
+  outcome              String?   @db.VarChar(20)
+  clientTokenHash      String?   @unique @map("client_token_hash") @db.VarChar(255)
+  clientTokenExpiresAt DateTime? @map("client_token_expires_at") @db.Timestamptz(6)
+  companyNotifiedAt    DateTime? @map("company_notified_at") @db.Timestamptz(6)
+  clientAgreedAt       DateTime? @map("client_agreed_at") @db.Timestamptz(6)
+  companyAgreedAt      DateTime? @map("company_agreed_at") @db.Timestamptz(6)
+  decisionReason       String?   @map("decision_reason") @db.Text
+  decidedBy            String?   @map("decided_by") @db.Uuid
+  closedAt             DateTime? @map("closed_at") @db.Timestamptz(6)
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  review       Review              @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  messages     ReviewCaseMessage[]
+  files        ReviewCaseFile[]
+
+  @@index([status])
+  @@index([organizationId, status])
+  @@map("review_cases")
+}
+
+// Mensajes del caso. Remitente: admin, client, company o system.
+model ReviewCaseMessage {
+  id             String   @id @default(uuid()) @db.Uuid
+  caseId         String   @map("case_id") @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  senderType     String   @map("sender_type") @db.VarChar(20)
+  senderUserId   String?  @map("sender_user_id") @db.Uuid
+  body           String   @db.Text
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  case         ReviewCase       @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  files        ReviewCaseFile[]
+
+  @@index([caseId, createdAt])
+  @@map("review_case_messages")
+}
+
+// Archivos de evidencia. Se guardan en la base (no en el almacenamiento
+// público) porque pueden contener datos personales: solo se descargan con
+// sesión de admin o empresa, o con el enlace del cliente.
+model ReviewCaseFile {
+  id             String   @id @default(uuid()) @db.Uuid
+  caseId         String   @map("case_id") @db.Uuid
+  messageId      String   @map("message_id") @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  filename       String   @db.VarChar(255)
+  mimeType       String   @map("mime_type") @db.VarChar(100)
+  size           Int
+  data           Bytes
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  case         ReviewCase        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  message      ReviewCaseMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@index([messageId])
+  @@map("review_case_files")
+}
+
+// Notificación del centro de avisos del panel. Una fila por destinatario
+// (miembro de la empresa), para que cada uno marque sus leídas.
+model Notification {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  type           String    @db.VarChar(30)
+  title          String    @db.VarChar(200)
+  body           String    @db.Text
+  link           String?   @db.VarChar(500)
+  reviewId       String?   @map("review_id") @db.Uuid
+  readAt         DateTime? @map("read_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, userId, createdAt])
+  @@index([organizationId, userId, readAt])
+  @@map("notifications")
 }
 
 model Session {
@@ -416,6 +520,7 @@ model RefreshToken {
 
   @@index([userId, isUsed, revokedAt])
   @@index([familyId])
+  @@index([sessionId])
   @@map("refresh_tokens")
 }
 

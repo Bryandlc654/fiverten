@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import NotificationBell from '../NotificationBell';
 
 interface TenantHeaderProps {
   company: string;
@@ -48,7 +49,7 @@ export default function TenantHeader({
   }
 
   return (
-    <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-slate-200 bg-white/85 px-6 py-4 backdrop-blur">
+    <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-slate-200 bg-white/85 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
       <div className="flex min-w-0 items-center gap-3">
         <button
           type="button"
@@ -72,7 +73,7 @@ export default function TenantHeader({
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         {slug && (
           <Link
             href={`/empresa/${slug}`}
@@ -83,13 +84,7 @@ export default function TenantHeader({
             Ver mi perfil público
           </Link>
         )}
-        <button
-          type="button"
-          className="relative rounded-lg border border-slate-200 bg-white p-2 text-slate-500 transition hover:text-slate-900"
-        >
-          <span className="material-symbols-outlined text-[20px]">notifications</span>
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-blue-600" />
-        </button>
+        <NotificationBell />
         <div className="relative" ref={userMenuRef}>
           <button
             type="button"
@@ -121,6 +116,17 @@ export default function TenantHeader({
                 <p className="truncate text-sm font-semibold text-slate-900">{fullName}</p>
                 <p className="truncate text-xs text-slate-500">{email}</p>
               </div>
+              <Link
+                href="/dashboard/seguridad"
+                role="menuitem"
+                onClick={() => setUserMenuOpen(false)}
+                className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                <span className="material-symbols-outlined text-[20px] text-slate-500">
+                  shield_lock
+                </span>
+                Seguridad de la cuenta
+              </Link>
               <button
                 type="button"
                 role="menuitem"

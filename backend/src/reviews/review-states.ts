@@ -98,3 +98,51 @@ export const LOW_RATING_MAX = 2;
 
 /** Estados de una resolución en los que aún se puede escribir y decidir. */
 export const ACTIVE_RESOLUTION_STATUSES = ['open', 'in_progress'];
+
+/**
+ * Caso de evidencias de una reseña de baja valoración (no se publica mientras
+ * dure):
+ *
+ *   awaiting_admin      --el admin pide evidencias-->       evidence_requested
+ *   evidence_requested  --el cliente las aporta-->          evidence_submitted
+ *   evidence_submitted  --el admin las valida-->            company_notified
+ *   company_notified    --la empresa responde-->            company_responded
+ *   (antes de notificar a la empresa)   --reject-->         closed: rejected
+ *   (empresa notificada) --publish-->                       closed: published
+ *   (empresa notificada + acuerdo de cliente y empresa) --withdraw--> closed: withdrawn
+ */
+export type CaseStatus =
+  | 'awaiting_admin'
+  | 'evidence_requested'
+  | 'evidence_submitted'
+  | 'company_notified'
+  | 'company_responded'
+  | 'closed';
+
+export type CaseOutcome = 'rejected' | 'published' | 'withdrawn';
+
+export const CASE_STATUSES: CaseStatus[] = [
+  'awaiting_admin',
+  'evidence_requested',
+  'evidence_submitted',
+  'company_notified',
+  'company_responded',
+  'closed',
+];
+
+/** Fases en las que el super admin tiene que actuar. */
+export const CASE_NEEDS_ADMIN: CaseStatus[] = [
+  'awaiting_admin',
+  'evidence_submitted',
+  'company_responded',
+];
+
+/** Fases en las que la empresa ya participa en el caso. */
+export const CASE_COMPANY_STAGES: CaseStatus[] = ['company_notified', 'company_responded'];
+
+/** Fases en las que la reseña aún puede rechazarse por falta de evidencias. */
+export const CASE_REJECTABLE: CaseStatus[] = [
+  'awaiting_admin',
+  'evidence_requested',
+  'evidence_submitted',
+];

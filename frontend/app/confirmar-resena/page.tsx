@@ -11,6 +11,7 @@ type State =
   | {
       kind: 'done';
       status: 'published' | 'under_review';
+      evidenceRequired: boolean;
       organization: { slug: string; tradeName: string; isPublic: boolean };
     };
 
@@ -76,7 +77,22 @@ export default function ConfirmReviewPage() {
           </>
         )}
 
-        {state.kind === 'done' && state.status === 'under_review' && (
+        {state.kind === 'done' && state.evidenceRequired && (
+          <>
+            <span className="material-symbols-outlined text-[44px] text-amber-500">fact_check</span>
+            <h1 className="mt-2 text-xl font-bold">Correo confirmado</h1>
+            <p className="mt-2 text-sm text-slate-600">
+              Antes de publicar una reseña de baja valoración sobre{' '}
+              <strong>{state.organization.tradeName}</strong>, nuestro equipo la revisará y te
+              pedirá por correo evidencias de lo que describes (fotos, facturas, capturas…).
+            </p>
+            <p className="mt-2 text-sm text-slate-600">
+              Si son válidas, la empresa podrá dar su versión antes de que decidamos.
+            </p>
+          </>
+        )}
+
+        {state.kind === 'done' && state.status === 'under_review' && !state.evidenceRequired && (
           <>
             <span className="material-symbols-outlined text-[44px] text-amber-500">
               hourglass_top

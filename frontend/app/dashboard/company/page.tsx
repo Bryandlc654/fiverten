@@ -19,6 +19,8 @@ interface FormState {
   isPublic: boolean;
   allowContact: boolean;
   hideLowRatings: boolean;
+  notifyNewReviews: boolean;
+  notifyNegativeReviews: boolean;
 }
 
 function toForm(org: OrganizationDetail): FormState {
@@ -34,6 +36,8 @@ function toForm(org: OrganizationDetail): FormState {
     isPublic: org.isPublic,
     allowContact: org.allowContact,
     hideLowRatings: org.hideLowRatings,
+    notifyNewReviews: org.notifyNewReviews,
+    notifyNegativeReviews: org.notifyNegativeReviews,
   };
 }
 
@@ -137,6 +141,8 @@ export default function CompanyPage() {
       payload.isPublic = form.isPublic;
       payload.allowContact = form.allowContact;
       payload.hideLowRatings = form.hideLowRatings;
+      payload.notifyNewReviews = form.notifyNewReviews;
+      payload.notifyNegativeReviews = form.notifyNegativeReviews;
 
       const updated = await api.updateMyOrganization(payload);
       setOrg(updated);
@@ -422,6 +428,50 @@ export default function CompanyPage() {
                   </span>
                 </span>
               </label>
+
+              <fieldset className="space-y-3 border-t border-slate-100 pt-4 sm:col-span-2">
+                <legend className="mb-2 flex items-center gap-2 pt-4 text-sm font-bold text-slate-900">
+                  <span className="material-symbols-outlined text-[18px] text-slate-500">
+                    notifications
+                  </span>
+                  Avisos de reseñas
+                </legend>
+                <p className="text-xs text-slate-500">
+                  Se muestran en la campana del panel y se envían por correo a los responsables de
+                  la empresa al publicarse cada reseña.
+                </p>
+                <label className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={form.notifyNewReviews}
+                    onChange={(e) => update('notifyNewReviews', e.target.checked)}
+                    disabled={!canEdit}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300"
+                  />
+                  <span className="text-sm text-slate-700">
+                    Nuevas reseñas
+                    <span className="mt-0.5 block text-xs text-slate-500">
+                      Cada reseña de 3, 4 o 5 estrellas que se publique en tu perfil.
+                    </span>
+                  </span>
+                </label>
+                <label className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={form.notifyNegativeReviews}
+                    onChange={(e) => update('notifyNegativeReviews', e.target.checked)}
+                    disabled={!canEdit}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300"
+                  />
+                  <span className="text-sm text-slate-700">
+                    Reseñas negativas (aviso destacado)
+                    <span className="mt-0.5 block text-xs text-slate-500">
+                      Las de 1 y 2 estrellas, cuando se publican tras revisar sus evidencias. Te
+                      recomendamos mantenerlo activo para responder a tiempo.
+                    </span>
+                  </span>
+                </label>
+              </fieldset>
 
               {canEdit && (
                 <div className="sm:col-span-2">

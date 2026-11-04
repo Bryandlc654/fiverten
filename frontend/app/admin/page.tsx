@@ -164,8 +164,8 @@ function AdminContent() {
               </button>
             </div>
 
-            <div className="flex flex-1 items-center justify-end gap-3">
-              <div className="relative">
+            <div className="flex w-full flex-1 flex-wrap items-center justify-end gap-3 sm:w-auto">
+              <div className="relative min-w-0 flex-1 sm:flex-none">
                 <span className="material-symbols-outlined pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[18px] text-slate-400">
                   search
                 </span>
@@ -181,7 +181,7 @@ function AdminContent() {
                     }
                   }}
                   placeholder="Buscar…"
-                  className="w-56 rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none focus:border-blue-500"
+                  className="w-full rounded-lg border border-slate-200 py-2 pl-9 sm:w-56 pr-3 text-sm text-slate-900 outline-none focus:border-blue-500"
                 />
               </div>
               {tab === 'organizations' && (

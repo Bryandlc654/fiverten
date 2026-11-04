@@ -15,6 +15,7 @@ import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import type { CookieOptions, Request, Response } from 'express';
 import { CurrentUser } from './decorators/current-user.decorator';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -66,10 +67,7 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
-  async refresh(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const token = req.cookies?.[this.cookieName] as string | undefined;
     try {
       const result = await this.auth.refresh(token, this.context(req));
@@ -135,6 +133,26 @@ export class AuthController {
   // ---------------------------------------------------------------------------
   // Gestión de sesiones
   // ---------------------------------------------------------------------------
+  /** Cambio de contraseña con sesión iniciada: cierra el resto de sesiones. */
+  @Post('password/change')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @UseGuards(JwtAuthGuard)
+  changePassword(
+    @CurrentUser('userId') userId: string,
+    @CurrentUser('sessionId') sessionId: string | null,
+    @Body() dto: ChangePasswordDto,
+    @Req() req: Request,
+  ) {
+    return this.auth.changePassword(
+      userId,
+      sessionId,
+      dto.currentPassword,
+      dto.newPassword,
+      this.context(req),
+    );
+  }
+
   @Get('sessions')
   @UseGuards(JwtAuthGuard)
   listSessions(
