@@ -21,6 +21,13 @@ const config: Config = {
         margin: '2rem',
       },
       colors: {
+        ink: '#081426',
+        navy: '#0D1E35',
+        panel: '#122944',
+        aqua: '#52D6D0',
+        mint: '#B7F4E8',
+        paper: '#F5F8FC',
+        muted: '#8FA2B8',
         'surface-tint': '#b4c5ff',
         'on-surface-variant': '#c3c6d7',
         'on-secondary-container': '#00311f',
@@ -69,6 +76,10 @@ const config: Config = {
         'secondary-container': '#00a572',
         'on-secondary-fixed': '#002113',
       },
+      boxShadow: {
+        glow: '0 0 70px rgba(82,214,208,.18)',
+        card: '0 24px 80px rgba(8,20,38,.12)',
+      },
       borderRadius: {
         DEFAULT: '0.25rem',
         lg: '0.5rem',
@@ -76,6 +87,8 @@ const config: Config = {
         full: '9999px',
       },
       fontFamily: {
+        sans: ['"DM Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         'display-hero': ['"Plus Jakarta Sans"', 'sans-serif'],
         'display-hero-mobile': ['"Plus Jakarta Sans"', 'sans-serif'],
         'headline-lg': ['"Plus Jakarta Sans"', 'sans-serif'],
