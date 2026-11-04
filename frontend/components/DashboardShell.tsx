@@ -15,6 +15,8 @@ export type NavKey =
   | 'reviews'
   | 'cases'
   | 'membership'
+  | 'support'
+  | 'adminSupport'
   | 'security'
   | 'adminOrgs'
   | 'adminUsers'
@@ -47,6 +49,7 @@ const TENANT_NAV: NavItem[] = [
   { key: 'reviews', label: 'Opiniones', icon: 'reviews', href: '/dashboard/reviews' },
   { key: 'cases', label: 'Casos', icon: 'policy', href: '/dashboard/casos' },
   { key: 'membership', label: 'Mi plan', icon: 'workspace_premium', href: '/dashboard/membresia' },
+  { key: 'support', label: 'Soporte', icon: 'support_agent', href: '/dashboard/soporte' },
   { key: 'profile', label: 'Perfil público', icon: 'verified', href: '/empresa' },
   { key: 'security', label: 'Seguridad', icon: 'shield_lock', href: '/dashboard/seguridad' },
 ];
@@ -64,6 +67,12 @@ const ADMIN_NAV: NavItem[] = [
   { key: 'adminCases', label: 'Casos', icon: 'policy', href: '/admin/casos' },
   { key: 'adminBilling', label: 'Membresías', icon: 'payments', href: '/admin/suscripciones' },
   { key: 'adminConfig', label: 'Configuración', icon: 'settings', href: '/admin/configuracion' },
+  { key: 'adminSupport', label: 'Soporte', icon: 'support_agent', href: '/admin/soporte' },
+  { key: 'security', label: 'Seguridad', icon: 'shield_lock', href: '/dashboard/seguridad' },
+];
+
+const SUPPORT_NAV: NavItem[] = [
+  { key: 'adminSupport', label: 'Soporte', icon: 'support_agent', href: '/admin/soporte' },
   { key: 'security', label: 'Seguridad', icon: 'shield_lock', href: '/dashboard/seguridad' },
 ];
 
@@ -77,7 +86,16 @@ export default function DashboardShell({
   children,
 }: DashboardShellProps) {
   const router = useRouter();
-  const { user, organization, role, isAuthenticated, isLoading, isSuperAdmin, logout } = useAuth();
+  const {
+    user,
+    organization,
+    role,
+    isAuthenticated,
+    isLoading,
+    isSuperAdmin,
+    isSupportAgent,
+    logout,
+  } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -116,7 +134,9 @@ export default function DashboardShell({
   const roleLabel =
     role === null && isSuperAdmin
       ? 'Administrador general'
-      : (ROLE_LABELS[role ?? ''] ?? (role || 'Consulta'));
+      : role === null && isSupportAgent
+        ? 'Soporte'
+        : (ROLE_LABELS[role ?? ''] ?? (role || 'Consulta'));
   const company = organization?.tradeName ?? (isSuperAdmin ? 'FIVERTEN' : 'Sin organización');
 
   async function onLogout() {
@@ -134,7 +154,11 @@ export default function DashboardShell({
     );
   }
 
-  const visibleNav = isSuperAdmin ? ADMIN_NAV : TENANT_NAV;
+  const visibleNav = isSuperAdmin
+    ? ADMIN_NAV
+    : isSupportAgent
+      ? SUPPORT_NAV
+      : TENANT_NAV;
 
   return (
     <div className="flex-1 flex min-h-screen bg-slate-50 text-slate-900">

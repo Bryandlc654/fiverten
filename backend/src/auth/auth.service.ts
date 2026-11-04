@@ -43,6 +43,7 @@ interface SessionSubject {
   isOwner: boolean;
   isSuperAdmin: boolean;
   isStaff: boolean;
+  isSupportAgent: boolean;
 }
 
 @Injectable()
@@ -163,6 +164,7 @@ export class AuthService {
             isOwner: true,
             isSuperAdmin: created.user.isSuperAdmin,
             isStaff: created.user.isFivertenStaff,
+            isSupportAgent: created.user.isSupportAgent,
           },
           ctx,
         );
@@ -286,6 +288,7 @@ export class AuthService {
         isOwner,
         isSuperAdmin: user.isSuperAdmin,
         isStaff: user.isFivertenStaff,
+        isSupportAgent: user.isSupportAgent,
       },
       ctx,
     );
@@ -477,6 +480,7 @@ export class AuthService {
         isOwner,
         isSuperAdmin: token.user.isSuperAdmin,
         isStaff: token.user.isFivertenStaff,
+        isSupportAgent: token.user.isSupportAgent,
       },
       token.sessionId,
     );
@@ -534,6 +538,7 @@ export class AuthService {
         emailVerified: user.emailVerifiedAt !== null,
         isSuperAdmin: user.isSuperAdmin,
         isFivertenStaff: user.isFivertenStaff,
+        isSupportAgent: user.isSupportAgent,
         isActive: user.isActive,
         mfaEnabled: user.mfaEnabled,
       },
@@ -563,6 +568,7 @@ export class AuthService {
       isOwner: membership?.isOwner ?? false,
       isSuperAdmin: user.isSuperAdmin,
       isFivertenStaff: user.isFivertenStaff,
+      isSupportAgent: user.isSupportAgent,
     };
   }
 
@@ -1037,6 +1043,7 @@ export class AuthService {
       own: subject.isOwner,
       root: subject.isSuperAdmin,
       staff: subject.isStaff,
+      support: subject.isSupportAgent,
     });
   }
 
@@ -1068,6 +1075,7 @@ export class AuthService {
         isVerified: user.isVerified,
         isSuperAdmin: user.isSuperAdmin,
         isFivertenStaff: user.isFivertenStaff,
+        isSupportAgent: user.isSupportAgent,
         mfaEnabled: user.mfaEnabled,
       },
       organization: organization
@@ -1084,6 +1092,7 @@ export class AuthService {
       isOwner,
       isSuperAdmin: user.isSuperAdmin,
       isFivertenStaff: user.isFivertenStaff,
+      isSupportAgent: user.isSupportAgent,
     };
   }
 }

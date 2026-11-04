@@ -27,6 +27,7 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
   isSuperAdmin: boolean;
+  isSupportAgent: boolean;
 }
 
 interface AuthContextValue extends AuthState {
@@ -132,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       isAuthenticated: user !== null,
       isSuperAdmin: user?.isSuperAdmin === true,
+      isSupportAgent: user?.isSupportAgent === true,
       login,
       verifyMfa,
       register,

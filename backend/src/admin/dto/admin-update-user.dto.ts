@@ -13,4 +13,9 @@ export class AdminUpdateUserDto {
   @IsOptional()
   @IsBoolean()
   isSuperAdmin?: boolean;
+
+  /** Acceso al panel de soporte (rol de plataforma). */
+  @IsOptional()
+  @IsBoolean()
+  isSupportAgent?: boolean;
 }

@@ -200,6 +200,10 @@ export const rlsStatements: string[] = [
   ...tenantTablePolicy('notifications'),
   // Solicitudes personalizadas de reseña: datos de clientes de la organización.
   ...tenantTablePolicy('review_requests'),
+  // Soporte: la empresa ve sus tickets; el staff de soporte consulta con
+  // contexto de plataforma.
+  ...tenantTablePolicy('support_tickets'),
+  ...tenantTablePolicy('support_ticket_messages'),
   `DROP POLICY IF EXISTS rls_review_responses_public ON review_responses`,
   `CREATE POLICY rls_review_responses_public ON review_responses FOR SELECT
      USING (

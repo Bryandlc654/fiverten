@@ -20,7 +20,16 @@ import { roleLabel } from '../../lib/roles';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, organization, role, isAuthenticated, isLoading, isSuperAdmin, logout } = useAuth();
+  const {
+    user,
+    organization,
+    role,
+    isAuthenticated,
+    isLoading,
+    isSuperAdmin,
+    isSupportAgent,
+    logout,
+  } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [sendingVerification, setSendingVerification] = useState(false);
@@ -34,7 +43,10 @@ export default function DashboardPage() {
     if (!isLoading && !isAuthenticated) {
       router.replace('/login');
     }
-  }, [isLoading, isAuthenticated, router]);
+    if (!isLoading && isSupportAgent && !isSuperAdmin) {
+      router.replace('/admin/soporte');
+    }
+  }, [isLoading, isAuthenticated, isSupportAgent, isSuperAdmin, router]);
 
   // Una sola petición para todas las cifras del resumen (las del super admin van aparte).
   const hasOrganization = Boolean(organization);
@@ -91,6 +103,16 @@ export default function DashboardPage() {
 
   if (isSuperAdmin) {
     return <PlatformDashboard />;
+  }
+
+  if (isSupportAgent) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-slate-50">
+        <div className="flex items-center gap-3 text-sm text-slate-500">
+          Abriendo panel de soporte…
+        </div>
+      </div>
+    );
   }
 
   const fullName =

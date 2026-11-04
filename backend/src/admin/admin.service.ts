@@ -344,6 +344,7 @@ export class AdminService {
           isActive: user.isActive,
           isVerified: user.isVerified,
           isSuperAdmin: user.isSuperAdmin,
+          isSupportAgent: user.isSupportAgent,
           createdAt: user.createdAt,
           lastLoginAt: user.lastLoginAt,
           organization: user.memberships[0]?.organization
@@ -378,6 +379,7 @@ export class AdminService {
           isActive: dto.isActive,
           isVerified: dto.isVerified,
           isSuperAdmin: dto.isSuperAdmin,
+          isSupportAgent: dto.isSupportAgent,
           updatedBy: actorId,
         },
       });
@@ -390,6 +392,7 @@ export class AdminService {
         isActive: updated.isActive,
         isVerified: updated.isVerified,
         isSuperAdmin: updated.isSuperAdmin,
+        isSupportAgent: updated.isSupportAgent,
       };
     });
   }

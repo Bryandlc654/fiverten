@@ -18,6 +18,8 @@ export interface User {
   isVerified: boolean;
   isSuperAdmin?: boolean;
   isFivertenStaff?: boolean;
+  /** Rol de plataforma para el panel de soporte. */
+  isSupportAgent?: boolean;
   /** Verificación en dos pasos (TOTP). */
   mfaEnabled?: boolean;
 }
@@ -453,6 +455,7 @@ export interface AdminUser {
   isActive: boolean;
   isVerified: boolean;
   isSuperAdmin: boolean;
+  isSupportAgent: boolean;
   createdAt: string;
   lastLoginAt: string | null;
   organization: { id: string; tradeName: string } | null;
@@ -676,6 +679,80 @@ export interface PublicConfig {
   maintenanceMode: boolean;
   lowRatingMax: number;
   allowLowRatingResolution: boolean;
+}
+
+export type TicketStatus = 'open' | 'pending' | 'resolved' | 'closed';
+export type TicketPriority = 'low' | 'normal' | 'high' | 'urgent';
+export type TicketCategory =
+  | 'general'
+  | 'billing'
+  | 'reviews'
+  | 'technical'
+  | 'account'
+  | 'other';
+
+export interface SupportMessage {
+  id: string;
+  senderType: 'company' | 'support' | 'system';
+  senderUserId: string | null;
+  body: string;
+  isInternal: boolean;
+  createdAt: string;
+  sender: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+  } | null;
+}
+
+export interface SupportTicketSummary {
+  id: string;
+  organizationId: string;
+  subject: string;
+  category: TicketCategory;
+  priority: TicketPriority;
+  status: TicketStatus;
+  assignedTo: string | null;
+  lastMessageAt: string;
+  closedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  organization: { id: string; tradeName: string; slug: string };
+  creator: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+  };
+  assignee: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+  } | null;
+  messageCount: number;
+}
+
+export interface SupportTicketDetail extends SupportTicketSummary {
+  messages: SupportMessage[];
+}
+
+export interface SupportTicketList extends Paginated<SupportTicketSummary> {
+  counts?: Record<string, number>;
+  stats?: {
+    status: Record<string, number>;
+    priority: Record<string, number>;
+    unassigned: number;
+    mine: number;
+  };
+}
+
+export interface SupportStats {
+  status: Record<string, number>;
+  priority: Record<string, number>;
+  unassigned: number;
+  mine: number;
 }
 
 export interface Paginated<T> {
@@ -1443,11 +1520,84 @@ export const api = {
   },
   adminUpdateUser(
     id: string,
-    payload: { isActive?: boolean; isVerified?: boolean; isSuperAdmin?: boolean },
+    payload: {
+      isActive?: boolean;
+      isVerified?: boolean;
+      isSuperAdmin?: boolean;
+      isSupportAgent?: boolean;
+    },
   ): Promise<AdminUser> {
     return request<AdminUser>(`/admin/users/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
+    });
+  },
+
+  // Soporte (empresa)
+  myTickets(params: ListParams = {}): Promise<SupportTicketList> {
+    return request<SupportTicketList>(`/organizations/me/tickets${buildQuery(params)}`);
+  },
+  createTicket(payload: {
+    subject: string;
+    message: string;
+    category?: TicketCategory;
+    priority?: TicketPriority;
+  }): Promise<SupportTicketSummary> {
+    return request<SupportTicketSummary>('/organizations/me/tickets', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  myTicket(id: string): Promise<SupportTicketDetail> {
+    return request<SupportTicketDetail>(`/organizations/me/tickets/${id}`);
+  },
+  replyMyTicket(id: string, body: string): Promise<SupportMessage> {
+    return request<SupportMessage>(`/organizations/me/tickets/${id}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ body }),
+    });
+  },
+  closeMyTicket(id: string): Promise<SupportTicketSummary> {
+    return request<SupportTicketSummary>(`/organizations/me/tickets/${id}/close`, {
+      method: 'POST',
+    });
+  },
+
+  // Soporte (staff)
+  supportStats(): Promise<SupportStats> {
+    return request<SupportStats>('/support/stats');
+  },
+  supportTickets(
+    params: ListParams & { priority?: string; assigned?: string } = {},
+  ): Promise<SupportTicketList> {
+    return request<SupportTicketList>(`/support/tickets${buildQuery(params)}`);
+  },
+  supportTicket(id: string): Promise<SupportTicketDetail> {
+    return request<SupportTicketDetail>(`/support/tickets/${id}`);
+  },
+  supportReply(id: string, body: string, isInternal = false): Promise<SupportMessage> {
+    return request<SupportMessage>(`/support/tickets/${id}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ body, isInternal }),
+    });
+  },
+  supportUpdateTicket(
+    id: string,
+    payload: {
+      status?: TicketStatus;
+      priority?: TicketPriority;
+      category?: TicketCategory;
+      assignedTo?: string | null;
+    },
+  ): Promise<SupportTicketSummary> {
+    return request<SupportTicketSummary>(`/support/tickets/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+  supportAssignMe(id: string): Promise<SupportTicketSummary> {
+    return request<SupportTicketSummary>(`/support/tickets/${id}/assign-me`, {
+      method: 'POST',
     });
   },
 

@@ -156,6 +156,54 @@ export class MailService implements OnModuleInit {
     });
   }
 
+  /** Aviso al equipo de soporte de un ticket nuevo. */
+  async sendSupportTicketCreated(
+    to: string,
+    subject: string,
+    organizationName: string,
+    ticketId: string,
+  ): Promise<void> {
+    const link = `${this.frontendUrl}/admin/soporte?ticket=${encodeURIComponent(ticketId)}`;
+    await this.send({
+      code: 'support_ticket_created',
+      category: 'notification',
+      kind: 'nuevo ticket de soporte',
+      vars: { organization: organizationName, ticket: subject },
+      to,
+      subject: `Nuevo ticket de soporte: ${subject} - ${BRAND}`,
+      title: `Nuevo ticket de ${organizationName}`,
+      intro: `${organizationName} ha abierto un ticket: "${subject}". Revísalo y responde desde el panel de soporte.`,
+      action: 'Abrir ticket',
+      link,
+    });
+  }
+
+  /** Aviso de una nueva respuesta en un ticket (empresa o soporte). */
+  async sendSupportTicketReply(
+    to: string,
+    subject: string,
+    organizationName: string,
+    ticketId: string,
+    fromSupport: boolean,
+  ): Promise<void> {
+    const base = fromSupport ? 'dashboard/soporte' : 'admin/soporte';
+    const link = `${this.frontendUrl}/${base}?ticket=${encodeURIComponent(ticketId)}`;
+    await this.send({
+      code: 'support_ticket_reply',
+      category: 'notification',
+      kind: 'respuesta de ticket de soporte',
+      vars: { organization: organizationName, ticket: subject },
+      to,
+      subject: `Respuesta a tu ticket: ${subject} - ${BRAND}`,
+      title: fromSupport ? 'Tienes una respuesta de soporte' : `Nueva respuesta de ${organizationName}`,
+      intro: fromSupport
+        ? `El equipo de soporte ha respondido a "${subject}". Entra para leer el mensaje y continuar la conversación.`
+        : `${organizationName} ha respondido en el ticket "${subject}". Revísalo desde el panel de soporte.`,
+      action: 'Ver conversación',
+      link,
+    });
+  }
+
   /** Enlace para que el cliente siga la resolución de su reseña (sin cuenta). */
   async sendResolutionLink(
     to: string,

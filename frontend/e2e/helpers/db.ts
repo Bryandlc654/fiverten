@@ -205,6 +205,11 @@ export async function promoteToSuperAdmin(email: string): Promise<void> {
   await db().user.update({ where: { email }, data: { isSuperAdmin: true, isFivertenStaff: true } });
 }
 
+/** Da acceso al panel de soporte (rol de plataforma). */
+export async function promoteToSupportAgent(email: string): Promise<void> {
+  await db().user.update({ where: { email }, data: { isSupportAgent: true } });
+}
+
 /** Asigna el rol indicado a una membresía (por email de usuario y slug de org). */
 export async function setMemberRole(slug: string, email: string, baseRole: string): Promise<void> {
   const organization = await organizationBySlug(slug);
