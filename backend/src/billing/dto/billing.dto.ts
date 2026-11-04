@@ -151,6 +151,11 @@ export class UpdateSubscriptionDto {
   @IsOptional() @IsString() @MaxLength(1000) note?: string;
 }
 
+export class ChangePlanDto {
+  @IsUUID()
+  planId!: string;
+}
+
 export class CancelSubscriptionDto {
   @IsOptional()
   @IsBoolean()

@@ -1893,6 +1893,12 @@ export const api = {
   mySubscription(): Promise<CompanySubscription> {
     return request<CompanySubscription>('/organizations/me/subscription');
   },
+  changeMyPlan(planId: string): Promise<AdminSubscription> {
+    return request<AdminSubscription>('/organizations/me/subscription/change', {
+      method: 'POST',
+      body: JSON.stringify({ planId }),
+    });
+  },
   myPayments(params: ListParams = {}): Promise<Paginated<AdminPayment>> {
     return request<Paginated<AdminPayment>>(`/organizations/me/payments${buildQuery(params)}`);
   },

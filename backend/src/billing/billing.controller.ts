@@ -5,6 +5,8 @@ import {
   ForbiddenException,
   Get,
   Header,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
@@ -15,11 +17,14 @@ import {
 } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { PlatformAdmin } from '../auth/decorators/platform-admin.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PlatformAdminGuard } from '../auth/guards/platform-admin.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import { BillingService } from './billing.service';
 import {
   CancelSubscriptionDto,
+  ChangePlanDto,
   CreatePaymentDto,
   PlanDto,
   UpdatePaymentDto,
@@ -118,13 +123,24 @@ export class AdminBillingController {
 }
 
 @Controller('organizations/me')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class CompanyBillingController {
   constructor(private readonly billing: BillingService) {}
 
   @Get('subscription')
   subscription(@CurrentUser('organizationId') orgId: string | null) {
     return this.billing.companySubscription(this.requireOrg(orgId));
+  }
+
+  @Post('subscription/change')
+  @HttpCode(HttpStatus.OK)
+  @Roles('admin')
+  changePlan(
+    @CurrentUser('organizationId') orgId: string | null,
+    @CurrentUser('userId') userId: string,
+    @Body() dto: ChangePlanDto,
+  ) {
+    return this.billing.changeCompanyPlan(this.requireOrg(orgId), userId, dto.planId);
   }
 
   @Get('payments')

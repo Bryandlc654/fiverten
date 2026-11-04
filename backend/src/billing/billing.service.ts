@@ -467,6 +467,114 @@ export class BillingService {
     });
   }
 
+  /** Cambio de plan iniciado por la propia empresa (autoservicio). */
+  async changeCompanyPlan(orgId: string, userId: string, planId: string) {
+    return this.prisma.withContext({ orgId, userId }, async (tx) => {
+      const plan = await tx.plan.findFirst({
+        where: { id: planId, isActive: true, isPublic: true },
+      });
+      if (!plan) {
+        throw new NotFoundException('Plan no disponible');
+      }
+
+      const subscription = await tx.subscription.findUnique({
+        where: { organizationId: orgId },
+        include: {
+          plan: true,
+          organization: { select: { id: true, tradeName: true, slug: true, email: true } },
+        },
+      });
+      if (subscription?.planId === plan.id) {
+        return this.subscriptionView(subscription);
+      }
+
+      const now = new Date();
+      const periodStart = subscription?.currentPeriodStart ?? now;
+      const periodEnd = subscription?.currentPeriodEnd ?? addMonths(now, 1);
+
+      const [members, invitations] = await Promise.all([
+        tx.organizationMembership.count({ where: { organizationId: orgId, isActive: true } }),
+        tx.organizationInvitation.count({
+          where: {
+            organizationId: orgId,
+            acceptedAt: null,
+            revokedAt: null,
+            expiresAt: { gt: now },
+          },
+        }),
+      ]);
+      const users = members + invitations;
+      if (plan.userLimit !== null && users > plan.userLimit) {
+        throw new BadRequestException(
+          `El plan ${plan.name} permite ${plan.userLimit} usuarios y actualmente tienes ${users}.`,
+        );
+      }
+
+      if (plan.reviewLimit !== null) {
+        const reviewCount = await tx.review.count({
+          where: {
+            organizationId: orgId,
+            deletedAt: null,
+            createdAt: {
+              gte: periodStart,
+              lte: periodEnd.getTime() > now.getTime() ? now : periodEnd,
+            },
+          },
+        });
+        if (reviewCount > plan.reviewLimit) {
+          throw new BadRequestException(
+            `El plan ${plan.name} permite ${plan.reviewLimit} reseñas en el periodo y ya tienes ${reviewCount}.`,
+          );
+        }
+      }
+
+      const updated = subscription
+        ? await tx.subscription.update({
+            where: { id: subscription.id },
+            data: {
+              planId: plan.id,
+              status: 'active',
+              cancelledAt: null,
+              cancelAtPeriodEnd: false,
+            },
+            include: {
+              plan: true,
+              organization: { select: { id: true, tradeName: true, slug: true, email: true } },
+            },
+          })
+        : await tx.subscription.create({
+            data: {
+              organizationId: orgId,
+              planId: plan.id,
+              status: 'active',
+              billingCycle: 'monthly',
+              currentPeriodStart: now,
+              currentPeriodEnd: addMonths(now, 1),
+            },
+            include: {
+              plan: true,
+              organization: { select: { id: true, tradeName: true, slug: true, email: true } },
+            },
+          });
+
+      await tx.subscriptionEvent.create({
+        data: {
+          subscriptionId: updated.id,
+          organizationId: orgId,
+          type: subscription ? 'plan_changed' : 'created',
+          fromPlanId: subscription?.planId ?? null,
+          toPlanId: plan.id,
+          fromStatus: subscription?.status ?? null,
+          toStatus: 'active',
+          note: 'Cambio de plan desde el panel de la empresa',
+          actorUserId: userId,
+        },
+      });
+
+      return this.subscriptionView(updated);
+    });
+  }
+
   async companyPayments(orgId: string, query: ListQuery) {
     const page = Math.max(1, query.page);
     const pageSize = Math.min(50, Math.max(1, query.pageSize));

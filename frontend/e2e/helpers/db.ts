@@ -210,6 +210,29 @@ export async function promoteToSupportAgent(email: string): Promise<void> {
   await db().user.update({ where: { email }, data: { isSupportAgent: true } });
 }
 
+/** Crea un plan visible para las pruebas de cambio de plan. */
+export async function createPlan(options: {
+  code: string;
+  name: string;
+  priceMonthly?: number;
+  reviewLimit?: number | null;
+  userLimit?: number | null;
+}) {
+  return db().plan.create({
+    data: {
+      code: options.code,
+      name: options.name,
+      description: 'Plan de prueba E2E',
+      priceMonthly: options.priceMonthly ?? 19,
+      priceYearly: (options.priceMonthly ?? 19) * 10,
+      reviewLimit: options.reviewLimit ?? 1000,
+      userLimit: options.userLimit ?? 10,
+      isActive: true,
+      isPublic: true,
+    },
+  });
+}
+
 /** Asigna el rol indicado a una membresía (por email de usuario y slug de org). */
 export async function setMemberRole(slug: string, email: string, baseRole: string): Promise<void> {
   const organization = await organizationBySlug(slug);
