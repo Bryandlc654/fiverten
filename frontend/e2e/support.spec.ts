@@ -67,6 +67,6 @@ test.describe('Soporte por tickets', () => {
     await dialog.getByRole('button', { name: 'Crear ticket' }).click();
 
     await expect(page.getByText('Ticket creado', { exact: false })).toBeVisible();
-    await expect(page.getByText(subject)).toBeVisible();
+    await expect(page.getByRole('heading', { name: subject })).toBeVisible();
   });
 });
