@@ -19,8 +19,20 @@ async function main(): Promise<void> {
       );
       console.log(`Rol '${APP_ROLE}' creado.`);
     } else {
+      // En proveedores gestionados (Neon, RDS…) el rol propietario no es
+      // SUPERUSER y no puede tocar el atributo SUPERUSER ni para quitarlo.
+      // Para un rol existente basta con asegurar LOGIN + contraseña y avisar
+      // si conservara privilegios elevados.
+      const roles = (await admin.$queryRawUnsafe(
+        `SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = '${APP_ROLE}'`,
+      )) as { rolsuper: boolean; rolbypassrls: boolean }[];
+      if (roles[0]?.rolsuper || roles[0]?.rolbypassrls) {
+        console.warn(
+          `Aviso: el rol '${APP_ROLE}' tiene SUPERUSER o BYPASSRLS; revísalo con el proveedor.`,
+        );
+      }
       await admin.$executeRawUnsafe(
-        `ALTER ROLE ${APP_ROLE} WITH LOGIN PASSWORD '${APP_ROLE_PASSWORD}' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE`,
+        `ALTER ROLE ${APP_ROLE} WITH LOGIN PASSWORD '${APP_ROLE_PASSWORD}'`,
       );
       console.log(`Rol '${APP_ROLE}' actualizado.`);
     }
