@@ -156,6 +156,29 @@ export class MailService implements OnModuleInit {
     });
   }
 
+  /** Solicitud pública de verificación enviada desde /verificar-empresa. */
+  async sendVerificationInquiry(
+    to: string,
+    companyName: string,
+    contactName: string,
+    email: string,
+    phone?: string,
+    message?: string,
+  ): Promise<void> {
+    await this.send({
+      code: 'verification_inquiry',
+      category: 'transactional',
+      kind: 'solicitud de verificación',
+      vars: { organization: companyName, name: contactName },
+      to,
+      subject: `Solicitud de verificación: ${companyName} - ${BRAND}`,
+      title: `Nueva solicitud de verificación`,
+      intro: `${contactName} (${email}${phone ? ` · ${phone}` : ''}) quiere verificar ${companyName}. ${message ? `Mensaje: ${message}` : ''}`,
+      action: 'Responder',
+      link: `mailto:${email}`,
+    });
+  }
+
   /** Aviso al equipo de soporte de un ticket nuevo. */
   async sendSupportTicketCreated(
     to: string,

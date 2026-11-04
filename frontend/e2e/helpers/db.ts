@@ -210,6 +210,96 @@ export async function promoteToSupportAgent(email: string): Promise<void> {
   await db().user.update({ where: { email }, data: { isSupportAgent: true } });
 }
 
+/** Deja una empresa pública con verificación aprobada, documentos y un proyecto. */
+export async function seedApprovedVerification(
+  slug: string,
+  projectName = 'Proyecto público E2E',
+) {
+  const organization = await organizationBySlug(slug);
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+  const request = await db().verificationRequest.create({
+    data: {
+      organizationId: organization.id,
+      status: 'approved',
+      submittedAt: now,
+      reviewedAt: now,
+      expiresAt,
+    },
+  });
+  for (const category of ['identity', 'tax', 'address']) {
+    await db().verificationDocument.create({
+      data: {
+        organizationId: organization.id,
+        requestId: request.id,
+        category,
+        filename: `${category}.pdf`,
+        mimeType: 'application/pdf',
+        size: 16,
+        data: Buffer.from('%PDF-1.4 test'),
+      },
+    });
+  }
+  const project = await db().verificationProject.create({
+    data: {
+      organizationId: organization.id,
+      requestId: request.id,
+      name: projectName,
+      description: 'Evidencia pública de prueba',
+      url: 'https://example.com/proyecto',
+    },
+  });
+  await db().verificationDocument.create({
+    data: {
+      organizationId: organization.id,
+      requestId: request.id,
+      projectId: project.id,
+      category: 'project',
+      filename: 'evidencia.pdf',
+      mimeType: 'application/pdf',
+      size: 16,
+      data: Buffer.from('%PDF-1.4 test'),
+    },
+  });
+  await db().organization.update({
+    where: { id: organization.id },
+    data: {
+      isPublic: true,
+      verificationStatus: 'verified',
+      verifiedAt: now,
+      verificationExpiresAt: expiresAt,
+    },
+  });
+}
+
+/** Añade una certificación externa ya validada para el perfil público. */
+export async function seedCertification(
+  slug: string,
+  overrides: Partial<{
+    name: string;
+    issuer: string;
+    credentialId: string;
+    credentialUrl: string;
+    issuedAt: Date;
+    expiresAt: Date;
+  }> = {},
+) {
+  const organization = await organizationBySlug(slug);
+  return db().certification.create({
+    data: {
+      organizationId: organization.id,
+      name: overrides.name ?? 'ISO 9001',
+      issuer: overrides.issuer ?? 'AENOR',
+      credentialId: overrides.credentialId ?? 'E2E-ISO-9001',
+      credentialUrl: overrides.credentialUrl ?? 'https://example.com/credencial',
+      issuedAt: overrides.issuedAt ?? new Date(),
+      expiresAt: overrides.expiresAt ?? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+      status: 'verified',
+      reviewedAt: new Date(),
+    },
+  });
+}
+
 /** Crea un plan visible para las pruebas de cambio de plan. */
 export async function createPlan(options: {
   code: string;

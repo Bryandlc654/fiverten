@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import Pagination from '../../../components/ui/Pagination';
+import CompanyPublicNav from '../../../components/public/CompanyPublicNav';
 import PublicHero from '../../../components/public/PublicHero';
 import PublicShell from '../../../components/public/PublicShell';
 import RatingBreakdown from '../../../components/reviews/RatingBreakdown';
@@ -137,6 +138,10 @@ export default function PublicProfilePage() {
   return (
     <PublicShell>
       <PublicHero profile={profile} />
+
+      <div className="mt-4">
+        <CompanyPublicNav slug={slug} active="resumen" />
+      </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr] xl:grid-cols-[320px_1fr]">
         <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
@@ -348,6 +353,7 @@ export default function PublicProfilePage() {
                     date={review.publishedAt}
                     experienceDate={review.experienceDate}
                     verified={review.verified}
+                    projectName={review.project?.name}
                     companyName={profile.tradeName}
                     response={review.response}
                   >

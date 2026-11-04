@@ -21,6 +21,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { PlatformAdmin } from '../auth/decorators/platform-admin.decorator';
@@ -30,10 +31,15 @@ import { PlatformAdminGuard } from '../auth/guards/platform-admin.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import {
   ApproveVerificationDto,
+  CreateCertificationDto,
   CreateVerificationProjectDto,
+  RejectCertificationDto,
   RejectVerificationDto,
+  ReviewCertificationDto,
   RevokeVerificationDto,
+  UpdateVerificationInquiryDto,
   UploadVerificationDocumentDto,
+  VerificationInquiryDto,
 } from './dto/verification.dto';
 import { VerificationService, type VerificationUpload } from './verification.service';
 
@@ -127,6 +133,26 @@ export class CompanyVerificationController {
     return this.verification.deleteProject(this.requireOrg(orgId), id);
   }
 
+  @Post('certifications')
+  @Roles('admin')
+  addCertification(
+    @CurrentUser('organizationId') orgId: string | null,
+    @CurrentUser('userId') userId: string,
+    @Body() dto: CreateCertificationDto,
+  ) {
+    return this.verification.addCertification(this.requireOrg(orgId), userId, dto);
+  }
+
+  @Delete('certifications/:id')
+  @Roles('admin')
+  @HttpCode(HttpStatus.OK)
+  deleteCertification(
+    @CurrentUser('organizationId') orgId: string | null,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.verification.deleteCertification(this.requireOrg(orgId), id);
+  }
+
   @Post('submit')
   @Roles('admin')
   @HttpCode(HttpStatus.OK)
@@ -139,6 +165,30 @@ export class CompanyVerificationController {
       throw new ForbiddenException('Tu cuenta no está asociada a ninguna empresa');
     }
     return orgId;
+  }
+}
+
+@Controller('public')
+export class PublicVerificationController {
+  constructor(private readonly verification: VerificationService) {}
+
+  @Get('organizations/:slug/verification')
+  @Header('Cache-Control', 'public, max-age=30, stale-while-revalidate=120')
+  get(@Param('slug') slug: string) {
+    return this.verification.getPublicVerification(slug);
+  }
+
+  @Get('verification-info')
+  @Header('Cache-Control', 'public, max-age=300, stale-while-revalidate=600')
+  info() {
+    return this.verification.getPublicVerificationInfo();
+  }
+
+  @Post('verification-inquiry')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  inquiry(@Body() dto: VerificationInquiryDto) {
+    return this.verification.submitInquiry(dto);
   }
 }
 
@@ -156,6 +206,56 @@ export class AdminVerificationController {
     @Query('search') search?: string,
   ) {
     return this.verification.adminList({ page, pageSize, status, search });
+  }
+
+  @Get('certifications')
+  listCertifications(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.verification.adminListCertifications({ page, pageSize, status, search });
+  }
+
+  @Post('certifications/:id/approve')
+  @HttpCode(HttpStatus.OK)
+  approveCertification(
+    @CurrentUser('userId') userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ReviewCertificationDto,
+  ) {
+    return this.verification.approveCertification(id, userId, dto);
+  }
+
+  @Post('certifications/:id/reject')
+  @HttpCode(HttpStatus.OK)
+  rejectCertification(
+    @CurrentUser('userId') userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RejectCertificationDto,
+  ) {
+    return this.verification.rejectCertification(id, userId, dto);
+  }
+
+  @Get('inquiries')
+  listInquiries(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.verification.adminListInquiries({ page, pageSize, status, search });
+  }
+
+  @Post('inquiries/:id')
+  @HttpCode(HttpStatus.OK)
+  updateInquiry(
+    @CurrentUser('userId') userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateVerificationInquiryDto,
+  ) {
+    return this.verification.updateInquiry(id, userId, dto);
   }
 
   @Get(':id')

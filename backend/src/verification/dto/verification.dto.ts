@@ -1,5 +1,9 @@
 import { Type } from 'class-transformer';
 import {
+  Equals,
+  IsBoolean,
+  IsDateString,
+  IsEmail,
   IsIn,
   IsInt,
   IsOptional,
@@ -61,3 +65,88 @@ export class RevokeVerificationDto {
   @MaxLength(2000)
   reason?: string;
 }
+
+export class CreateCertificationDto {
+  @IsString()
+  @MinLength(2)
+  @MaxLength(200)
+  name!: string;
+
+  @IsString()
+  @MinLength(2)
+  @MaxLength(200)
+  issuer!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  credentialId?: string;
+
+  @IsOptional()
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
+  @MaxLength(500)
+  credentialUrl?: string;
+
+  @IsOptional()
+  @IsDateString({}, { message: 'La fecha de emisión no es válida' })
+  issuedAt?: string;
+
+  @IsOptional()
+  @IsDateString({}, { message: 'La fecha de caducidad no es válida' })
+  expiresAt?: string;
+}
+
+export class ReviewCertificationDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  note?: string;
+}
+
+export class RejectCertificationDto {
+  @IsString()
+  @MinLength(3)
+  @MaxLength(2000)
+  reason!: string;
+}
+
+export class UpdateVerificationInquiryDto {
+  @IsIn(['new', 'contacted', 'closed'])
+  status!: 'new' | 'contacted' | 'closed';
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  notes?: string;
+}
+
+export class VerificationInquiryDto {
+  @IsString()
+  @MinLength(2)
+  @MaxLength(200)
+  companyName!: string;
+
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
+  contactName!: string;
+
+  @IsEmail()
+  @MaxLength(255)
+  email!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  message?: string;
+
+  @IsBoolean()
+  @Equals(true, { message: 'Debes aceptar la política de privacidad' })
+  consent!: boolean;
+}
+

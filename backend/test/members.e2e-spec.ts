@@ -75,7 +75,7 @@ describe('FIVERTEN Miembros e invitaciones (e2e)', () => {
       });
 
     await prisma.$executeRawUnsafe(
-      'TRUNCATE TABLE "organizations","users","roles","permissions","role_permissions","organization_memberships","organization_invitations","sessions","refresh_tokens","email_verifications","password_reset_tokens","auth_attempts" RESTART IDENTITY CASCADE',
+      'TRUNCATE TABLE "organizations","users","roles","permissions","role_permissions","organization_memberships","organization_invitations","sessions","refresh_tokens","email_verifications","password_reset_tokens","auth_attempts","plans","subscriptions","subscription_events","payments" RESTART IDENTITY CASCADE',
     );
 
     await http()

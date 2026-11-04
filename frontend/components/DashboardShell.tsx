@@ -20,6 +20,8 @@ export type NavKey =
   | 'verification'
   | 'adminSupport'
   | 'adminVerifications'
+  | 'adminCertifications'
+  | 'adminInquiries'
   | 'profileEdit'
   | 'security'
   | 'adminOrgs'
@@ -79,6 +81,18 @@ const ADMIN_NAV: NavItem[] = [
     label: 'Verificaciones',
     icon: 'fact_check',
     href: '/admin/verificaciones',
+  },
+  {
+    key: 'adminCertifications',
+    label: 'Certificaciones',
+    icon: 'workspace_premium',
+    href: '/admin/certificaciones',
+  },
+  {
+    key: 'adminInquiries',
+    label: 'Solicitudes',
+    icon: 'mark_email_unread',
+    href: '/admin/solicitudes',
   },
   { key: 'adminSupport', label: 'Soporte', icon: 'support_agent', href: '/admin/soporte' },
   { key: 'profileEdit', label: 'Mi perfil', icon: 'account_circle', href: '/dashboard/perfil' },

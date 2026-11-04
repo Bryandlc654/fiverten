@@ -33,6 +33,26 @@ export class PublicReviewsController {
     private readonly requests: ReviewRequestsService,
   ) {}
 
+  @Get('organizations')
+  @Header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
+  listOrganizations(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('pageSize', new DefaultValuePipe(12), ParseIntPipe) pageSize: number,
+    @Query('search') search?: string,
+    @Query('sector') sector?: string,
+    @Query('country') country?: string,
+    @Query('verified') verified?: string,
+  ) {
+    return this.reviews.listOrganizations({
+      page,
+      pageSize,
+      search,
+      sector,
+      country,
+      verified: verified === 'true',
+    });
+  }
+
   @Get('organizations/:slug')
   @Header('Cache-Control', 'public, max-age=30, stale-while-revalidate=120')
   getProfile(@Param('slug') slug: string) {

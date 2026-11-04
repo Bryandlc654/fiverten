@@ -2,9 +2,18 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Providers } from './providers';
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://app-fiverten.onrender.com';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: 'FIVERTEN',
   description: 'Plataforma de reseñas y reputación verificable',
+  openGraph: {
+    siteName: 'FIVERTEN',
+    locale: 'es_ES',
+    type: 'website',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

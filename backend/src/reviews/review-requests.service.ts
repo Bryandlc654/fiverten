@@ -331,13 +331,19 @@ export class ReviewRequestsService {
     orgId: string,
     token: string,
     reviewId: string,
+    reviewerEmail: string,
   ): Promise<void> {
     const request = await tx.reviewRequest.findFirst({
       where: { organizationId: orgId, tokenHash: hashToken(token), reviewId: null },
-      select: { id: true, expiresAt: true },
+      select: { id: true, expiresAt: true, reviewerEmail: true },
     });
     if (!request || request.expiresAt.getTime() < Date.now()) {
       throw new BadRequestException('El enlace de solicitud no es válido o ha caducado');
+    }
+    if (request.reviewerEmail.trim().toLowerCase() !== reviewerEmail.trim().toLowerCase()) {
+      throw new BadRequestException(
+        'El correo debe coincidir con el de la solicitud personalizada',
+      );
     }
     await tx.reviewRequest.update({
       where: { id: request.id },

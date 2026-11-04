@@ -76,6 +76,12 @@ export default function VerificationPage() {
   const [projectUrl, setProjectUrl] = useState('');
   const [projectFiles, setProjectFiles] = useState<File[]>([]);
   const [copied, setCopied] = useState(false);
+  const [certName, setCertName] = useState('');
+  const [certIssuer, setCertIssuer] = useState('');
+  const [certCredentialId, setCertCredentialId] = useState('');
+  const [certCredentialUrl, setCertCredentialUrl] = useState('');
+  const [certIssuedAt, setCertIssuedAt] = useState('');
+  const [certExpiresAt, setCertExpiresAt] = useState('');
 
   const load = useCallback(async () => {
     setError(null);
@@ -156,6 +162,29 @@ export default function VerificationPage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function addCertification(event: FormEvent) {
+    event.preventDefault();
+    if (!certName.trim() || !certIssuer.trim()) return;
+    await run(
+      () =>
+        api.addCertification({
+          name: certName.trim(),
+          issuer: certIssuer.trim(),
+          credentialId: certCredentialId.trim() || undefined,
+          credentialUrl: certCredentialUrl.trim() || undefined,
+          issuedAt: certIssuedAt || undefined,
+          expiresAt: certExpiresAt || undefined,
+        }),
+      'Certificación enviada para revisión',
+    );
+    setCertName('');
+    setCertIssuer('');
+    setCertCredentialId('');
+    setCertCredentialUrl('');
+    setCertIssuedAt('');
+    setCertExpiresAt('');
   }
 
   async function submit() {
@@ -290,6 +319,107 @@ export default function VerificationPage() {
             </div>
           </section>
         )}
+
+        <section className="rounded-xl border border-slate-200 bg-white p-5">
+          <h2 className="text-base font-bold text-slate-900">Certificaciones externas</h2>
+          <p className="mt-1 text-xs text-slate-500">
+            Añade credenciales de terceros. Se publicarán en tu perfil cuando FIVERTEN las valide.
+          </p>
+          <form onSubmit={addCertification} className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="Nombre de la certificación" className="block">
+              <input
+                required
+                value={certName}
+                onChange={(event) => setCertName(event.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Entidad emisora" className="block">
+              <input
+                required
+                value={certIssuer}
+                onChange={(event) => setCertIssuer(event.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="ID de credencial (opcional)" className="block">
+              <input
+                value={certCredentialId}
+                onChange={(event) => setCertCredentialId(event.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="URL de comprobación (opcional)" className="block">
+              <input
+                type="url"
+                value={certCredentialUrl}
+                onChange={(event) => setCertCredentialUrl(event.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Fecha de emisión (opcional)" className="block">
+              <input
+                type="date"
+                value={certIssuedAt}
+                onChange={(event) => setCertIssuedAt(event.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Fecha de caducidad (opcional)" className="block">
+              <input
+                type="date"
+                value={certExpiresAt}
+                onChange={(event) => setCertExpiresAt(event.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <button
+              type="submit"
+              disabled={busy || !certName.trim() || !certIssuer.trim()}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 sm:col-span-2"
+            >
+              Añadir certificación
+            </button>
+          </form>
+          {data.certifications.length > 0 && (
+            <ul className="mt-4 divide-y divide-slate-100">
+              {data.certifications.map((certification) => (
+                <li
+                  key={certification.id}
+                  className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-slate-900">{certification.name}</p>
+                    <p className="text-xs text-slate-500">
+                      {certification.issuer} ·{' '}
+                      {certification.status === 'verified'
+                        ? 'Validada'
+                        : certification.status === 'rejected'
+                          ? 'Rechazada'
+                          : 'En revisión'}
+                      {certification.decisionReason
+                        ? ` · ${certification.decisionReason}`
+                        : ''}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void run(
+                        () => api.deleteCertification(certification.id),
+                        'Certificación eliminada',
+                      )
+                    }
+                    disabled={busy}
+                    className="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
+                  >
+                    Quitar
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
         <section className="rounded-xl border border-slate-200 bg-white p-5">
           <h2 className="text-base font-bold text-slate-900">Requisitos</h2>

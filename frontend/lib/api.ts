@@ -131,6 +131,60 @@ export interface PublicProfile {
   rating: RatingSummary;
 }
 
+export interface PublicOrganizationSummary {
+  slug: string;
+  tradeName: string;
+  description: string | null;
+  logoUrl: string | null;
+  sector: { slug: string; name: string } | null;
+  country: { iso2: string; name: string } | null;
+  verified: boolean;
+  rating: { average: number | null; total: number };
+}
+
+export interface PublicVerificationProject {
+  id: string;
+  name: string;
+  description: string | null;
+  url: string | null;
+  createdAt: string;
+  evidenceCount: number;
+  evidence: {
+    id: string;
+    kind: 'image' | 'pdf';
+    size: number;
+    createdAt: string;
+  }[];
+}
+
+export interface PublicCertification {
+  id: string;
+  name: string;
+  issuer: string;
+  credentialId: string | null;
+  credentialUrl: string | null;
+  issuedAt: string | null;
+  expiresAt: string | null;
+}
+
+export interface PublicVerification {
+  organization: {
+    tradeName: string;
+    slug: string;
+    publicId: string;
+    description: string | null;
+    logoUrl: string | null;
+    sector: { slug: string; name: string } | null;
+    country: { iso2: string; name: string } | null;
+  };
+  status: VerificationStatus;
+  verifiedAt: string | null;
+  expiresAt: string | null;
+  categories: string[];
+  certifications: PublicCertification[];
+  projects: PublicVerificationProject[];
+}
+
 export interface ReviewReply {
   body: string;
   createdAt: string;
@@ -145,6 +199,7 @@ export interface PublicReview {
   body: string;
   experienceDate: string | null;
   verified: boolean;
+  project: { id: string; name: string } | null;
   publishedAt: string;
   response: ReviewReply | null;
 }
@@ -155,6 +210,7 @@ export interface ReviewForm {
   logoUrl: string | null;
   verified: boolean;
   isPublic: boolean;
+  projects: { id: string; name: string }[];
 }
 
 export interface SubmitReviewPayload {
@@ -169,6 +225,8 @@ export interface SubmitReviewPayload {
   website?: string;
   /** Token del enlace personalizado de solicitud (?rt=...). */
   requestToken?: string;
+  /** Proyecto verificado con el que se relaciona la experiencia. */
+  projectId?: string;
 }
 
 export type ReviewRequestStatus = 'sent' | 'opened' | 'completed';
@@ -873,7 +931,52 @@ export interface VerificationStatusResponse {
     expiryDays: number;
     renewalDays: number;
   };
+  certifications: CompanyCertification[];
   request: VerificationRequest | null;
+}
+
+export type CertificationStatus = 'pending' | 'verified' | 'rejected';
+
+export interface CompanyCertification {
+  id: string;
+  name: string;
+  issuer: string;
+  credentialId: string | null;
+  credentialUrl: string | null;
+  issuedAt: string | null;
+  expiresAt: string | null;
+  status: CertificationStatus;
+  decisionReason: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+}
+
+export interface AdminCertification extends CompanyCertification {
+  organization: { id: string; tradeName: string; slug: string; email: string | null };
+}
+
+export type VerificationInquiryStatus = 'new' | 'contacted' | 'closed';
+
+export interface VerificationInquiry {
+  id: string;
+  companyName: string;
+  contactName: string;
+  email: string;
+  phone: string | null;
+  message: string | null;
+  status: VerificationInquiryStatus;
+  notes: string | null;
+  handledBy: string | null;
+  handledAt: string | null;
+  createdAt: string;
+}
+
+export interface PublicVerificationInfo {
+  reviewDays: number;
+  expiryDays: number;
+  renewalDays: number;
+  minProjects: number;
+  requiredDocuments: string[];
 }
 
 export interface AdminVerificationSummary {
@@ -1504,6 +1607,39 @@ export const api = {
   getReviewCampaign(id: string): Promise<ReviewCampaignDetail> {
     return request<ReviewCampaignDetail>(`/organizations/me/review-requests/campaigns/${id}`);
   },
+  publicOrganizations(params: {
+    search?: string;
+    sector?: string;
+    country?: string;
+    verified?: boolean;
+    page?: number;
+    pageSize?: number;
+  } = {}): Promise<Paginated<PublicOrganizationSummary>> {
+    return request<Paginated<PublicOrganizationSummary>>(
+      `/public/organizations${buildQuery(params)}`,
+    );
+  },
+  publicVerification(slug: string): Promise<PublicVerification> {
+    return request<PublicVerification>(
+      `/public/organizations/${encodeURIComponent(slug)}/verification`,
+    );
+  },
+  publicVerificationInfo(): Promise<PublicVerificationInfo> {
+    return request<PublicVerificationInfo>('/public/verification-info');
+  },
+  submitVerificationInquiry(payload: {
+    companyName: string;
+    contactName: string;
+    email: string;
+    phone?: string;
+    message?: string;
+    consent: boolean;
+  }): Promise<{ received: boolean }> {
+    return request<{ received: boolean }>('/public/verification-inquiry', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
   publicProfile(slug: string): Promise<PublicProfile> {
     return request<PublicProfile>(`/public/organizations/${encodeURIComponent(slug)}`);
   },
@@ -1820,6 +1956,25 @@ export const api = {
       method: 'POST',
     });
   },
+  addCertification(payload: {
+    name: string;
+    issuer: string;
+    credentialId?: string;
+    credentialUrl?: string;
+    issuedAt?: string;
+    expiresAt?: string;
+  }): Promise<CompanyCertification> {
+    return request<CompanyCertification>('/organizations/me/verification/certifications', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  deleteCertification(id: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(
+      `/organizations/me/verification/certifications/${id}`,
+      { method: 'DELETE' },
+    );
+  },
 
   // Verificación (super admin)
   adminListVerifications(
@@ -1855,6 +2010,41 @@ export const api = {
   },
   adminVerificationDocument(id: string, documentId: string): Promise<Blob> {
     return requestBlob(`/admin/verifications/${id}/documents/${documentId}`);
+  },
+  adminListCertifications(
+    params: ListParams = {},
+  ): Promise<Paginated<AdminCertification>> {
+    return request<Paginated<AdminCertification>>(
+      `/admin/verifications/certifications${buildQuery(params)}`,
+    );
+  },
+  adminApproveCertification(id: string, note?: string): Promise<AdminCertification> {
+    return request<AdminCertification>(
+      `/admin/verifications/certifications/${id}/approve`,
+      { method: 'POST', body: JSON.stringify(note ? { note } : {}) },
+    );
+  },
+  adminRejectCertification(id: string, reason: string): Promise<AdminCertification> {
+    return request<AdminCertification>(
+      `/admin/verifications/certifications/${id}/reject`,
+      { method: 'POST', body: JSON.stringify({ reason }) },
+    );
+  },
+  adminListVerificationInquiries(
+    params: ListParams = {},
+  ): Promise<Paginated<VerificationInquiry>> {
+    return request<Paginated<VerificationInquiry>>(
+      `/admin/verifications/inquiries${buildQuery(params)}`,
+    );
+  },
+  adminUpdateVerificationInquiry(
+    id: string,
+    payload: { status: VerificationInquiryStatus; notes?: string },
+  ): Promise<VerificationInquiry> {
+    return request<VerificationInquiry>(`/admin/verifications/inquiries/${id}`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
   },
 
   // Membresías, suscripciones y pagos (super admin)

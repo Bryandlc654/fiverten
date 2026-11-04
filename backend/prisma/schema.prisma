@@ -76,6 +76,7 @@ model Organization {
   verificationRequests  VerificationRequest[]
   verificationDocuments VerificationDocument[]
   verificationProjects  VerificationProject[]
+  certifications        Certification[]
 
   @@index([slug])
   @@index([status, isActive, deletedAt])
@@ -244,6 +245,7 @@ model Review {
   organizationId     String    @map("organization_id") @db.Uuid
   reviewerName       String    @map("reviewer_name") @db.VarChar(200)
   reviewerEmail      String    @map("reviewer_email") @db.VarChar(255)
+  projectId          String?   @map("project_id") @db.Uuid
   rating             Int       @db.SmallInt
   title              String?   @db.VarChar(255)
   body               String    @db.Text
@@ -265,6 +267,7 @@ model Review {
   deletedAt          DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project           VerificationProject? @relation(fields: [projectId], references: [id], onDelete: SetNull)
   response          ReviewResponse?
   reports           ReviewReport[]
   moderationActions ModerationAction[]
@@ -280,6 +283,7 @@ model Review {
   @@index([publishedAt])
   @@index([ipAddress])
   @@index([organizationId, reviewerEmail])
+  @@index([projectId])
   @@map("reviews")
 }
 
@@ -952,10 +956,57 @@ model VerificationProject {
   organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   request      VerificationRequest?   @relation(fields: [requestId], references: [id], onDelete: Cascade)
   documents    VerificationDocument[]
+  reviews      Review[]
 
   @@index([organizationId, createdAt])
   @@index([requestId])
   @@map("verification_projects")
+}
+
+// Credenciales o certificaciones externas aportadas por la empresa y
+// validadas por FIVERTEN. No se publican hasta que un administrador las aprueba.
+model Certification {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  name           String    @db.VarChar(200)
+  issuer         String    @db.VarChar(200)
+  credentialId   String?   @map("credential_id") @db.VarChar(200)
+  credentialUrl  String?   @map("credential_url") @db.VarChar(500)
+  issuedAt       DateTime? @map("issued_at") @db.Date
+  expiresAt      DateTime? @map("expires_at") @db.Date
+  status         String    @default("pending") @db.VarChar(20)
+  decisionReason String?   @map("decision_reason") @db.Text
+  reviewedAt     DateTime? @map("reviewed_at") @db.Timestamptz(6)
+  reviewedBy     String?   @map("reviewed_by") @db.Uuid
+  createdBy      String?   @map("created_by") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status])
+  @@index([status, createdAt])
+  @@map("certifications")
+}
+
+// Solicitudes de captación recibidas desde /verificar-empresa.
+model VerificationInquiry {
+  id          String    @id @default(uuid()) @db.Uuid
+  companyName String    @map("company_name") @db.VarChar(200)
+  contactName String    @map("contact_name") @db.VarChar(120)
+  email       String    @db.VarChar(255)
+  phone       String?   @db.VarChar(50)
+  message     String?   @db.Text
+  status      String    @default("new") @db.VarChar(20)
+  notes       String?   @db.Text
+  handledBy   String?   @map("handled_by") @db.Uuid
+  handledAt   DateTime? @map("handled_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status, createdAt])
+  @@index([email])
+  @@map("verification_inquiries")
 }
 
 

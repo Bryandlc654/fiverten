@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
+import { hashToken } from '../src/common/tokens';
 import { MailService } from '../src/mail/mail.service';
 import { PrismaService } from '../src/prisma/prisma.service';
 
@@ -19,6 +20,7 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
   let companyToken: string;
   let adminToken: string;
   let publicId: string;
+  let slug: string;
   let requestId: string;
 
   const company = () => ({ Authorization: `Bearer ${companyToken}` });
@@ -47,9 +49,10 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
     http = () => request(app.getHttpServer());
     const mail = app.get(MailService);
     jest.spyOn(mail, 'sendEmailVerification').mockResolvedValue(undefined);
+    jest.spyOn(mail, 'sendVerificationInquiry').mockResolvedValue(undefined);
 
     await prisma.$executeRawUnsafe(
-      'TRUNCATE TABLE "verification_requests","verification_documents","verification_projects","organizations","users","roles","permissions","role_permissions","organization_memberships","organization_invitations","reviews","review_requests","review_campaigns","review_responses","sessions","refresh_tokens","email_verifications","password_reset_tokens","auth_attempts","notifications","review_cases","review_case_messages","review_case_files","review_resolutions","resolution_messages","review_reports","moderation_actions","plans","subscriptions","subscription_events","payments","platform_settings","email_templates","sectors","countries","languages","report_reasons","support_tickets","support_ticket_messages","media_files" RESTART IDENTITY CASCADE',
+      'TRUNCATE TABLE "verification_requests","verification_documents","verification_projects","certifications","verification_inquiries","organizations","users","roles","permissions","role_permissions","organization_memberships","organization_invitations","reviews","review_requests","review_campaigns","review_responses","sessions","refresh_tokens","email_verifications","password_reset_tokens","auth_attempts","notifications","review_cases","review_case_messages","review_case_files","review_resolutions","resolution_messages","review_reports","moderation_actions","plans","subscriptions","subscription_events","payments","platform_settings","email_templates","sectors","countries","languages","report_reasons","support_tickets","support_ticket_messages","media_files" RESTART IDENTITY CASCADE',
     );
 
     const registered = await http()
@@ -58,6 +61,7 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
       .expect(201);
     companyToken = registered.body.accessToken as string;
     publicId = registered.body.organization.publicId as string;
+    slug = registered.body.organization.slug as string;
 
     await http()
       .patch('/api/organizations/me')
@@ -148,6 +152,18 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
     const status = await http().get(VERIFY).set(company()).expect(200);
     expect(status.body.status).toBe('verified');
 
+    const publicData = await http()
+      .get(`/api/public/organizations/${slug}/verification`)
+      .expect(200);
+    expect(publicData.body.status).toBe('verified');
+    expect(publicData.body.categories).toHaveLength(3);
+    expect(publicData.body.projects[0]).toMatchObject({
+      name: 'Proyecto de prueba',
+      evidenceCount: 1,
+    });
+    // Nunca se exponen nombres de documentos privados.
+    expect(JSON.stringify(publicData.body)).not.toContain('identity.pdf');
+
     const svg = await http().get(`/api/seal/${publicId}.svg`).expect(200);
     expect(svg.headers['content-type']).toContain('image/svg+xml');
     expect(svgText(svg)).toContain('Empresa verificada');
@@ -156,6 +172,153 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
     const png = await http().get(`/api/seal/${publicId}.png`).expect(200);
     expect(png.headers['content-type']).toContain('image/png');
     expect(png.body.length).toBeGreaterThan(100);
+  });
+
+  it('valida certificaciones externas y las publica solo tras aprobarlas', async () => {
+    const created = await http()
+      .post(`${VERIFY}/certifications`)
+      .set(company())
+      .send({
+        name: 'ISO 9001',
+        issuer: 'AENOR',
+        credentialId: 'ISO-123',
+        credentialUrl: 'https://example.com/credencial',
+        issuedAt: '2025-01-01',
+        expiresAt: '2027-01-01',
+      })
+      .expect(201);
+    expect(created.body.status).toBe('pending');
+
+    const pending = await http()
+      .get(`${ADMIN}/certifications?status=pending`)
+      .set(admin())
+      .expect(200);
+    expect(pending.body.total).toBe(1);
+
+    await http()
+      .post(`${ADMIN}/certifications/${created.body.id}/approve`)
+      .set(admin())
+      .send({ note: 'Credencial comprobada' })
+      .expect(200);
+
+    const publicData = await http()
+      .get(`/api/public/organizations/${slug}/verification`)
+      .expect(200);
+    expect(publicData.body.certifications).toHaveLength(1);
+    expect(publicData.body.certifications[0]).toMatchObject({
+      name: 'ISO 9001',
+      issuer: 'AENOR',
+      credentialId: 'ISO-123',
+    });
+  });
+
+  it('vincula opiniones verificadas a proyectos comprobados', async () => {
+    const org = await prisma.organization.findFirstOrThrow({ where: { slug } });
+    const project = await prisma.verificationProject.findFirstOrThrow({
+      where: { organizationId: org.id },
+    });
+    await prisma.reviewRequest.create({
+      data: {
+        organizationId: org.id,
+        tokenHash: hashToken('review-request-token'),
+        reviewerName: 'Cliente Verificado',
+        reviewerEmail: 'cliente-verificado@test.local',
+        expiresAt: new Date(Date.now() + 86400000),
+      },
+    });
+
+    await http()
+      .post(`/api/public/organizations/${slug}/reviews`)
+      .send({
+        name: 'Cliente Verificado',
+        email: 'cliente-verificado@test.local',
+        rating: 5,
+        body: 'Experiencia excelente con el proyecto.',
+        consent: true,
+        projectId: project.id,
+        requestToken: 'review-request-token',
+      })
+      .expect(201);
+
+    const review = await prisma.review.findFirstOrThrow({
+      where: { organizationId: org.id, reviewerEmail: 'cliente-verificado@test.local' },
+    });
+    expect(review.projectId).toBe(project.id);
+    expect(review.verificationStatus).toBe('verified');
+
+    const form = await http()
+      .get(`/api/public/organizations/${slug}/review-form`)
+      .expect(200);
+    expect(form.body.projects).toEqual([{ id: project.id, name: 'Proyecto de prueba' }]);
+  });
+
+  it('no marca como verificada una reseña con otro correo', async () => {
+    const org = await prisma.organization.findFirstOrThrow({ where: { slug } });
+    await prisma.reviewRequest.create({
+      data: {
+        organizationId: org.id,
+        tokenHash: hashToken('review-request-otro-correo'),
+        reviewerName: 'Cliente Original',
+        reviewerEmail: 'original@test.local',
+        expiresAt: new Date(Date.now() + 86400000),
+      },
+    });
+
+    await http()
+      .post(`/api/public/organizations/${slug}/reviews`)
+      .send({
+        name: 'Otro Cliente',
+        email: 'otro@test.local',
+        rating: 5,
+        body: 'Intento de usar un enlace ajeno.',
+        consent: true,
+        requestToken: 'review-request-otro-correo',
+      })
+      .expect(400);
+  });
+
+  it('rechaza vincular una opinión a un proyecto ajeno', async () => {
+    await http()
+      .post(`/api/public/organizations/${slug}/reviews`)
+      .send({
+        name: 'Cliente Proyecto',
+        email: 'cliente-proyecto@test.local',
+        rating: 4,
+        body: 'Experiencia con un proyecto no válido.',
+        consent: true,
+        projectId: '00000000-0000-4000-8000-000000000000',
+      })
+      .expect(400);
+  });
+
+  it('acepta solicitudes de captación desde la web pública y las guarda', async () => {
+    const response = await http()
+      .post('/api/public/verification-inquiry')
+      .send({
+        companyName: 'Contacto SL',
+        contactName: 'Ana',
+        email: 'ana@contacto.test',
+        consent: true,
+      })
+      .expect(200);
+    expect(response.body).toEqual({ received: true });
+
+    const list = await http()
+      .get(`${ADMIN}/inquiries?status=new`)
+      .set(admin())
+      .expect(200);
+    expect(list.body.total).toBe(1);
+    expect(list.body.items[0]).toMatchObject({
+      companyName: 'Contacto SL',
+      email: 'ana@contacto.test',
+    });
+
+    const updated = await http()
+      .post(`${ADMIN}/inquiries/${list.body.items[0].id}`)
+      .set(admin())
+      .send({ status: 'contacted', notes: 'Llamada realizada' })
+      .expect(200);
+    expect(updated.body.status).toBe('contacted');
   });
 
   it('el sello refleja la revocación automáticamente', async () => {
@@ -167,6 +330,13 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
 
     const status = await http().get(VERIFY).set(company()).expect(200);
     expect(status.body.status).toBe('expired');
+
+    const publicData = await http()
+      .get(`/api/public/organizations/${slug}/verification`)
+      .expect(200);
+    expect(publicData.body.categories).toEqual([]);
+    expect(publicData.body.projects).toEqual([]);
+    expect(publicData.body.certifications).toEqual([]);
 
     const svg = await http().get(`/api/seal/${publicId}.svg`).expect(200);
     expect(svgText(svg)).toContain('Verificación caducada');

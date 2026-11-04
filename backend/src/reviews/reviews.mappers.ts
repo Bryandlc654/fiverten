@@ -68,6 +68,7 @@ export const PUBLIC_REVIEW_SELECT = {
   experienceDate: true,
   verificationStatus: true,
   publishedAt: true,
+  project: { select: { id: true, name: true } },
   response: { select: { body: true, createdAt: true, editedAt: true, isPublic: true } },
 } satisfies Prisma.ReviewSelect;
 
@@ -82,6 +83,7 @@ export function toPublicReview(review: PublicReviewRow) {
     body: review.body,
     experienceDate: review.experienceDate,
     verified: review.verificationStatus === 'verified',
+    project: review.project,
     publishedAt: review.publishedAt,
     response:
       review.response && review.response.isPublic

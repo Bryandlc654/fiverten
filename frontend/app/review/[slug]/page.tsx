@@ -23,6 +23,7 @@ interface FormState {
   email: string;
   experienceDate: string;
   orderReference: string;
+  projectId: string;
   consent: boolean;
   website: string;
 }
@@ -35,6 +36,7 @@ const EMPTY: FormState = {
   email: '',
   experienceDate: '',
   orderReference: '',
+  projectId: '',
   consent: false,
   website: '',
 };
@@ -113,6 +115,7 @@ export default function WriteReviewPage() {
         email: form.email.trim(),
         experienceDate: form.experienceDate || undefined,
         orderReference: form.orderReference.trim() || undefined,
+        projectId: form.projectId || undefined,
         consent: form.consent,
         website: form.website || undefined,
         requestToken: requestToken || undefined,
@@ -268,6 +271,22 @@ export default function WriteReviewPage() {
                 className={inputClass}
               />
             </Field>
+            {company.projects.length > 0 && (
+              <Field label="Proyecto relacionado (opcional)">
+                <select
+                  value={form.projectId}
+                  onChange={(e) => setForm({ ...form, projectId: e.target.value })}
+                  className={inputClass}
+                >
+                  <option value="">Experiencia general</option>
+                  {company.projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
             <Field label="Tu nombre">
               <input
                 required

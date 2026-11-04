@@ -20,6 +20,7 @@ interface ReviewCardProps {
   date: string | null;
   experienceDate: string | null;
   verified: boolean;
+  projectName?: string | null;
   companyName: string;
   response: ReviewReply | null;
   /** Etiquetas o acciones extra (panel de la empresa). */
@@ -35,6 +36,7 @@ export default function ReviewCard({
   date,
   experienceDate,
   verified,
+  projectName,
   companyName,
   response,
   badge,
@@ -69,6 +71,12 @@ export default function ReviewCard({
       {experienceDate && (
         <p className="mt-2 text-xs text-slate-400">
           Fecha de la experiencia: {formatDate(experienceDate)}
+        </p>
+      )}
+      {projectName && (
+        <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
+          <span className="material-symbols-outlined text-[14px]">folder_open</span>
+          Proyecto: {projectName}
         </p>
       )}
 

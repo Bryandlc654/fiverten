@@ -142,7 +142,7 @@ export class PublicReviewsService {
       where.publishedAt = { gte: query.since };
     }
 
-    return this.prisma.withContext({}, async (tx) => {
+    return this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
       const [total, rows] = await Promise.all([
         tx.review.count({ where }),
         tx.review.findMany({
@@ -160,13 +160,120 @@ export class PublicReviewsService {
   /** Cabecera del formulario: la empresa recibe reseñas aunque su perfil aún no sea público. */
   async getReviewForm(slug: string) {
     const org = await this.findOrganization(slug, { requirePublic: false });
+    const verified = effectiveVerificationStatus(org) === 'verified';
+    const projects = verified
+      ? await this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
+          const approved = await tx.verificationRequest.findFirst({
+            where: { organizationId: org.id, status: 'approved' },
+            orderBy: { reviewedAt: 'desc' },
+            select: { id: true },
+          });
+          if (!approved) return [];
+          return tx.verificationProject.findMany({
+            where: { organizationId: org.id, requestId: approved.id },
+            select: { id: true, name: true },
+            orderBy: { createdAt: 'asc' },
+          });
+        })
+      : [];
     return {
       slug: org.slug,
       tradeName: org.tradeName,
       logoUrl: org.logoUrl,
-      verified: effectiveVerificationStatus(org) === 'verified',
+      verified,
       isPublic: org.isPublic,
+      projects,
     };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Directorio público
+  // ---------------------------------------------------------------------------
+  async listOrganizations(query: {
+    page: number;
+    pageSize: number;
+    search?: string;
+    sector?: string;
+    country?: string;
+    verified?: boolean;
+  }) {
+    const page = Math.max(1, query.page);
+    const pageSize = Math.min(48, Math.max(1, query.pageSize));
+    const search = query.search?.trim();
+    const where: Prisma.OrganizationWhereInput = {
+      deletedAt: null,
+      isActive: true,
+      status: 'active',
+      isPublic: true,
+      ...(search
+        ? {
+            OR: [
+              { tradeName: { contains: search, mode: 'insensitive' } },
+              { description: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+      ...(query.sector ? { sector: { slug: query.sector } } : {}),
+      ...(query.country ? { country: { iso2: query.country.toUpperCase() } } : {}),
+    };
+    if (query.verified) {
+      where.AND = [
+        { verificationStatus: 'verified' },
+        { OR: [{ verificationExpiresAt: null }, { verificationExpiresAt: { gt: new Date() } }] },
+      ];
+    }
+
+    return this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
+      const [total, rows] = await Promise.all([
+        tx.organization.count({ where }),
+        tx.organization.findMany({
+          where,
+          include: {
+            sector: { select: { slug: true, name: true } },
+            country: { select: { iso2: true, name: true } },
+          },
+          orderBy: { tradeName: 'asc' },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+      ]);
+
+      const ids = rows.map((row) => row.id);
+      const grouped = ids.length
+        ? await tx.review.groupBy({
+            by: ['organizationId'],
+            where: { organizationId: { in: ids }, ...PUBLISHED },
+            _avg: { rating: true },
+            _count: { _all: true },
+          })
+        : [];
+      const ratings = new Map(
+        grouped.map((row) => [
+          row.organizationId,
+          {
+            average:
+              row._avg.rating === null ? null : Math.round(row._avg.rating * 10) / 10,
+            total: row._count._all,
+          },
+        ]),
+      );
+
+      return {
+        items: rows.map((row) => ({
+          slug: row.slug,
+          tradeName: row.tradeName,
+          description: row.description,
+          logoUrl: row.logoUrl,
+          sector: row.sector,
+          country: row.country,
+          verified: effectiveVerificationStatus(row) === 'verified',
+          rating: ratings.get(row.id) ?? { average: null, total: 0 },
+        })),
+        total,
+        page,
+        pageSize,
+      };
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -208,9 +315,36 @@ export class PublicReviewsService {
 
       await this.billing.assertCanReceiveReview(tx, org.id);
 
+      let projectId: string | null = null;
+      if (dto.projectId) {
+        if (effectiveVerificationStatus(org) !== 'verified') {
+          throw new BadRequestException('La empresa no tiene una verificación vigente');
+        }
+        const approved = await tx.verificationRequest.findFirst({
+          where: { organizationId: org.id, status: 'approved' },
+          orderBy: { reviewedAt: 'desc' },
+          select: { id: true },
+        });
+        const project = approved
+          ? await tx.verificationProject.findFirst({
+              where: {
+                id: dto.projectId,
+                organizationId: org.id,
+                requestId: approved.id,
+              },
+              select: { id: true },
+            })
+          : null;
+        if (!project) {
+          throw new BadRequestException('El proyecto indicado no es válido');
+        }
+        projectId = project.id;
+      }
+
       const created = await tx.review.create({
         data: {
           organizationId: org.id,
+          projectId,
           reviewerName: dto.name.trim(),
           reviewerEmail: email,
           rating: dto.rating,
@@ -225,9 +359,13 @@ export class PublicReviewsService {
         },
       });
       // Enlace personalizado: la reseña queda vinculada a la solicitud para
-      // poder medir si el cliente llegó a completarla.
+      // poder medir si el cliente llegó a completarla y marcada como verificada.
       if (dto.requestToken) {
-        await this.requests.attachToReview(tx, org.id, dto.requestToken, created.id);
+        await this.requests.attachToReview(tx, org.id, dto.requestToken, created.id, email);
+        await tx.review.update({
+          where: { id: created.id },
+          data: { verificationStatus: 'verified' },
+        });
       }
     });
 

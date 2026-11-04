@@ -1,4 +1,4 @@
-import { Equals, IsBoolean, IsDateString, IsEmail, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { Equals, IsBoolean, IsDateString, IsEmail, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 /** Formulario público para dejar una reseña (plataforma.com/review/:slug). */
 export class SubmitReviewDto {
@@ -44,6 +44,11 @@ export class SubmitReviewDto {
   @IsString()
   @MaxLength(256)
   requestToken?: string;
+
+  /** Proyecto verificado con el que se relaciona la experiencia. */
+  @IsOptional()
+  @IsUUID('4')
+  projectId?: string;
 
   // Trampa para bots: el formulario lo oculta, una persona nunca lo rellena.
   @IsOptional()

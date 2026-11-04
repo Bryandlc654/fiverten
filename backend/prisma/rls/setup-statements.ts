@@ -208,6 +208,9 @@ export const rlsStatements: string[] = [
   ...tenantTablePolicy('verification_requests'),
   ...tenantTablePolicy('verification_documents'),
   ...tenantTablePolicy('verification_projects'),
+  ...tenantTablePolicy('certifications'),
+  // Solicitudes de captación: solo las gestiona el equipo de plataforma.
+  ...platformTablePolicy('verification_inquiries'),
 
   // Imágenes: lectura pública; escritura del tenant o del propio usuario.
   `ALTER TABLE media_files ENABLE ROW LEVEL SECURITY`,
