@@ -137,18 +137,39 @@ async function seedPlatform(): Promise<void> {
   }
 
   const sectors = [
-    ['tecnologia', 'Tecnología'],
-    ['salud', 'Salud'],
-    ['educacion', 'Educación'],
+    ['tecnologia', 'Tecnología y software'],
+    ['salud', 'Salud y bienestar'],
+    ['educacion', 'Educación y formación'],
     ['retail', 'Comercio y retail'],
     ['hosteleria', 'Hostelería y turismo'],
     ['servicios', 'Servicios profesionales'],
+    ['automocion', 'Automoción y movilidad'],
+    ['inmobiliaria', 'Inmobiliaria'],
+    ['finanzas', 'Finanzas y seguros'],
+    ['construccion', 'Construcción y reformas'],
+    ['industria', 'Industria y manufactura'],
+    ['logistica', 'Logística y transporte'],
+    ['alimentacion', 'Alimentación y bebidas'],
+    ['moda', 'Moda y belleza'],
+    ['deporte', 'Deporte y ocio'],
+    ['medios', 'Medios y entretenimiento'],
+    ['telecomunicaciones', 'Telecomunicaciones'],
+    ['energia', 'Energía y medioambiente'],
+    ['agro', 'Agricultura y ganadería'],
+    ['legal', 'Legal y asesoría'],
+    ['marketing', 'Marketing y publicidad'],
+    ['administracion', 'Administración pública'],
+    ['ong', 'ONG y asociaciones'],
+    ['hogar', 'Hogar y servicios domésticos'],
+    ['mascotas', 'Mascotas y veterinaria'],
+    ['otros', 'Otros'],
   ] as const;
-  for (const [slug, name] of sectors) {
+  for (let index = 0; index < sectors.length; index += 1) {
+    const [slug, name] = sectors[index];
     await prisma.sector.upsert({
       where: { slug },
-      update: { name, isActive: true },
-      create: { slug, name },
+      update: { name, isActive: true, sortOrder: index * 10 },
+      create: { slug, name, sortOrder: index * 10 },
     });
   }
 
