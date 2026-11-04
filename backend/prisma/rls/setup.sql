@@ -247,6 +247,26 @@ CREATE POLICY rls_support_ticket_messages ON support_ticket_messages
     USING (organization_id = app_current_org() OR app_is_platform_admin())
     WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
 
+ALTER TABLE media_files ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_media_files_select ON media_files;
+
+CREATE POLICY rls_media_files_select ON media_files FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS rls_media_files_write ON media_files;
+
+CREATE POLICY rls_media_files_write ON media_files
+  USING (
+    (organization_id IS NOT NULL AND organization_id = app_current_org())
+    OR (user_id IS NOT NULL AND user_id = app_current_user())
+    OR app_is_platform_admin()
+  )
+  WITH CHECK (
+    (organization_id IS NOT NULL AND organization_id = app_current_org())
+    OR (user_id IS NOT NULL AND user_id = app_current_user())
+    OR app_is_platform_admin()
+  );
+
 DROP POLICY IF EXISTS rls_review_responses_public ON review_responses;
 
 CREATE POLICY rls_review_responses_public ON review_responses FOR SELECT

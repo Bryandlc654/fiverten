@@ -1,7 +1,8 @@
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { randomUUID } from 'node:crypto';
+import { PrismaService } from '../prisma/prisma.service';
 
 const MIME_EXTENSIONS: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -27,7 +28,10 @@ export interface UploadedImage {
 export class MediaService {
   private client: S3Client | null = null;
 
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly config: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   isConfigured(): boolean {
     return Boolean(
@@ -40,15 +44,57 @@ export class MediaService {
   }
 
   async uploadOrganizationCover(orgId: string, file: UploadedImage): Promise<string> {
+    if (!this.isConfigured()) {
+      return this.storeInDatabase({ organizationId: orgId, kind: 'cover' }, file);
+    }
     return this.upload(`organizations/${orgId}/cover`, file);
   }
 
   async uploadAvatar(userId: string, file: UploadedImage): Promise<string> {
+    if (!this.isConfigured()) {
+      return this.storeInDatabase({ userId, kind: 'avatar' }, file);
+    }
     return this.upload(`users/${userId}/avatar`, file);
   }
 
   async uploadOrganizationLogo(orgId: string, file: UploadedImage): Promise<string> {
+    if (!this.isConfigured()) {
+      return this.storeInDatabase({ organizationId: orgId, kind: 'logo' }, file);
+    }
     return this.upload(`organizations/${orgId}/logo`, file);
+  }
+
+  /** Imagen pública guardada en la base (fallback sin R2). */
+  async getFile(id: string): Promise<{ data: Buffer; mimeType: string }> {
+    const file = await this.prisma.withContext({}, (tx) =>
+      tx.mediaFile.findUnique({ where: { id }, select: { data: true, mimeType: true } }),
+    );
+    if (!file) {
+      throw new NotFoundException('Imagen no encontrada');
+    }
+    return { data: Buffer.from(file.data), mimeType: file.mimeType };
+  }
+
+  private async storeInDatabase(
+    owner: { organizationId?: string; userId?: string; kind: string },
+    file: UploadedImage,
+  ): Promise<string> {
+    const record = await this.prisma.withContext(
+      { orgId: owner.organizationId ?? null, userId: owner.userId ?? null },
+      (tx) =>
+        tx.mediaFile.create({
+          data: {
+            organizationId: owner.organizationId ?? null,
+            userId: owner.userId ?? null,
+            kind: owner.kind,
+            mimeType: file.mimetype,
+            size: file.size,
+            data: file.buffer,
+          },
+          select: { id: true },
+        }),
+    );
+    return `/api/media/files/${record.id}`;
   }
 
   private async upload(prefix: string, file: UploadedImage): Promise<string> {
@@ -79,9 +125,7 @@ export class MediaService {
 
   private getClient(): S3Client {
     if (!this.isConfigured()) {
-      throw new ServiceUnavailableException(
-        'El almacenamiento de imagenes no esta configurado. Intentalo mas tarde.',
-      );
+      throw new NotFoundException('El almacenamiento de imagenes no esta configurado');
     }
     if (!this.client) {
       const endpoint =

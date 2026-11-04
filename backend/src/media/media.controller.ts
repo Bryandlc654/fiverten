@@ -2,12 +2,19 @@ import {
   BadRequestException,
   Controller,
   ForbiddenException,
+  Get,
+  Header,
+  Param,
+  ParseUUIDPipe,
   Post,
+  Res,
+  StreamableFile,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -83,5 +90,21 @@ export class MediaController {
     }
     const url = await this.media.uploadOrganizationCover(orgId, file);
     return { url };
+  }
+}
+
+@Controller('media')
+export class MediaFilesController {
+  constructor(private readonly media: MediaService) {}
+
+  @Get('files/:id')
+  @Header('Cache-Control', 'public, max-age=31536000, immutable')
+  async file(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    const file = await this.media.getFile(id);
+    res.setHeader('Content-Type', file.mimeType);
+    return new StreamableFile(file.data);
   }
 }

@@ -4,7 +4,6 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
 import { MailService } from '../src/mail/mail.service';
-import { MediaService } from '../src/media/media.service';
 import { PrismaService } from '../src/prisma/prisma.service';
 
 const AUTH = '/api/auth';
@@ -28,9 +27,6 @@ describe('FIVERTEN logo de empresa (e2e)', () => {
     http = () => request(app.getHttpServer());
     const mail = app.get(MailService);
     jest.spyOn(mail, 'sendEmailVerification').mockResolvedValue(undefined);
-    jest
-      .spyOn(app.get(MediaService), 'uploadOrganizationLogo')
-      .mockResolvedValue('https://cdn.example.com/logo.png');
 
     await prisma.$executeRawUnsafe(
       'TRUNCATE TABLE "organizations","users","roles","permissions","role_permissions","organization_memberships","organization_invitations","reviews","review_requests","review_campaigns","review_responses","sessions","refresh_tokens","email_verifications","password_reset_tokens","auth_attempts","notifications","review_cases","review_case_messages","review_case_files","review_resolutions","resolution_messages","review_reports","moderation_actions","plans","subscriptions","subscription_events","payments","platform_settings","email_templates","sectors","countries","languages","report_reasons","support_tickets","support_ticket_messages" RESTART IDENTITY CASCADE',
@@ -56,7 +52,11 @@ describe('FIVERTEN logo de empresa (e2e)', () => {
         contentType: 'image/png',
       })
       .expect(201);
-    expect(response.body.url).toBe('https://cdn.example.com/logo.png');
+    expect(response.body.url).toMatch(/^\/api\/media\/files\/[0-9a-f-]+$/);
+
+    const file = await http().get(response.body.url).expect(200);
+    expect(file.headers['content-type']).toContain('image/png');
+    expect(file.body).toEqual(Buffer.from('fake-png'));
   });
 
   it('rechaza archivos que no son imágenes', async () => {

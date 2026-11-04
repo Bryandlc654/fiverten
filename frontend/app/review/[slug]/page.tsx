@@ -7,7 +7,13 @@ import { useEffect, useState, type FormEvent } from 'react';
 import PublicShell from '../../../components/public/PublicShell';
 import { StarPicker } from '../../../components/reviews/Stars';
 import { Alert, Field, inputClass } from '../../../components/ui';
-import { ApiError, api, type ReviewForm, type ReviewRequestLookup } from '../../../lib/api';
+import {
+  ApiError,
+  api,
+  resolveAssetUrl,
+  type ReviewForm,
+  type ReviewRequestLookup,
+} from '../../../lib/api';
 
 interface FormState {
   rating: number;
@@ -164,7 +170,7 @@ export default function WriteReviewPage() {
         <div className="flex items-center gap-4">
           {company.logoUrl ? (
             <Image
-              src={company.logoUrl}
+              src={resolveAssetUrl(company.logoUrl) ?? company.logoUrl}
               alt={company.tradeName}
               width={56}
               height={56}

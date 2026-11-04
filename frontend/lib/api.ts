@@ -1,5 +1,20 @@
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
 
+/**
+ * Resuelve URLs de imágenes guardadas en la API (p. ej. /api/media/files/…)
+ * contra el backend real, tanto en local (URL absoluta) como en producción
+ * con proxy same-origin (/api).
+ */
+export function resolveAssetUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  if (/^(https?:|data:|blob:)/i.test(value)) return value;
+  if (value.startsWith('/api/')) {
+    const base = API_URL.replace(/\/api\/?$/, '');
+    return `${base}${value}`;
+  }
+  return value;
+}
+
 export interface Organization {
   id: string;
   publicId: string;

@@ -72,6 +72,7 @@ model Organization {
   payments           Payment[]
   supportTickets     SupportTicket[]
   supportMessages    SupportTicketMessage[]
+  mediaFiles         MediaFile[]
 
   @@index([slug])
   @@index([status, isActive, deletedAt])
@@ -124,6 +125,7 @@ model User {
   supportTicketsCreated  SupportTicket[] @relation("SupportTicketCreator")
   supportTicketsAssigned SupportTicket[] @relation("SupportTicketAssignee")
   supportMessages        SupportTicketMessage[]
+  mediaFiles             MediaFile[]
 
   @@index([isActive, deletedAt])
   @@index([isFivertenStaff])
@@ -862,5 +864,27 @@ model SupportTicketMessage {
   @@index([organizationId, createdAt])
   @@map("support_ticket_messages")
 }
+
+// Imágenes subidas sin R2: almacenamiento de respaldo en la base de datos.
+// Las imágenes son públicas (logo, portada, avatar); la escritura se limita al
+// tenant o al propio usuario.
+model MediaFile {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String?  @map("organization_id") @db.Uuid
+  userId         String?  @map("user_id") @db.Uuid
+  kind           String   @db.VarChar(20)
+  mimeType       String   @map("mime_type") @db.VarChar(100)
+  size           Int
+  data           Bytes
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([userId])
+  @@map("media_files")
+}
+
 
 

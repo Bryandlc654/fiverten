@@ -1,11 +1,11 @@
-'use client';
+﻿'use client';
 
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import DashboardShell from '../../../components/DashboardShell';
 import { Alert, Badge, Field, inputClass } from '../../../components/ui';
-import { ApiError, api, type MeResponse } from '../../../lib/api';
+import { ApiError, api, type MeResponse, resolveAssetUrl } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
 
 interface FormState {
@@ -142,7 +142,7 @@ export default function ProfilePage() {
                 <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-full bg-slate-100 ring-4 ring-white shadow">
                   {form.avatarUrl ? (
                     <Image
-                      src={form.avatarUrl}
+                      src={resolveAssetUrl(form.avatarUrl) ?? form.avatarUrl}
                       alt="Foto de perfil"
                       fill
                       sizes="96px"

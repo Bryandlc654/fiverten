@@ -1,6 +1,6 @@
-import Image from 'next/image';
+﻿import Image from 'next/image';
 import Link from 'next/link';
-import type { PublicProfile } from '../../lib/api';
+import { resolveAssetUrl, type PublicProfile } from '../../lib/api';
 import { formatRating, Stars } from '../reviews/Stars';
 
 /**
@@ -17,7 +17,7 @@ export default function PublicHero({ profile }: { profile: PublicProfile }) {
       <div className="relative h-36 sm:h-44 lg:h-48">
         {profile.coverUrl ? (
           <Image
-            src={profile.coverUrl}
+            src={resolveAssetUrl(profile.coverUrl) ?? profile.coverUrl}
             alt=""
             fill
             priority
@@ -68,7 +68,7 @@ export default function PublicHero({ profile }: { profile: PublicProfile }) {
             <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-white p-1 shadow-lg ring-4 ring-white sm:h-28 sm:w-28">
               {profile.logoUrl ? (
                 <Image
-                  src={profile.logoUrl}
+                  src={resolveAssetUrl(profile.logoUrl) ?? profile.logoUrl}
                   alt={`Logo de ${profile.tradeName}`}
                   fill
                   sizes="112px"

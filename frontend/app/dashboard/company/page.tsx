@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ChangeEvent } from 'react';
 import DashboardShell from '../../../components/DashboardShell';
-import { ApiError, api, type OrganizationDetail, type PublicCatalogs } from '../../../lib/api';
+import { ApiError, api, type OrganizationDetail, type PublicCatalogs, resolveAssetUrl } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
 import { roleAtLeast } from '../../../lib/roles';
 
@@ -303,7 +303,7 @@ export default function CompanyPage() {
                   <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white">
                     {form.logoUrl ? (
                       <Image
-                        src={form.logoUrl}
+                        src={resolveAssetUrl(form.logoUrl) ?? form.logoUrl}
                         alt="Logo de la empresa"
                         fill
                         sizes="80px"
@@ -367,7 +367,7 @@ export default function CompanyPage() {
                   <div className="relative aspect-[3/1] w-full bg-slate-100">
                     {form.coverUrl ? (
                       <Image
-                        src={form.coverUrl}
+                        src={resolveAssetUrl(form.coverUrl) ?? form.coverUrl}
                         alt="Portada de la empresa"
                         fill
                         sizes="(max-width: 768px) 100vw, 768px"
