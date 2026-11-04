@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import type { Organization, User } from '@prisma/client';
+import { Prisma, type Organization, type User } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { generatePublicId } from '../common/ids';
 import { burnPasswordCheck, hashPassword, verifyPassword } from '../common/passwords';
@@ -23,6 +23,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PlatformSettingsService } from '../settings/settings.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 interface RequestContext {
   ipAddress?: string;
@@ -536,6 +537,8 @@ export class AuthService {
         lastName: user.lastName,
         isVerified: user.isVerified,
         emailVerified: user.emailVerifiedAt !== null,
+        phone: user.phone,
+        avatarUrl: user.avatarUrl,
         isSuperAdmin: user.isSuperAdmin,
         isFivertenStaff: user.isFivertenStaff,
         isSupportAgent: user.isSupportAgent,
@@ -570,6 +573,28 @@ export class AuthService {
       isFivertenStaff: user.isFivertenStaff,
       isSupportAgent: user.isSupportAgent,
     };
+  }
+
+  /** Edición de los datos personales del propio usuario. */
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const data: Prisma.UserUpdateInput = {};
+    if (dto.firstName !== undefined) data.firstName = dto.firstName.trim() || null;
+    if (dto.lastName !== undefined) data.lastName = dto.lastName.trim() || null;
+    if (dto.username !== undefined) data.username = dto.username.trim();
+    if (dto.phone !== undefined) data.phone = dto.phone.trim() || null;
+    if (dto.avatarUrl !== undefined) data.avatarUrl = dto.avatarUrl?.trim() || null;
+
+    try {
+      await this.prisma.withContext({ userId }, (tx) =>
+        tx.user.update({ where: { id: userId }, data }),
+      );
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('Ese nombre de usuario ya está en uso');
+      }
+      throw error;
+    }
+    return this.me(userId);
   }
 
   // ---------------------------------------------------------------------------
@@ -1072,6 +1097,8 @@ export class AuthService {
         username: user.username,
         firstName: user.firstName,
         lastName: user.lastName,
+        phone: user.phone,
+        avatarUrl: user.avatarUrl,
         isVerified: user.isVerified,
         isSuperAdmin: user.isSuperAdmin,
         isFivertenStaff: user.isFivertenStaff,

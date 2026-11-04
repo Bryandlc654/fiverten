@@ -15,6 +15,8 @@ export interface User {
   username: string;
   firstName: string | null;
   lastName: string | null;
+  phone?: string | null;
+  avatarUrl?: string | null;
   isVerified: boolean;
   isSuperAdmin?: boolean;
   isFivertenStaff?: boolean;
@@ -828,6 +830,14 @@ export interface MeResponse {
   role: string | null;
 }
 
+export interface UpdateProfilePayload {
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  phone?: string;
+  avatarUrl?: string | null;
+}
+
 export interface SessionInfo {
   id: string;
   ipAddress: string | null;
@@ -1117,6 +1127,17 @@ export const api = {
   },
   me(): Promise<MeResponse> {
     return request<MeResponse>('/auth/me');
+  },
+  updateProfile(payload: UpdateProfilePayload): Promise<MeResponse> {
+    return request<MeResponse>('/auth/me', {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+  uploadAvatar(file: File): Promise<{ url: string }> {
+    const form = new FormData();
+    form.append('file', file);
+    return requestForm<{ url: string }>('/media/avatar', form);
   },
   verifyEmail(token: string): Promise<{ verified: boolean }> {
     return once(`verify-email:${token}`, () =>

@@ -18,6 +18,7 @@ export type NavKey =
   | 'support'
   | 'campaigns'
   | 'adminSupport'
+  | 'profileEdit'
   | 'security'
   | 'adminOrgs'
   | 'adminUsers'
@@ -52,6 +53,7 @@ const TENANT_NAV: NavItem[] = [
   { key: 'membership', label: 'Mi plan', icon: 'workspace_premium', href: '/dashboard/membresia' },
   { key: 'campaigns', label: 'Campañas', icon: 'campaign', href: '/dashboard/campanas' },
   { key: 'support', label: 'Soporte', icon: 'support_agent', href: '/dashboard/soporte' },
+  { key: 'profileEdit', label: 'Mi perfil', icon: 'account_circle', href: '/dashboard/perfil' },
   { key: 'profile', label: 'Perfil público', icon: 'verified', href: '/empresa' },
   { key: 'security', label: 'Seguridad', icon: 'shield_lock', href: '/dashboard/seguridad' },
 ];
@@ -70,11 +72,13 @@ const ADMIN_NAV: NavItem[] = [
   { key: 'adminBilling', label: 'Membresías', icon: 'payments', href: '/admin/suscripciones' },
   { key: 'adminConfig', label: 'Configuración', icon: 'settings', href: '/admin/configuracion' },
   { key: 'adminSupport', label: 'Soporte', icon: 'support_agent', href: '/admin/soporte' },
+  { key: 'profileEdit', label: 'Mi perfil', icon: 'account_circle', href: '/dashboard/perfil' },
   { key: 'security', label: 'Seguridad', icon: 'shield_lock', href: '/dashboard/seguridad' },
 ];
 
 const SUPPORT_NAV: NavItem[] = [
   { key: 'adminSupport', label: 'Soporte', icon: 'support_agent', href: '/admin/soporte' },
+  { key: 'profileEdit', label: 'Mi perfil', icon: 'account_circle', href: '/dashboard/perfil' },
   { key: 'security', label: 'Seguridad', icon: 'shield_lock', href: '/dashboard/seguridad' },
 ];
 
@@ -297,6 +301,20 @@ export default function DashboardShell({
                     <p className="truncate text-sm font-semibold text-slate-900">{fullName}</p>
                     <p className="truncate text-xs text-slate-500">{email}</p>
                   </div>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      router.push('/dashboard/perfil');
+                    }}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    <span className="material-symbols-outlined text-[20px] text-slate-500">
+                      account_circle
+                    </span>
+                    Mi perfil
+                  </button>
                   <button
                     type="button"
                     role="menuitem"

@@ -40,9 +40,17 @@ export class MediaService {
   }
 
   async uploadOrganizationCover(orgId: string, file: UploadedImage): Promise<string> {
+    return this.upload(`organizations/${orgId}/cover`, file);
+  }
+
+  async uploadAvatar(userId: string, file: UploadedImage): Promise<string> {
+    return this.upload(`users/${userId}/avatar`, file);
+  }
+
+  private async upload(prefix: string, file: UploadedImage): Promise<string> {
     const client = this.getClient();
     const extension = MIME_EXTENSIONS[file.mimetype] ?? 'jpg';
-    const key = `organizations/${orgId}/cover/${randomUUID()}.${extension}`;
+    const key = `${prefix}/${randomUUID()}.${extension}`;
 
     await client.send(
       new PutObjectCommand({

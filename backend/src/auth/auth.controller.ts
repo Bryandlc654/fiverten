@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Req,
   Res,
@@ -21,6 +22,7 @@ import { LoginDto } from './dto/login.dto';
 import { DisableMfaDto, EnableMfaDto, VerifyMfaLoginDto } from './dto/mfa.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AuthService } from './auth.service';
@@ -136,6 +138,12 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   me(@CurrentUser('userId') userId: string) {
     return this.auth.me(userId);
+  }
+
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  updateProfile(@CurrentUser('userId') userId: string, @Body() dto: UpdateProfileDto) {
+    return this.auth.updateProfile(userId, dto);
   }
 
   // ---------------------------------------------------------------------------

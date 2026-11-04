@@ -29,6 +29,22 @@ const ALLOWED_MIME_TYPES = new Set([
 export class MediaController {
   constructor(private readonly media: MediaService) {}
 
+  @Post('avatar')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_IMAGE_BYTES } }))
+  async uploadAvatar(
+    @CurrentUser('userId') userId: string,
+    @UploadedFile() file?: UploadedImage,
+  ): Promise<{ url: string }> {
+    if (!file) {
+      throw new BadRequestException('No se recibió ninguna imagen');
+    }
+    if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
+      throw new BadRequestException('Formato no permitido. Usa JPG, PNG, WEBP, GIF o AVIF.');
+    }
+    const url = await this.media.uploadAvatar(userId, file);
+    return { url };
+  }
+
   @Post('organization-cover')
   @Roles('admin')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_IMAGE_BYTES } }))
