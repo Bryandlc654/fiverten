@@ -62,7 +62,7 @@ test.describe('Página de inicio de sesión', () => {
     await page.getByRole('button', { name: 'Acceder' }).click();
 
     await expect(page.getByTestId('auth-success')).toBeVisible();
-    await page.waitForURL('**/dashboard');
+    await page.waitForURL('**/app');
     await expect(page.getByRole('heading', { name: 'E2E Corp' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Resumen' })).toBeVisible();
     await expect(page.getByText('Ada Lovelace')).toBeVisible();
@@ -75,7 +75,7 @@ test.describe('Página de inicio de sesión', () => {
     await page.getByLabel('Correo corporativo').fill(email);
     await page.getByLabel('Contraseña').fill(password);
     await page.getByRole('button', { name: 'Acceder' }).click();
-    await page.waitForURL('**/dashboard');
+    await page.waitForURL('**/app');
 
     await page.getByRole('button', { name: 'Menú de usuario' }).click();
     await page.getByRole('menuitem', { name: 'Cerrar sesión' }).click();

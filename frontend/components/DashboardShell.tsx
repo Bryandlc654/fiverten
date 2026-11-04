@@ -18,6 +18,9 @@ export type NavKey =
   | 'support'
   | 'campaigns'
   | 'verification'
+  | 'documentos'
+  | 'proyectos'
+  | 'analytics'
   | 'adminSupport'
   | 'adminVerifications'
   | 'adminCertifications'
@@ -49,22 +52,27 @@ interface NavItem {
 }
 
 const TENANT_NAV: NavItem[] = [
-  { key: 'overview', label: 'Resumen', icon: 'dashboard', href: '/dashboard' },
-  { key: 'company', label: 'Empresa', icon: 'storefront', href: '/dashboard/company' },
-  { key: 'users', label: 'Usuarios', icon: 'group', href: '/dashboard/users' },
-  { key: 'reviews', label: 'Opiniones', icon: 'reviews', href: '/dashboard/reviews' },
-  { key: 'cases', label: 'Casos', icon: 'policy', href: '/dashboard/casos' },
-  { key: 'membership', label: 'Mi plan', icon: 'workspace_premium', href: '/dashboard/membresia' },
-  { key: 'campaigns', label: 'Campañas', icon: 'campaign', href: '/dashboard/campanas' },
-  { key: 'verification', label: 'Sello', icon: 'verified_user', href: '/dashboard/sello' },
-  { key: 'support', label: 'Soporte', icon: 'support_agent', href: '/dashboard/soporte' },
-  { key: 'profileEdit', label: 'Mi perfil', icon: 'account_circle', href: '/dashboard/perfil' },
-  { key: 'profile', label: 'Perfil público', icon: 'verified', href: '/empresa' },
-  { key: 'security', label: 'Seguridad', icon: 'shield_lock', href: '/dashboard/seguridad' },
+  { key: 'overview', label: 'Resumen', icon: 'dashboard', href: '/app' },
+  { key: 'profile', label: 'Perfil', icon: 'account_circle', href: '/app/perfil' },
+  { key: 'documentos', label: 'Documentos', icon: 'description', href: '/app/documentos' },
+  { key: 'proyectos', label: 'Proyectos', icon: 'folder_open', href: '/app/proyectos' },
+  { key: 'campaigns', label: 'Clientes', icon: 'group', href: '/app/clientes' },
+  { key: 'reviews', label: 'Opiniones', icon: 'reviews', href: '/app/opiniones' },
+  { key: 'verification', label: 'Sello', icon: 'verified_user', href: '/app/sello' },
+  { key: 'analytics', label: 'Analítica', icon: 'monitoring', href: '/app/analytics' },
+  {
+    key: 'membership',
+    label: 'Plan y facturación',
+    icon: 'workspace_premium',
+    href: '/app/facturacion',
+  },
+  { key: 'users', label: 'Equipo y configuración', icon: 'settings', href: '/app/configuracion' },
+  { key: 'cases', label: 'Casos', icon: 'policy', href: '/app/casos' },
+  { key: 'support', label: 'Soporte', icon: 'support_agent', href: '/app/soporte' },
 ];
 
 const ADMIN_NAV: NavItem[] = [
-  { key: 'overview', label: 'Resumen', icon: 'dashboard', href: '/dashboard' },
+  { key: 'overview', label: 'Resumen', icon: 'dashboard', href: '/app' },
   {
     key: 'adminOrgs',
     label: 'Empresas',
@@ -95,14 +103,14 @@ const ADMIN_NAV: NavItem[] = [
     href: '/admin/solicitudes',
   },
   { key: 'adminSupport', label: 'Soporte', icon: 'support_agent', href: '/admin/soporte' },
-  { key: 'profileEdit', label: 'Mi perfil', icon: 'account_circle', href: '/dashboard/perfil' },
-  { key: 'security', label: 'Seguridad', icon: 'shield_lock', href: '/dashboard/seguridad' },
+  { key: 'profileEdit', label: 'Mi cuenta', icon: 'account_circle', href: '/app/perfil/cuenta' },
+  { key: 'security', label: 'Seguridad', icon: 'shield_lock', href: '/app/configuracion/seguridad' },
 ];
 
 const SUPPORT_NAV: NavItem[] = [
   { key: 'adminSupport', label: 'Soporte', icon: 'support_agent', href: '/admin/soporte' },
-  { key: 'profileEdit', label: 'Mi perfil', icon: 'account_circle', href: '/dashboard/perfil' },
-  { key: 'security', label: 'Seguridad', icon: 'shield_lock', href: '/dashboard/seguridad' },
+  { key: 'profileEdit', label: 'Mi cuenta', icon: 'account_circle', href: '/app/perfil/cuenta' },
+  { key: 'security', label: 'Seguridad', icon: 'shield_lock', href: '/app/configuracion/seguridad' },
 ];
 
 export default function DashboardShell({
@@ -329,7 +337,7 @@ export default function DashboardShell({
                     role="menuitem"
                     onClick={() => {
                       setUserMenuOpen(false);
-                      router.push('/dashboard/perfil');
+                      router.push('/app/perfil/cuenta');
                     }}
                     className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                   >
@@ -343,7 +351,7 @@ export default function DashboardShell({
                     role="menuitem"
                     onClick={() => {
                       setUserMenuOpen(false);
-                      router.push('/dashboard/seguridad');
+                      router.push('/app/configuracion/seguridad');
                     }}
                     className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                   >

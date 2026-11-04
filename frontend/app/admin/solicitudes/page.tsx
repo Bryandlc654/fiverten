@@ -48,7 +48,7 @@ export default function AdminInquiriesPage() {
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isLoading && !isSuperAdmin) router.replace('/dashboard');
+    if (!isLoading && !isSuperAdmin) router.replace('/app');
   }, [isLoading, isSuperAdmin, router]);
 
   const load = useCallback(async () => {

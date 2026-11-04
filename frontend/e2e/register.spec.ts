@@ -12,7 +12,7 @@ test.describe('Registro de organización', () => {
     await page.getByLabel('Contraseña').fill('Password123!');
     await page.getByRole('button', { name: 'Crear cuenta' }).click();
 
-    await page.waitForURL('**/dashboard');
+    await page.waitForURL('**/app');
     await expect(page.getByRole('heading', { name: 'Reseñas Verificadas SL' })).toBeVisible();
     await expect(page.getByText('Grace Hopper')).toBeVisible();
   });

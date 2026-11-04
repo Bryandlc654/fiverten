@@ -67,7 +67,7 @@ test.describe('Adaptación móvil @mobile', () => {
     await page.getByRole('button', { name: 'Mostrar u ocultar menú' }).click();
     await expect(page.getByRole('button', { name: 'Opiniones' })).toBeVisible();
     await page.getByRole('button', { name: 'Opiniones' }).click();
-    await page.waitForURL('**/dashboard/reviews');
+    await page.waitForURL('**/app/opiniones');
 
     await expect(page.getByTestId('review-requests')).toBeVisible();
     await expectNoHorizontalOverflow(page);

@@ -62,5 +62,5 @@ export async function loginInBrowser(
   await passwordField.fill(organization.password);
   await expect(passwordField).toHaveValue(organization.password);
   await page.getByRole('button', { name: 'Acceder' }).click();
-  await page.waitForURL('**/dashboard', { waitUntil: 'domcontentloaded' });
+  await page.waitForURL('**/app', { waitUntil: 'domcontentloaded' });
 }

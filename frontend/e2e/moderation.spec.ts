@@ -45,7 +45,7 @@ test.describe('Moderación', () => {
     await seedPublishedReview(organization.slug, { rating: 3, body });
 
     await loginInBrowser(page, organization);
-    await page.goto('/dashboard/reviews');
+    await page.goto('/app/opiniones');
 
     await expect(page.getByText(body)).toBeVisible();
     await page.getByRole('button', { name: /Reportar/ }).first().click();

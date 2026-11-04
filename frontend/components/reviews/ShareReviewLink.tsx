@@ -44,7 +44,7 @@ export default function ShareReviewLink({ slug, isPublic }: { slug: string; isPu
           </Link>
         ) : (
           <Link
-            href="/dashboard/company"
+            href="/app/perfil"
             className="text-xs font-semibold text-amber-600 hover:underline"
           >
             Tu perfil aún no es público · Activarlo

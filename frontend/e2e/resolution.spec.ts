@@ -41,9 +41,9 @@ test.describe('Resolución de incidencias', () => {
     await page.getByLabel('Correo corporativo').fill(organization.email);
     await page.getByLabel('Contraseña').fill(organization.password);
     await page.getByRole('button', { name: 'Acceder' }).click();
-    await page.waitForURL('**/dashboard');
+    await page.waitForURL('**/app');
 
-    await page.goto('/dashboard/reviews?lowRating=true');
+    await page.goto('/app/opiniones?lowRating=true');
     await expect(
       page.getByText('El pedido llegó incompleto y nadie me respondió.'),
     ).toBeVisible();

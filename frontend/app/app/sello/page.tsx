@@ -235,8 +235,8 @@ export default function VerificationPage() {
   return (
     <DashboardShell
       active="verification"
-      title="Sello y verificación"
-      subtitle="Verificación de identidad y sello para tu web"
+      title="Sello y embeds"
+      subtitle="Sello dinámico, credenciales y código para tu web"
     >
       <div className="mx-auto max-w-4xl space-y-5">
         {error && <Alert tone="error">{error}</Alert>}

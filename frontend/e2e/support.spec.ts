@@ -52,7 +52,7 @@ test.describe('Soporte por tickets', () => {
     const company = await seedOrganization(request, 'Empresa Ticket UI E2E');
     await loginInBrowser(page, company);
 
-    await page.goto('/dashboard/soporte');
+    await page.goto('/app/soporte');
     await expect(page.getByRole('heading', { name: 'Soporte' })).toBeVisible();
     await page.getByRole('button', { name: 'Nuevo ticket' }).click();
 

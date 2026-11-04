@@ -54,7 +54,7 @@ export default function AcceptInvitationPage() {
 
   async function finish() {
     await reloadSession();
-    router.replace('/dashboard');
+    router.replace('/app');
   }
 
   async function onCreateAccount(event: FormEvent<HTMLFormElement>) {
@@ -74,7 +74,7 @@ export default function AcceptInvitationPage() {
         lastName: lastName.trim() || undefined,
       });
       await login({ email: invitation.email, password });
-      router.replace('/dashboard');
+      router.replace('/app');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo aceptar la invitación');
       setSubmitting(false);

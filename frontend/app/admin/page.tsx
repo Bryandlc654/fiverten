@@ -64,7 +64,7 @@ function AdminContent() {
 
   useEffect(() => {
     if (!isLoading && !isSuperAdmin) {
-      router.replace('/dashboard');
+      router.replace('/app');
     }
   }, [isLoading, isSuperAdmin, router]);
 

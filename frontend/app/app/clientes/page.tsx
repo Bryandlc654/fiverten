@@ -79,8 +79,8 @@ export default function CampaignsPage() {
   return (
     <DashboardShell
       active="campaigns"
-      title="Campañas de reseñas"
-      subtitle="Envía enlaces personalizados a lotes de clientes y mide la conversión"
+      title="Clientes"
+      subtitle="Solicitudes y campañas de reseñas para tus clientes"
     >
       <div className="space-y-5">
         {error && <Alert tone="error">{error}</Alert>}

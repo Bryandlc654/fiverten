@@ -13,28 +13,28 @@ function buildTasks(org: OrganizationDetail, stats: OrganizationStats): Task[] {
     {
       label: 'Completa los datos fiscales de la empresa',
       done: Boolean(org.legalName && org.taxId),
-      href: '/dashboard/company',
+      href: '/app/perfil',
     },
     {
       label: 'Añade una descripción y una portada',
       done: Boolean(org.description && org.coverUrl),
-      href: '/dashboard/company',
+      href: '/app/perfil',
     },
-    { label: 'Publica tu perfil público', done: org.isPublic, href: '/dashboard/company' },
+    { label: 'Publica tu perfil público', done: org.isPublic, href: '/app/perfil' },
     {
       label: 'Consigue tu primera reseña',
       done: stats.rating.total > 0,
-      href: '/dashboard/reviews',
+      href: '/app/opiniones',
     },
     {
       label: 'Responde a todas tus reseñas',
       done: stats.responses.published > 0 && stats.responses.answered === stats.responses.published,
-      href: '/dashboard/reviews?answered=no',
+      href: '/app/opiniones?answered=no',
     },
     {
       label: 'Obtén el sello de empresa verificada',
       done: org.verificationStatus === 'verified',
-      href: '/dashboard/company',
+      href: '/app/perfil',
     },
   ];
 }

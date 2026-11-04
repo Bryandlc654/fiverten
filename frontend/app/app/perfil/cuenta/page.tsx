@@ -3,10 +3,10 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
-import DashboardShell from '../../../components/DashboardShell';
-import { Alert, Badge, Field, inputClass } from '../../../components/ui';
-import { ApiError, api, type MeResponse, resolveAssetUrl } from '../../../lib/api';
-import { useAuth } from '../../../lib/auth-context';
+import DashboardShell from '../../../../components/DashboardShell';
+import { Alert, Badge, Field, inputClass } from '../../../../components/ui';
+import { ApiError, api, type MeResponse, resolveAssetUrl } from '../../../../lib/api';
+import { useAuth } from '../../../../lib/auth-context';
 
 interface FormState {
   firstName: string;
@@ -126,7 +126,7 @@ export default function ProfilePage() {
   return (
     <DashboardShell
       active="profileEdit"
-      title="Mi perfil"
+      title="Mi cuenta"
       subtitle="Actualiza tus datos personales y tu foto"
     >
       <div className="mx-auto max-w-3xl space-y-5">
@@ -256,7 +256,7 @@ export default function ProfilePage() {
                 </Field>
                 <div className="flex flex-wrap items-center justify-between gap-3 sm:col-span-2">
                   <Link
-                    href="/dashboard/seguridad"
+                    href="/app/configuracion/seguridad"
                     className="text-xs font-semibold text-blue-600 hover:underline"
                   >
                     Cambiar contraseña o activar 2FA

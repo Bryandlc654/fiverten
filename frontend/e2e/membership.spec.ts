@@ -6,8 +6,8 @@ test.describe('Mi plan (empresa)', () => {
     const organization = await seedOrganization(request, 'Membresía Empresa E2E');
     await loginInBrowser(page, organization);
 
-    await page.goto('/dashboard/membresia');
-    await expect(page.getByRole('heading', { name: 'Mi plan' })).toBeVisible();
+    await page.goto('/app/facturacion');
+    await expect(page.getByRole('heading', { name: 'Plan y facturación' })).toBeVisible();
     await expect(page.getByText('Historial de pagos')).toBeVisible();
     await expect(page.getByText('Usuarios e invitaciones')).toBeVisible();
     await expect(page.getByText('Reseñas recibidas')).toBeVisible();

@@ -97,7 +97,7 @@ export default function PublicProfilePage() {
             cambios.
           </p>
           <Link
-            href="/dashboard/company"
+            href="/app/perfil"
             className="mt-5 inline-flex rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600"
           >
             Ir a los datos de la empresa

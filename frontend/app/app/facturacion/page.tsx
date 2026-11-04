@@ -80,7 +80,7 @@ export default function MembershipPage() {
   return (
     <DashboardShell
       active="membership"
-      title="Mi plan"
+      title="Plan y facturación"
       subtitle="Suscripción, límites y facturación de tu empresa"
     >
       <div className="mx-auto max-w-3xl space-y-5">

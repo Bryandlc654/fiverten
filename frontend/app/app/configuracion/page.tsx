@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import DashboardShell from '../../../components/DashboardShell';
 import { Alert } from '../../../components/ui';
@@ -123,12 +124,33 @@ export default function UsersPage() {
   return (
     <DashboardShell
       active="users"
-      title="Usuarios"
-      subtitle="Gestiona los miembros de tu empresa y sus roles"
+      title="Equipo y configuración"
+      subtitle="Miembros, roles, perfil de empresa y seguridad"
     >
       <div className="space-y-6">
         {notice && <Alert tone="success">{notice}</Alert>}
         {error && <Alert tone="error">{error}</Alert>}
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Link
+            href="/app/perfil"
+            className="rounded-xl border border-slate-200 bg-white p-4 transition hover:border-blue-300"
+          >
+            <p className="text-sm font-bold text-slate-900">Perfil de empresa</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Datos públicos, logo, portada y visibilidad del perfil.
+            </p>
+          </Link>
+          <Link
+            href="/app/configuracion/seguridad"
+            className="rounded-xl border border-slate-200 bg-white p-4 transition hover:border-blue-300"
+          >
+            <p className="text-sm font-bold text-slate-900">Seguridad de la cuenta</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Contraseña, verificación en dos pasos y sesiones abiertas.
+            </p>
+          </Link>
+        </div>
 
         {canManage && (
           <div className="flex justify-end">

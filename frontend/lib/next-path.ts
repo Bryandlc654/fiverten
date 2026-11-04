@@ -3,7 +3,7 @@
  * página de invitación. Solo se aceptan rutas internas para evitar redirecciones
  * abiertas a otros dominios.
  */
-export function nextPath(fallback = '/dashboard'): string {
+export function nextPath(fallback = '/app'): string {
   if (typeof window === 'undefined') {
     return fallback;
   }

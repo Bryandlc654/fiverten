@@ -63,7 +63,7 @@ export default function AdminSupportPage() {
 
   useEffect(() => {
     if (!isLoading && !isSuperAdmin && !isSupportAgent) {
-      router.replace('/dashboard');
+      router.replace('/app');
     }
   }, [isLoading, isSuperAdmin, isSupportAgent, router]);
 

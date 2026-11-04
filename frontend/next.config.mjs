@@ -16,6 +16,23 @@ const nextConfig = {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60 * 60 * 24 * 7,
   },
+  async redirects() {
+    return [
+      { source: '/dashboard', destination: '/app', permanent: true },
+      { source: '/dashboard/company', destination: '/app/perfil', permanent: true },
+      { source: '/app/configuracion/empresa', destination: '/app/perfil', permanent: true },
+      { source: '/dashboard/users', destination: '/app/configuracion', permanent: true },
+      { source: '/dashboard/seguridad', destination: '/app/configuracion/seguridad', permanent: true },
+      { source: '/dashboard/membresia', destination: '/app/facturacion', permanent: true },
+      { source: '/dashboard/campanas', destination: '/app/clientes', permanent: true },
+      { source: '/dashboard/reviews', destination: '/app/opiniones', permanent: true },
+      { source: '/dashboard/sello', destination: '/app/sello', permanent: true },
+      { source: '/dashboard/perfil', destination: '/app/perfil/cuenta', permanent: true },
+      { source: '/dashboard/casos', destination: '/app/casos', permanent: true },
+      { source: '/dashboard/soporte', destination: '/app/soporte', permanent: true },
+      { source: '/dashboard/:path*', destination: '/app/:path*', permanent: true },
+    ];
+  },
   async rewrites() {
     if (!apiProxyTarget) {
       return [];

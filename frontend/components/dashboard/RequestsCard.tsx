@@ -33,7 +33,7 @@ export default function RequestsCard({ stats }: { stats: OrganizationStats | nul
 
       <Section
         title="Solicitudes de reseña"
-        href="/dashboard/campanas"
+        href="/app/clientes"
         rate={reviewRequests.conversion}
         rateLabel="conversión"
         items={[
@@ -44,7 +44,7 @@ export default function RequestsCard({ stats }: { stats: OrganizationStats | nul
       />
       <Section
         title="Incidencias con clientes"
-        href="/dashboard/reviews?lowRating=true"
+        href="/app/opiniones?lowRating=true"
         rate={resolutions.resolutionRate}
         rateLabel="resueltas"
         items={[
@@ -55,7 +55,7 @@ export default function RequestsCard({ stats }: { stats: OrganizationStats | nul
       />
       <Section
         title="Casos de evidencias"
-        href="/dashboard/casos"
+        href="/app/casos"
         rate={cases.resolutionRate}
         rateLabel="cerrados"
         items={[

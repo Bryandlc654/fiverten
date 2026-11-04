@@ -15,7 +15,7 @@ test.describe('Sello y verificación', () => {
     const organization = await seedOrganization(request, 'Verificación E2E SL');
     await loginInBrowser(page, organization);
 
-    await page.goto('/dashboard/sello');
+    await page.goto('/app/sello');
     await expect(page.getByRole('heading', { name: 'Sello y verificación' })).toBeVisible();
     await expect(page.getByText('Sin verificar').first()).toBeVisible();
 

@@ -21,7 +21,7 @@ async function loginAsAdmin(page: Page, email: string, password: string) {
   await page.getByLabel('Correo corporativo').fill(email);
   await page.getByLabel('Contraseña').fill(password);
   await page.getByRole('button', { name: 'Acceder' }).click();
-  await page.waitForURL('**/dashboard', { waitUntil: 'domcontentloaded' });
+  await page.waitForURL('**/app', { waitUntil: 'domcontentloaded' });
 }
 
 test.describe('Panel de administración general', () => {

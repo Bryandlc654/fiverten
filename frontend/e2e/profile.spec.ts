@@ -6,8 +6,8 @@ test.describe('Mi perfil', () => {
     const organization = await seedOrganization(request, 'Perfil E2E SL');
     await loginInBrowser(page, organization);
 
-    await page.goto('/dashboard/perfil');
-    await expect(page.getByRole('heading', { name: 'Mi perfil' })).toBeVisible();
+    await page.goto('/app/perfil/cuenta');
+    await expect(page.getByRole('heading', { name: 'Mi cuenta' })).toBeVisible();
 
     await page.getByLabel('Nombre', { exact: true }).fill('Nombre Editado');
     await page.getByLabel('Apellidos', { exact: true }).fill('Apellido Editado');

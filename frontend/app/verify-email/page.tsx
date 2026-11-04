@@ -46,7 +46,7 @@ export default function VerifyEmailPage() {
         {status === 'success' && (
           <>
             <p className="subtitle">{message}</p>
-            <Link className="btn" href="/dashboard">
+            <Link className="btn" href="/app">
               Ir a mi panel
             </Link>
           </>

@@ -2,10 +2,10 @@
 
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import DashboardShell from '../../../components/DashboardShell';
-import { Alert, Field, inputClass } from '../../../components/ui';
-import { ApiError, api, type SessionInfo } from '../../../lib/api';
-import { useAuth } from '../../../lib/auth-context';
+import DashboardShell from '../../../../components/DashboardShell';
+import { Alert, Field, inputClass } from '../../../../components/ui';
+import { ApiError, api, type SessionInfo } from '../../../../lib/api';
+import { useAuth } from '../../../../lib/auth-context';
 
 const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d).{8,72}$/;
 
@@ -208,7 +208,7 @@ export default function SecurityPage() {
 
   return (
     <DashboardShell
-      active="security"
+      active="users"
       title="Seguridad de la cuenta"
       subtitle="Contraseña y sesiones abiertas"
     >

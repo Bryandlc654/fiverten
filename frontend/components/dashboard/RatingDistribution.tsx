@@ -33,7 +33,7 @@ export default function RatingDistribution({ stats }: { stats: OrganizationStats
           return (
             <li key={star}>
               <Link
-                href={`/dashboard/reviews?rating=${star}`}
+                href={`/app/opiniones?rating=${star}`}
                 className="flex items-center gap-2 rounded text-xs text-slate-600 hover:text-slate-900"
               >
                 <span className="w-7 shrink-0">{star} ★</span>

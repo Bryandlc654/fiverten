@@ -18,8 +18,8 @@ test.describe('Cambio de plan de la empresa', () => {
     });
 
     await loginInBrowser(page, organization);
-    await page.goto('/dashboard/membresia');
-    await expect(page.getByRole('heading', { name: 'Mi plan' })).toBeVisible();
+    await page.goto('/app/facturacion');
+    await expect(page.getByRole('heading', { name: 'Plan y facturación' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Planes disponibles' })).toBeVisible();
 
     page.on('dialog', (dialog) => dialog.accept());

@@ -41,7 +41,7 @@ export default function HomePage() {
               </Link>
               {!isLoading && isAuthenticated && (
                 <Link
-                  href="/dashboard"
+                  href="/app"
                   className="rounded-xl bg-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/15"
                 >
                   Ir a mi panel

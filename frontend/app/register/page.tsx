@@ -32,7 +32,7 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && feedback !== 'success') {
-      router.replace('/dashboard');
+      router.replace('/app');
     }
   }, [isLoading, isAuthenticated, router, feedback]);
 
@@ -75,7 +75,7 @@ export default function RegisterPage() {
         return;
       }
       // Espera a que se vea la animación de éxito antes de entrar al panel.
-      window.setTimeout(() => router.replace('/dashboard'), 1100);
+      window.setTimeout(() => router.replace('/app'), 1100);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo completar el registro');
       setSubmitting(false);

@@ -235,9 +235,9 @@ export default function CompanyPage() {
 
   return (
     <DashboardShell
-      active="company"
-      title="Empresa"
-      subtitle="Datos y edición del perfil de la empresa"
+      active="profile"
+      title="Perfil"
+      subtitle="Datos públicos y presentación de tu empresa"
     >
       <div className="mx-auto max-w-3xl">
         {loading ? (

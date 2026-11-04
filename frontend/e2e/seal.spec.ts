@@ -6,7 +6,7 @@ test.describe('Sello, QR y widget', () => {
     const organization = await seedOrganization(request, 'Sello E2E SL');
     await loginInBrowser(page, organization);
 
-    await page.goto('/dashboard');
+    await page.goto('/app');
     const seal = page.getByRole('heading', { name: 'Sello verificado' }).locator('..');
 
     await seal.getByRole('button', { name: 'QR' }).click();

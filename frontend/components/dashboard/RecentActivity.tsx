@@ -24,7 +24,7 @@ export default function RecentActivity() {
       ) : items.length === 0 ? (
         <p className="mt-4 text-sm text-slate-500">
           Aquí aparecerán los avisos de nuevas reseñas. Puedes elegir cuáles recibir en{' '}
-          <Link href="/dashboard/company" className="font-semibold text-blue-600 hover:underline">
+          <Link href="/app/perfil" className="font-semibold text-blue-600 hover:underline">
             Empresa
           </Link>
           .

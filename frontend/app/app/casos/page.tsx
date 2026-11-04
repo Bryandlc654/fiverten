@@ -44,7 +44,7 @@ function CompanyCasesContent() {
   }, [loadList]);
 
   const select = (id: string | null) =>
-    router.replace(id ? `/dashboard/casos?id=${id}` : '/dashboard/casos', { scroll: false });
+    router.replace(id ? `/app/casos?id=${id}` : '/app/casos', { scroll: false });
 
   return (
     <DashboardShell

@@ -9,8 +9,8 @@ test.describe('Campañas de reseñas', () => {
     const organization = await seedOrganization(request, 'Campaña E2E SL');
     await loginInBrowser(page, organization);
 
-    await page.goto('/dashboard/campanas');
-    await expect(page.getByRole('heading', { name: 'Campañas de reseñas' })).toBeVisible();
+    await page.goto('/app/clientes');
+    await expect(page.getByRole('heading', { name: 'Clientes' })).toBeVisible();
     await page.getByRole('button', { name: 'Nueva campaña' }).click();
 
     const dialog = page.getByRole('dialog', { name: 'Nueva campaña de reseñas' });
@@ -32,7 +32,7 @@ test.describe('Campañas de reseñas', () => {
     const organization = await seedOrganization(request, 'Stats Solicitudes E2E');
     await loginInBrowser(page, organization);
 
-    await page.goto('/dashboard');
+    await page.goto('/app');
     await expect(page.getByText('Solicitudes de reseña')).toBeVisible();
     await expect(page.getByText('Conversión', { exact: false }).first()).toBeVisible();
   });

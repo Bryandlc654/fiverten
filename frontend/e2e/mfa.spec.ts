@@ -7,7 +7,7 @@ test.describe('Verificación en dos pasos', () => {
     const organization = await seedOrganization(request, 'Seguridad E2E');
     await loginInBrowser(page, organization);
 
-    await page.goto('/dashboard/seguridad');
+    await page.goto('/app/configuracion/seguridad');
     const card = page.getByTestId('mfa-card');
     await expect(card.getByText('Desactivada', { exact: true })).toBeVisible();
 
@@ -31,10 +31,10 @@ test.describe('Verificación en dos pasos', () => {
     await expect(page.getByRole('heading', { name: 'Verificación en dos pasos' })).toBeVisible();
     await page.getByLabel('Código de verificación').fill(totp(secret));
     await page.getByRole('button', { name: 'Verificar código' }).click();
-    await page.waitForURL('**/dashboard', { waitUntil: 'domcontentloaded' });
+    await page.waitForURL('**/app', { waitUntil: 'domcontentloaded' });
 
     // Desactiva el 2FA desde seguridad.
-    await page.goto('/dashboard/seguridad');
+    await page.goto('/app/configuracion/seguridad');
     const securityCard = page.getByTestId('mfa-card');
     await securityCard.getByLabel('Contraseña').fill(organization.password);
     await securityCard.getByLabel('Código actual').fill(totp(secret));

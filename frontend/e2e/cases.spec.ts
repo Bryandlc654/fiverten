@@ -28,7 +28,7 @@ test.describe('Casos de evidencias', () => {
     await seedCase(organization.slug, 'company_notified');
 
     await loginInBrowser(page, organization);
-    await page.goto('/dashboard/casos');
+    await page.goto('/app/casos');
 
     await expect(page.getByText('No recibí el pedido').first()).toBeVisible();
     await page.getByText('No recibí el pedido').first().click();

@@ -62,7 +62,7 @@ export default function AdminVerificationsPage() {
   const [revokeReason, setRevokeReason] = useState('');
 
   useEffect(() => {
-    if (!isLoading && !isSuperAdmin) router.replace('/dashboard');
+    if (!isLoading && !isSuperAdmin) router.replace('/app');
   }, [isLoading, isSuperAdmin, router]);
 
   const load = useCallback(async () => {
