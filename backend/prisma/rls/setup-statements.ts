@@ -205,6 +205,9 @@ export const rlsStatements: string[] = [
   // contexto de plataforma.
   ...tenantTablePolicy('support_tickets'),
   ...tenantTablePolicy('support_ticket_messages'),
+  ...tenantTablePolicy('verification_requests'),
+  ...tenantTablePolicy('verification_documents'),
+  ...tenantTablePolicy('verification_projects'),
 
   // Imágenes: lectura pública; escritura del tenant o del propio usuario.
   `ALTER TABLE media_files ENABLE ROW LEVEL SECURITY`,

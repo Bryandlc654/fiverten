@@ -73,6 +73,9 @@ model Organization {
   supportTickets     SupportTicket[]
   supportMessages    SupportTicketMessage[]
   mediaFiles         MediaFile[]
+  verificationRequests  VerificationRequest[]
+  verificationDocuments VerificationDocument[]
+  verificationProjects  VerificationProject[]
 
   @@index([slug])
   @@index([status, isActive, deletedAt])
@@ -885,6 +888,72 @@ model MediaFile {
   @@index([userId])
   @@map("media_files")
 }
+
+// ============================================================================
+// Verificación de empresa y sello dinámico
+// ============================================================================
+
+model VerificationRequest {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  // draft | submitted | in_review | approved | rejected | revoked
+  status         String    @default("draft") @db.VarChar(20)
+  submittedAt    DateTime? @map("submitted_at") @db.Timestamptz(6)
+  reviewedAt     DateTime? @map("reviewed_at") @db.Timestamptz(6)
+  reviewedBy     String?   @map("reviewed_by") @db.Uuid
+  decisionReason String?   @map("decision_reason") @db.Text
+  expiresAt      DateTime? @map("expires_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  documents    VerificationDocument[]
+  projects     VerificationProject[]
+
+  @@index([organizationId, status, createdAt])
+  @@index([status, createdAt])
+  @@map("verification_requests")
+}
+
+model VerificationDocument {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  requestId      String?  @map("request_id") @db.Uuid
+  // identity | tax | address | project | other
+  category       String   @db.VarChar(30)
+  filename       String   @db.VarChar(255)
+  mimeType       String   @map("mime_type") @db.VarChar(100)
+  size           Int
+  data           Bytes
+  createdBy      String?  @map("created_by") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  request      VerificationRequest? @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@index([requestId])
+  @@map("verification_documents")
+}
+
+model VerificationProject {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  requestId      String?  @map("request_id") @db.Uuid
+  name           String   @db.VarChar(200)
+  description    String?  @db.Text
+  url            String?  @db.VarChar(500)
+  createdBy      String?  @map("created_by") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  request      VerificationRequest? @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@index([requestId])
+  @@map("verification_projects")
+}
+
 
 
 

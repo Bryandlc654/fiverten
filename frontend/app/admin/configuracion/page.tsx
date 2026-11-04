@@ -21,6 +21,7 @@ type Tab =
   | 'reviews'
   | 'notifications'
   | 'email'
+  | 'verification'
   | 'sectors'
   | 'countries'
   | 'languages'
@@ -31,6 +32,7 @@ const TABS: [Tab, string][] = [
   ['reviews', 'Reseñas'],
   ['notifications', 'Notificaciones'],
   ['email', 'Plantillas de email'],
+  ['verification', 'Verificación'],
   ['sectors', 'Categorías'],
   ['countries', 'Países'],
   ['languages', 'Idiomas'],
@@ -323,6 +325,59 @@ export default function AdminConfigPage() {
                 ))}
               </ul>
             </div>
+          )}
+
+          {tab === 'verification' && (
+            <SettingsForm
+              title="Verificación y sello"
+              description="Requisitos, plazos y validez del sello de empresa verificada."
+              busy={saving}
+              onSubmit={(form) =>
+                saveSettings({
+                  'verification.required_documents': form.requiredDocs
+                    .split(',')
+                    .map((item) => item.trim())
+                    .filter(Boolean),
+                  'verification.min_projects': Number(form.minProjects),
+                  'verification.review_days': Number(form.reviewDays),
+                  'verification.expiry_days': Number(form.expiryDays),
+                  'verification.renewal_days': Number(form.renewalDays),
+                })
+              }
+              fields={[
+                {
+                  key: 'requiredDocs',
+                  label: 'Documentos obligatorios (coma)',
+                  value: Array.isArray(value('verification.required_documents'))
+                    ? (value('verification.required_documents') as string[]).join(', ')
+                    : 'identity, tax, address',
+                },
+                {
+                  key: 'minProjects',
+                  label: 'Proyectos/evidencias mínimas',
+                  value: String(value('verification.min_projects') ?? 1),
+                  type: 'number',
+                },
+                {
+                  key: 'reviewDays',
+                  label: 'Días hábiles de revisión',
+                  value: String(value('verification.review_days') ?? 5),
+                  type: 'number',
+                },
+                {
+                  key: 'expiryDays',
+                  label: 'Días de validez del sello',
+                  value: String(value('verification.expiry_days') ?? 365),
+                  type: 'number',
+                },
+                {
+                  key: 'renewalDays',
+                  label: 'Días de antelación para renovar',
+                  value: String(value('verification.renewal_days') ?? 30),
+                  type: 'number',
+                },
+              ]}
+            />
           )}
 
           {tab === 'sectors' && (

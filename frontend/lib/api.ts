@@ -798,6 +798,93 @@ export interface SupportStats {
   mine: number;
 }
 
+export type VerificationStatus =
+  | 'not_verified'
+  | 'pending'
+  | 'verified'
+  | 'rejected'
+  | 'expired';
+
+export type VerificationDocumentCategory =
+  | 'identity'
+  | 'tax'
+  | 'address'
+  | 'project'
+  | 'other';
+
+export interface VerificationDocument {
+  id: string;
+  category: VerificationDocumentCategory;
+  filename: string;
+  mimeType: string;
+  size: number;
+  createdAt: string;
+}
+
+export interface VerificationProject {
+  id: string;
+  name: string;
+  description: string | null;
+  url: string | null;
+  createdAt: string;
+}
+
+export interface VerificationRequest {
+  id: string;
+  status: 'draft' | 'submitted' | 'in_review' | 'approved' | 'rejected' | 'revoked';
+  submittedAt: string | null;
+  reviewedAt: string | null;
+  decisionReason: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+  organization: {
+    id: string;
+    tradeName: string;
+    slug: string;
+    publicId: string;
+    verificationStatus: string;
+    verifiedAt: string | null;
+    verificationExpiresAt: string | null;
+  };
+  documents: VerificationDocument[];
+  projects: VerificationProject[];
+}
+
+export interface VerificationStatusResponse {
+  organization: {
+    id: string;
+    tradeName: string;
+    slug: string;
+    publicId: string;
+    verificationStatus: string;
+    verifiedAt: string | null;
+    verificationExpiresAt: string | null;
+  };
+  status: VerificationStatus;
+  verifiedAt: string | null;
+  expiresAt: string | null;
+  canSubmit: boolean;
+  requirements: {
+    requiredDocuments: string[];
+    minProjects: number;
+    reviewDays: number;
+    expiryDays: number;
+    renewalDays: number;
+  };
+  request: VerificationRequest | null;
+}
+
+export interface AdminVerificationSummary {
+  id: string;
+  status: VerificationRequest['status'];
+  submittedAt: string | null;
+  createdAt: string;
+  expiresAt: string | null;
+  organization: { id: string; tradeName: string; slug: string; email: string | null };
+  documents: number;
+  projects: number;
+}
+
 export interface Paginated<T> {
   items: T[];
   total: number;
@@ -1680,6 +1767,81 @@ export const api = {
     return request<SupportTicketSummary>(`/support/tickets/${id}/assign-me`, {
       method: 'POST',
     });
+  },
+
+  // Verificación y sello (empresa)
+  myVerification(): Promise<VerificationStatusResponse> {
+    return request<VerificationStatusResponse>('/organizations/me/verification');
+  },
+  uploadVerificationDocument(
+    category: VerificationDocumentCategory,
+    file: File,
+  ): Promise<VerificationDocument> {
+    const form = new FormData();
+    form.append('category', category);
+    form.append('file', file);
+    return requestForm<VerificationDocument>('/organizations/me/verification/documents', form);
+  },
+  deleteVerificationDocument(id: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(`/organizations/me/verification/documents/${id}`, {
+      method: 'DELETE',
+    });
+  },
+  addVerificationProject(payload: {
+    name: string;
+    description?: string;
+    url?: string;
+  }): Promise<VerificationProject> {
+    return request<VerificationProject>('/organizations/me/verification/projects', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  deleteVerificationProject(id: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(`/organizations/me/verification/projects/${id}`, {
+      method: 'DELETE',
+    });
+  },
+  submitVerification(): Promise<VerificationRequest> {
+    return request<VerificationRequest>('/organizations/me/verification/submit', {
+      method: 'POST',
+    });
+  },
+
+  // Verificación (super admin)
+  adminListVerifications(
+    params: ListParams = {},
+  ): Promise<Paginated<AdminVerificationSummary>> {
+    return request<Paginated<AdminVerificationSummary>>(
+      `/admin/verifications${buildQuery(params)}`,
+    );
+  },
+  adminGetVerification(id: string): Promise<VerificationRequest> {
+    return request<VerificationRequest>(`/admin/verifications/${id}`);
+  },
+  adminApproveVerification(
+    id: string,
+    payload: { expiresInDays?: number; note?: string },
+  ): Promise<VerificationRequest> {
+    return request<VerificationRequest>(`/admin/verifications/${id}/approve`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  adminRejectVerification(id: string, reason: string): Promise<VerificationRequest> {
+    return request<VerificationRequest>(`/admin/verifications/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  },
+  adminRevokeVerification(id: string, reason?: string): Promise<VerificationRequest> {
+    return request<VerificationRequest>(`/admin/verifications/${id}/revoke`, {
+      method: 'POST',
+      body: JSON.stringify(reason ? { reason } : {}),
+    });
+  },
+  adminVerificationDocument(id: string, documentId: string): Promise<Blob> {
+    return requestBlob(`/admin/verifications/${id}/documents/${documentId}`);
   },
 
   // Membresías, suscripciones y pagos (super admin)

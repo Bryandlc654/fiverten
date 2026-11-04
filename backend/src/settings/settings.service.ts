@@ -51,6 +51,26 @@ export const SETTING_DEFAULTS: Record<string, { value: Prisma.InputJsonValue; de
       value: 7,
       description: 'Días antes del vencimiento para recordar la renovación',
     },
+    'verification.required_documents': {
+      value: ['identity', 'tax', 'address'],
+      description: 'Documentos obligatorios para solicitar la verificación',
+    },
+    'verification.min_projects': {
+      value: 1,
+      description: 'Proyectos o evidencias mínimas para solicitar la verificación',
+    },
+    'verification.review_days': {
+      value: 5,
+      description: 'Días hábiles estimados para revisar una solicitud',
+    },
+    'verification.expiry_days': {
+      value: 365,
+      description: 'Días de validez del sello tras la aprobación',
+    },
+    'verification.renewal_days': {
+      value: 30,
+      description: 'Días antes del vencimiento para solicitar la renovación',
+    },
   };
 
 const CACHE_TTL_MS = 30_000;

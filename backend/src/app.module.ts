@@ -15,6 +15,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { SettingsModule } from './settings/settings.module';
 import { SupportModule } from './support/support.module';
+import { SealModule } from './seal/seal.module';
+import { VerificationModule } from './verification/verification.module';
 import { WidgetModule } from './widget/widget.module';
 
 @Module({
@@ -40,6 +42,8 @@ import { WidgetModule } from './widget/widget.module';
     BillingModule,
     ConfigurationModule,
     SupportModule,
+    VerificationModule,
+    SealModule,
     WidgetModule,
   ],
   controllers: [HealthController],

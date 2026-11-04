@@ -17,7 +17,9 @@ export type NavKey =
   | 'membership'
   | 'support'
   | 'campaigns'
+  | 'verification'
   | 'adminSupport'
+  | 'adminVerifications'
   | 'profileEdit'
   | 'security'
   | 'adminOrgs'
@@ -52,6 +54,7 @@ const TENANT_NAV: NavItem[] = [
   { key: 'cases', label: 'Casos', icon: 'policy', href: '/dashboard/casos' },
   { key: 'membership', label: 'Mi plan', icon: 'workspace_premium', href: '/dashboard/membresia' },
   { key: 'campaigns', label: 'Campañas', icon: 'campaign', href: '/dashboard/campanas' },
+  { key: 'verification', label: 'Sello', icon: 'verified_user', href: '/dashboard/sello' },
   { key: 'support', label: 'Soporte', icon: 'support_agent', href: '/dashboard/soporte' },
   { key: 'profileEdit', label: 'Mi perfil', icon: 'account_circle', href: '/dashboard/perfil' },
   { key: 'profile', label: 'Perfil público', icon: 'verified', href: '/empresa' },
@@ -71,6 +74,12 @@ const ADMIN_NAV: NavItem[] = [
   { key: 'adminCases', label: 'Casos', icon: 'policy', href: '/admin/casos' },
   { key: 'adminBilling', label: 'Membresías', icon: 'payments', href: '/admin/suscripciones' },
   { key: 'adminConfig', label: 'Configuración', icon: 'settings', href: '/admin/configuracion' },
+  {
+    key: 'adminVerifications',
+    label: 'Verificaciones',
+    icon: 'fact_check',
+    href: '/admin/verificaciones',
+  },
   { key: 'adminSupport', label: 'Soporte', icon: 'support_agent', href: '/admin/soporte' },
   { key: 'profileEdit', label: 'Mi perfil', icon: 'account_circle', href: '/dashboard/perfil' },
   { key: 'security', label: 'Seguridad', icon: 'shield_lock', href: '/dashboard/seguridad' },

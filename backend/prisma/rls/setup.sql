@@ -247,6 +247,30 @@ CREATE POLICY rls_support_ticket_messages ON support_ticket_messages
     USING (organization_id = app_current_org() OR app_is_platform_admin())
     WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
 
+ALTER TABLE verification_requests ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_verification_requests ON verification_requests;
+
+CREATE POLICY rls_verification_requests ON verification_requests
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
+ALTER TABLE verification_documents ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_verification_documents ON verification_documents;
+
+CREATE POLICY rls_verification_documents ON verification_documents
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
+ALTER TABLE verification_projects ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_verification_projects ON verification_projects;
+
+CREATE POLICY rls_verification_projects ON verification_projects
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
 ALTER TABLE media_files ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS rls_media_files_select ON media_files;

@@ -12,6 +12,7 @@ import { MailService } from '../mail/mail.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PlatformSettingsService } from '../settings/settings.service';
+import { effectiveVerificationStatus } from '../verification/verification-status';
 import { SubmitReviewDto } from './dto/submit-review.dto';
 import { ReviewCasesService } from './cases.service';
 import { ReviewRequestsService } from './review-requests.service';
@@ -112,7 +113,7 @@ export class PublicReviewsService {
       phone: org.allowContact ? org.phone : null,
       sector: org.sector ? { slug: org.sector.slug, name: org.sector.name } : null,
       country: org.country ? { iso2: org.country.iso2, name: org.country.name } : null,
-      verified: org.verificationStatus === 'verified',
+      verified: effectiveVerificationStatus(org) === 'verified',
       createdAt: org.createdAt,
       // La media y el total siguen incluyendo todas las reseñas publicadas:
       // ocultarlas del listado no debe falsear la puntuación.
@@ -163,7 +164,7 @@ export class PublicReviewsService {
       slug: org.slug,
       tradeName: org.tradeName,
       logoUrl: org.logoUrl,
-      verified: org.verificationStatus === 'verified',
+      verified: effectiveVerificationStatus(org) === 'verified',
       isPublic: org.isPublic,
     };
   }

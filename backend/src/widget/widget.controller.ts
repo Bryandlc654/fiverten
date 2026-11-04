@@ -2,6 +2,7 @@ import { Controller, Get, Header, Param } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import { PrismaService } from '../prisma/prisma.service';
+import { effectiveVerificationStatus } from '../verification/verification-status';
 
 function escapeHtml(value: string): string {
   return value
@@ -40,7 +41,14 @@ export class WidgetController {
           isPublic: true,
           status: 'active',
         },
-        select: { id: true, publicId: true, tradeName: true, slug: true, verificationStatus: true },
+        select: {
+          id: true,
+          publicId: true,
+          tradeName: true,
+          slug: true,
+          verificationStatus: true,
+          verificationExpiresAt: true,
+        },
       }),
     );
 
@@ -76,7 +84,7 @@ export class WidgetController {
       this.config.get<string>('FRONTEND_URL') ?? 'https://fiverten.com'
     ).replace(/\/+$/, '');
     const profileUrl = `${baseUrl}/empresa/${encodeURIComponent(org.slug)}`;
-    const verified = org.verificationStatus === 'verified';
+    const verified = effectiveVerificationStatus(org) === 'verified';
     const name = escapeHtml(org.tradeName);
     const idAttr = escapeHtml(org.publicId);
 
