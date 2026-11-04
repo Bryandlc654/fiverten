@@ -3,14 +3,14 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { ApiError } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
 import { nextPath } from '../../lib/next-path';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, verifyMfa, isAuthenticated, isLoading } = useAuth();
+  const { login, verifyMfa, isAuthenticated, isLoading, isVerifier } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -22,11 +22,16 @@ export default function LoginPage() {
   const [mfaToken, setMfaToken] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState('');
 
+  const destination = useCallback(
+    (verifier = isVerifier) => nextPath(verifier ? '/admin/verificaciones' : '/app'),
+    [isVerifier],
+  );
+
   useEffect(() => {
     if (!isLoading && isAuthenticated && feedback !== 'success') {
-      router.replace(nextPath());
+      router.replace(destination());
     }
-  }, [isLoading, isAuthenticated, router, feedback]);
+  }, [isLoading, isAuthenticated, destination, router, feedback]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -47,7 +52,7 @@ export default function LoginPage() {
       }
       // Espera a que se vea la animación de éxito antes de entrar al panel.
       setFeedback('success');
-      window.setTimeout(() => router.replace(nextPath()), 1100);
+      window.setTimeout(() => router.replace(destination(result.user?.isVerifier === true)), 1100);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo iniciar sesión');
       setSubmitting(false);
@@ -66,10 +71,13 @@ export default function LoginPage() {
     setError(null);
     setSubmitting(true);
     try {
-      await verifyMfa(mfaToken, mfaCode);
+      const result = await verifyMfa(mfaToken, mfaCode);
       setMfaToken(null);
       setFeedback('success');
-      window.setTimeout(() => router.replace(nextPath()), 1100);
+      window.setTimeout(
+        () => router.replace(destination(result.user?.isVerifier === true)),
+        1100,
+      );
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo verificar el código');
       setSubmitting(false);

@@ -27,7 +27,7 @@ function formatDate(value: string | null): string {
 
 export default function AdminCertificationsPage() {
   const router = useRouter();
-  const { isSuperAdmin, isLoading } = useAuth();
+  const { isSuperAdmin, isVerifier, isLoading } = useAuth();
   const [items, setItems] = useState<AdminCertification[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -41,11 +41,11 @@ export default function AdminCertificationsPage() {
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isLoading && !isSuperAdmin) router.replace('/app');
-  }, [isLoading, isSuperAdmin, router]);
+    if (!isLoading && !(isSuperAdmin || isVerifier)) router.replace('/app');
+  }, [isLoading, isSuperAdmin, isVerifier, router]);
 
   const load = useCallback(async () => {
-    if (isLoading || !isSuperAdmin) return;
+    if (isLoading || !(isSuperAdmin || isVerifier)) return;
     setLoading(true);
     setError(null);
     try {
@@ -62,7 +62,7 @@ export default function AdminCertificationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, status, search, isLoading, isSuperAdmin]);
+  }, [page, status, search, isLoading, isSuperAdmin, isVerifier]);
 
   useEffect(() => {
     void load();

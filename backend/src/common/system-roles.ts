@@ -7,11 +7,9 @@ interface RoleMeta {
 }
 
 export const ROLE_META: Record<OrganizationRole, RoleMeta> = {
-  owner: { name: 'Propietario', priority: 100 },
-  admin: { name: 'Administrador', priority: 90 },
-  manager: { name: 'Responsable', priority: 70 },
-  editor: { name: 'Editor', priority: 50 },
-  viewer: { name: 'Consulta', priority: 10 },
+  admin: { name: 'Admin', priority: 30 },
+  editor: { name: 'Editor', priority: 20 },
+  viewer: { name: 'Viewer', priority: 10 },
 };
 
 /**

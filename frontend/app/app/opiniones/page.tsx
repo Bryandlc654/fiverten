@@ -56,7 +56,7 @@ export default function ReviewsPage() {
   }, []);
 
   const canRespond = roleAtLeast(role, 'editor');
-  const canRequest = roleAtLeast(role, 'manager');
+  const canRequest = roleAtLeast(role, 'editor');
 
   useEffect(() => {
     api
@@ -269,7 +269,7 @@ export default function ReviewsPage() {
                   review={review}
                   companyName={company?.tradeName ?? 'la empresa'}
                   canRespond={canRespond}
-                  canReport={roleAtLeast(role, 'manager')}
+                  canReport={roleAtLeast(role, 'editor')}
                   onChange={replace}
                 />
               ))}

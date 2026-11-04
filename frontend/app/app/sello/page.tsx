@@ -274,6 +274,22 @@ export default function VerificationPage() {
               <strong>Motivo:</strong> {request.decisionReason}
             </p>
           )}
+          {request && request.events.length > 0 && (
+            <div className="mt-4 border-t border-slate-100 pt-4">
+              <h3 className="text-sm font-semibold text-slate-800">Historial de verificación</h3>
+              <ul className="mt-2 space-y-2">
+                {request.events.map((event) => (
+                  <li key={event.id} className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                    <p className="font-semibold text-slate-800">
+                      {event.action} · {event.previousStatus ?? '—'} → {event.newStatus ?? '—'}
+                    </p>
+                    <p className="mt-0.5">{formatDate(event.createdAt)}</p>
+                    {event.reason && <p className="mt-1">{event.reason}</p>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </section>
 
         {data.status === 'verified' && (

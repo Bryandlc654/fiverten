@@ -55,6 +55,7 @@ export default function EditOrganizationForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [verificationReason, setVerificationReason] = useState('');
 
   const bind = (key: TextKey) => ({
     value: form[key],
@@ -68,6 +69,12 @@ export default function EditOrganizationForm({
     setError(null);
     setNotice(null);
     try {
+      const statusChanged = form.verificationStatus !== organization.verificationStatus;
+      if (statusChanged && verificationReason.trim().length < 3) {
+        setError('Indica un motivo para cambiar el estado de verificación');
+        setSaving(false);
+        return;
+      }
       const payload: Record<string, unknown> = {
         tradeName: form.tradeName.trim(),
         description: form.description.trim(),
@@ -77,6 +84,7 @@ export default function EditOrganizationForm({
         isPublic: form.isPublic,
         allowContact: form.allowContact,
       };
+      if (statusChanged) payload.verificationReason = verificationReason.trim();
       for (const key of OPTIONAL_FIELDS) {
         if (form[key].trim()) payload[key] = form[key].trim();
       }
@@ -138,6 +146,18 @@ export default function EditOrganizationForm({
               ))}
             </select>
           </Field>
+          {form.verificationStatus !== organization.verificationStatus && (
+            <Field label="Motivo del cambio de verificación *" className="sm:col-span-2">
+              <textarea
+                required
+                rows={2}
+                value={verificationReason}
+                onChange={(event) => setVerificationReason(event.target.value)}
+                placeholder="Documenta el motivo y la fuente de la decisión"
+                className={inputClass}
+              />
+            </Field>
+          )}
 
           <CheckboxField
             label="Empresa activa"

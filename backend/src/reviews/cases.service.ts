@@ -864,7 +864,7 @@ export class ReviewCasesService {
           tx.organization.findUnique({ where: { id: orgId }, select: { email: true } }),
         ]);
         const managers = memberships
-          .filter((m) => roleAtLeast(effectiveRole(m.role.baseRole, m.isOwner), 'manager'))
+          .filter((m) => roleAtLeast(effectiveRole(m.role.baseRole, m.isOwner), 'editor'))
           .map((m) => m.user.email);
         return managers.length > 0 ? managers : org?.email ? [org.email] : [];
       })

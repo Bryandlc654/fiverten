@@ -9,13 +9,11 @@ import {
 } from '../../lib/api';
 import { Alert, Field, inputClass } from '../ui';
 
-const ROLES = ['owner', 'admin', 'manager', 'editor', 'viewer'] as const;
+const ROLES = ['admin', 'editor', 'viewer'] as const;
 const ROLE_LABELS: Record<string, string> = {
-  owner: 'Propietario',
-  admin: 'Administrador',
-  manager: 'Responsable',
+  admin: 'Admin',
   editor: 'Editor',
-  viewer: 'Consulta',
+  viewer: 'Viewer',
 };
 
 export default function AdminOrganizationMembers({

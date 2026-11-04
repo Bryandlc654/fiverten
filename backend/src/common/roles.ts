@@ -1,22 +1,25 @@
-// Jerarquia de roles dentro de una organizacion (de mayor a menor nivel).
-export const ORGANIZATION_ROLES = ['owner', 'admin', 'manager', 'editor', 'viewer'] as const;
+// Roles de empresa admitidos por FIVERTEN. La propiedad no es un rol: es la
+// marca `isOwner` sobre una membresía con rol `admin`.
+export const ORGANIZATION_ROLES = ['admin', 'editor', 'viewer'] as const;
 
 export type OrganizationRole = (typeof ORGANIZATION_ROLES)[number];
 
 export const ROLE_LABELS: Record<string, string> = {
-  owner: 'Propietario',
-  admin: 'Administrador',
-  manager: 'Responsable',
+  admin: 'Admin',
   editor: 'Editor',
-  viewer: 'Consulta',
+  viewer: 'Viewer',
+  // Valores heredados que se normalizan al leer datos antiguos.
+  owner: 'Admin',
+  manager: 'Editor',
 };
 
 const ROLE_RANK: Record<string, number> = {
-  owner: 50,
-  admin: 40,
-  manager: 30,
+  admin: 30,
   editor: 20,
   viewer: 10,
+  // Valores heredados.
+  owner: 30,
+  manager: 20,
 };
 
 export function roleRank(role: string | null | undefined): number {
@@ -34,10 +37,16 @@ export function roleAtLeast(
   return roleRank(role) >= roleRank(minimum);
 }
 
-/** Rol efectivo: el propietario siempre es 'owner' aunque su baseRole sea 'admin'. */
-export function effectiveRole(baseRole: string | null, isOwner: boolean): string {
-  if (isOwner) {
-    return 'owner';
+/** Normaliza roles heredados y devuelve el rol efectivo dentro de la empresa. */
+export function effectiveRole(baseRole: string | null, _isOwner: boolean): OrganizationRole {
+  if (baseRole === 'owner') return 'admin';
+  if (baseRole === 'manager') return 'editor';
+  if (baseRole === 'admin' || baseRole === 'editor' || baseRole === 'viewer') {
+    return baseRole;
   }
-  return baseRole ?? 'viewer';
+  return 'viewer';
+}
+
+export function isOrganizationRole(value: string): value is OrganizationRole {
+  return (ORGANIZATION_ROLES as readonly string[]).includes(value);
 }

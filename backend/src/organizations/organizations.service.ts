@@ -71,9 +71,9 @@ export class OrganizationsService {
         throw new NotFoundException('Miembro no encontrado');
       }
 
-      const actorRank = await getActorRank(tx, orgId, actorId);
+      const actor = await getActor(tx, orgId, actorId);
       const targetRank = ROLES.roleRank(membershipRole(membership));
-      if (targetRank >= actorRank) {
+      if (targetRank > actor.rank || (targetRank === actor.rank && !actor.isOwner)) {
         throw new ForbiddenException(
           'No puedes modificar a un miembro con un rol igual o superior al tuyo',
         );
@@ -89,7 +89,8 @@ export class OrganizationsService {
       }
 
       if (dto.role && dto.role !== membershipRole(membership)) {
-        if (ROLES.roleRank(dto.role) >= actorRank) {
+        const newRank = ROLES.roleRank(dto.role);
+        if (newRank > actor.rank || (newRank === actor.rank && !actor.isOwner)) {
           throw new ForbiddenException('No puedes asignar un rol igual o superior al tuyo');
         }
         const roleRow = await ensureSystemRole(tx, orgId, dto.role);
@@ -117,9 +118,9 @@ export class OrganizationsService {
       if (membership.userId === actorId) {
         throw new BadRequestException('No puedes eliminarte a ti mismo de la empresa');
       }
-      const actorRank = await getActorRank(tx, orgId, actorId);
+      const actor = await getActor(tx, orgId, actorId);
       const targetRank = ROLES.roleRank(membershipRole(membership));
-      if (targetRank >= actorRank) {
+      if (targetRank > actor.rank || (targetRank === actor.rank && !actor.isOwner)) {
         throw new ForbiddenException(
           'No puedes eliminar a un miembro con un rol igual o superior al tuyo',
         );
@@ -139,11 +140,11 @@ export class OrganizationsService {
 }
 
 /** Rango del actor dentro de la organización (falla si no es miembro activo). */
-export async function getActorRank(
+export async function getActor(
   tx: Prisma.TransactionClient,
   orgId: string,
   actorId: string,
-): Promise<number> {
+): Promise<{ rank: number; isOwner: boolean; role: string }> {
   const actor = await tx.organizationMembership.findFirst({
     where: { organizationId: orgId, userId: actorId, isActive: true },
     include: { role: true },
@@ -151,5 +152,14 @@ export async function getActorRank(
   if (!actor) {
     throw new ForbiddenException('No perteneces a esta empresa');
   }
-  return ROLES.roleRank(membershipRole(actor));
+  const role = membershipRole(actor);
+  return { rank: ROLES.roleRank(role), isOwner: actor.isOwner, role };
+}
+
+export async function getActorRank(
+  tx: Prisma.TransactionClient,
+  orgId: string,
+  actorId: string,
+): Promise<number> {
+  return (await getActor(tx, orgId, actorId)).rank;
 }

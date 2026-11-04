@@ -14,8 +14,13 @@ export class AdminUpdateUserDto {
   @IsBoolean()
   isSuperAdmin?: boolean;
 
-  /** Acceso al panel de soporte (rol de plataforma). */
+  /** Acceso al panel de soporte (permiso de plataforma). */
   @IsOptional()
   @IsBoolean()
   isSupportAgent?: boolean;
+
+  /** Verificador FIVERTEN: revisa evidencias y cambia estados. */
+  @IsOptional()
+  @IsBoolean()
+  isVerifier?: boolean;
 }

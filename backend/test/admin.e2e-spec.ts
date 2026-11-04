@@ -91,7 +91,7 @@ describe('FIVERTEN Panel de administración (e2e)', () => {
       .expect(200);
     expect(detail.body.members).toHaveLength(0);
     expect(detail.body.invitations).toEqual([
-      expect.objectContaining({ email: ownerEmail, role: 'owner' }),
+      expect.objectContaining({ email: ownerEmail, role: 'admin' }),
     ]);
 
     await http()

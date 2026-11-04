@@ -107,7 +107,7 @@ describe('FIVERTEN ficha de empresa del super admin (e2e)', () => {
     await http()
       .post(`${ADMIN}/organizations/${orgId}/invitations`)
       .set(auth(adminToken))
-      .send({ email: 'miembro-ext@fiverten.test', role: 'manager', firstName: 'Miembro' })
+      .send({ email: 'miembro-ext@fiverten.test', role: 'editor', firstName: 'Miembro' })
       .expect(201);
     expect(invitationToken).toBeTruthy();
 

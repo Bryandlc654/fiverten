@@ -28,12 +28,13 @@ interface AuthState {
   isAuthenticated: boolean;
   isSuperAdmin: boolean;
   isSupportAgent: boolean;
+  isVerifier: boolean;
 }
 
 interface AuthContextValue extends AuthState {
   login: (payload: LoginPayload) => Promise<AuthResponse>;
   /** Completa el login cuando la cuenta tiene 2FA activado. */
-  verifyMfa: (mfaToken: string, code: string) => Promise<void>;
+  verifyMfa: (mfaToken: string, code: string) => Promise<AuthResponse>;
   register: (payload: RegisterPayload) => Promise<AuthResponse>;
   logout: () => Promise<void>;
   /** Vuelve a pedir la sesión al backend (p. ej. tras unirse a una empresa). */
@@ -93,7 +94,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const verifyMfa = useCallback(
     async (mfaToken: string, code: string) => {
-      apply(await api.verifyMfa(mfaToken, code));
+      const response = await api.verifyMfa(mfaToken, code);
+      apply(response);
+      return response;
     },
     [apply],
   );
@@ -134,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: user !== null,
       isSuperAdmin: user?.isSuperAdmin === true,
       isSupportAgent: user?.isSupportAgent === true,
+      isVerifier: user?.isVerifier === true,
       login,
       verifyMfa,
       register,

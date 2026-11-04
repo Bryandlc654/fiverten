@@ -24,7 +24,7 @@ import { ReviewRequestsService } from './review-requests.service';
 /** Enlaces personalizados de solicitud de reseña para el panel de la empresa. */
 @Controller('organizations/me/review-requests')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('manager')
+@Roles('editor')
 export class ReviewRequestsController {
   constructor(private readonly requests: ReviewRequestsService) {}
 

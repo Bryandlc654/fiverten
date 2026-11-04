@@ -19,11 +19,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AcceptInvitationDto } from './dto/accept-invitation.dto';
 import { CreateInvitationDto } from './dto/create-invitation.dto';
 import { toInvitation, toMember } from './organizations.mappers';
-import { getActorRank } from './organizations.service';
+import { getActor } from './organizations.service';
 
 interface InvitationInput {
   email: string;
   role: ROLES.OrganizationRole;
+  isOwner?: boolean;
   firstName?: string;
   lastName?: string;
 }
@@ -59,8 +60,9 @@ export class InvitationsService {
     const { invitation, token, orgName } = await this.prisma.withContext(
       { orgId, userId: actorId },
       async (tx) => {
-        const actorRank = await getActorRank(tx, orgId, actorId);
-        if (ROLES.roleRank(input.role) >= actorRank) {
+        const actor = await getActor(tx, orgId, actorId);
+        const roleRank = ROLES.roleRank(input.role);
+        if (roleRank > actor.rank || (roleRank === actor.rank && !actor.isOwner)) {
           throw new ForbiddenException('No puedes asignar un rol igual o superior al tuyo');
         }
         const alreadyMember = await tx.organizationMembership.findFirst({
@@ -102,8 +104,9 @@ export class InvitationsService {
       if (!invitation) {
         throw new NotFoundException('Invitación no encontrada');
       }
-      const actorRank = await getActorRank(tx, orgId, actorId);
-      if (ROLES.roleRank(invitation.role) >= actorRank) {
+      const actor = await getActor(tx, orgId, actorId);
+      const roleRank = ROLES.roleRank(invitation.role);
+      if (roleRank > actor.rank || (roleRank === actor.rank && !actor.isOwner)) {
         throw new ForbiddenException(
           'No puedes cancelar una invitación con un rol igual o superior al tuyo',
         );
@@ -155,7 +158,8 @@ export class InvitationsService {
   ): Promise<() => Promise<void>> {
     const { invitation, token, orgName } = await this.createInvitation(tx, orgId, actorId, {
       email: owner.email.trim().toLowerCase(),
-      role: 'owner',
+      role: 'admin',
+      isOwner: true,
       firstName: owner.firstName,
       lastName: owner.lastName,
     });
@@ -277,6 +281,7 @@ export class InvitationsService {
         organizationId: orgId,
         email: input.email,
         role: input.role,
+        isOwner: input.isOwner ?? false,
         firstName: input.firstName?.trim() || null,
         lastName: input.lastName?.trim() || null,
         tokenHash: hashToken(token),
@@ -317,7 +322,13 @@ export class InvitationsService {
 
   private async join(
     tx: Prisma.TransactionClient,
-    invitation: { id: string; organizationId: string; role: string; invitedBy: string | null },
+    invitation: {
+      id: string;
+      organizationId: string;
+      role: string;
+      isOwner: boolean;
+      invitedBy: string | null;
+    },
     userId: string,
   ) {
     const role = invitation.role as ROLES.OrganizationRole;
@@ -331,7 +342,7 @@ export class InvitationsService {
         organizationId: invitation.organizationId,
         userId,
         roleId: roleRow.id,
-        isOwner: role === 'owner',
+        isOwner: invitation.isOwner,
         isActive: true,
         invitedBy: invitation.invitedBy,
       },

@@ -14,6 +14,7 @@ export interface JwtPayload {
   root?: boolean;
   staff?: boolean;
   support?: boolean;
+  verifier?: boolean;
 }
 
 export interface AuthenticatedUser {
@@ -25,6 +26,7 @@ export interface AuthenticatedUser {
   isSuperAdmin: boolean;
   isStaff: boolean;
   isSupportAgent: boolean;
+  isVerifier: boolean;
   sessionId: string | null;
 }
 
@@ -103,6 +105,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       isSuperAdmin: user.isSuperAdmin,
       isStaff: user.isFivertenStaff,
       isSupportAgent: user.isSupportAgent,
+      isVerifier: user.isVerifier,
       sessionId: payload.sid,
     };
   }

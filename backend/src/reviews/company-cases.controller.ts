@@ -70,7 +70,7 @@ export class CompanyCasesController {
   /** Aceptar el acuerdo de retirar la reseña: lo decide un responsable o superior. */
   @Post(':id/agree')
   @HttpCode(HttpStatus.OK)
-  @Roles('manager')
+  @Roles('editor')
   agree(
     @CurrentUser('organizationId') orgId: string | null,
     @CurrentUser('userId') userId: string,

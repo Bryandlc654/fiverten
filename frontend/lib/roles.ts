@@ -1,28 +1,28 @@
-export const ORGANIZATION_ROLES = ['owner', 'admin', 'manager', 'editor', 'viewer'] as const;
+export const ORGANIZATION_ROLES = ['admin', 'editor', 'viewer'] as const;
 
 export type OrganizationRole = (typeof ORGANIZATION_ROLES)[number];
 
 export const ROLE_LABELS: Record<string, string> = {
-  owner: 'Propietario',
-  admin: 'Administrador',
-  manager: 'Responsable',
+  admin: 'Admin',
   editor: 'Editor',
-  viewer: 'Consulta',
+  viewer: 'Viewer',
+  // Valores heredados.
+  owner: 'Admin',
+  manager: 'Editor',
 };
 
 export const ROLE_RANK: Record<string, number> = {
-  owner: 50,
-  admin: 40,
-  manager: 30,
+  admin: 30,
   editor: 20,
   viewer: 10,
+  owner: 30,
+  manager: 20,
 };
 
 export const ROLE_OPTIONS: { value: OrganizationRole; label: string }[] = [
-  { value: 'admin', label: 'Administrador' },
-  { value: 'manager', label: 'Responsable' },
+  { value: 'admin', label: 'Admin' },
   { value: 'editor', label: 'Editor' },
-  { value: 'viewer', label: 'Consulta' },
+  { value: 'viewer', label: 'Viewer' },
 ];
 
 export const ORGANIZATION_STATUSES = ['pending', 'active', 'suspended', 'inactive'] as const;
@@ -38,12 +38,14 @@ export const VERIFICATION_STATUSES = [
   'pending',
   'verified',
   'rejected',
+  'expired',
 ] as const;
 export const VERIFICATION_STATUS_LABELS: Record<string, string> = {
   not_verified: 'No verificada',
   pending: 'En revisión',
   verified: 'Verificada',
   rejected: 'Rechazada',
+  expired: 'Caducada',
 };
 
 export function organizationStatusLabel(status: string): string {
@@ -56,7 +58,7 @@ export function verificationStatusLabel(status: string): string {
 
 export function roleLabel(role?: string | null): string {
   if (!role) {
-    return 'Consulta';
+    return 'Viewer';
   }
   return ROLE_LABELS[role] ?? role;
 }

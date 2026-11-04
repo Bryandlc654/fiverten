@@ -45,7 +45,7 @@ function formatDate(value: string | null): string {
 
 export default function AdminVerificationsPage() {
   const router = useRouter();
-  const { isSuperAdmin, isLoading } = useAuth();
+  const { isSuperAdmin, isVerifier, isLoading } = useAuth();
   const [items, setItems] = useState<AdminVerificationSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -62,11 +62,11 @@ export default function AdminVerificationsPage() {
   const [revokeReason, setRevokeReason] = useState('');
 
   useEffect(() => {
-    if (!isLoading && !isSuperAdmin) router.replace('/app');
-  }, [isLoading, isSuperAdmin, router]);
+    if (!isLoading && !(isSuperAdmin || isVerifier)) router.replace('/app');
+  }, [isLoading, isSuperAdmin, isVerifier, router]);
 
   const load = useCallback(async () => {
-    if (isLoading || !isSuperAdmin) return;
+    if (isLoading || !(isSuperAdmin || isVerifier)) return;
     setLoading(true);
     setError(null);
     try {
@@ -83,7 +83,7 @@ export default function AdminVerificationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, status, search, isLoading, isSuperAdmin]);
+  }, [page, status, search, isLoading, isSuperAdmin, isVerifier]);
 
   useEffect(() => {
     void load();
@@ -313,6 +313,28 @@ export default function AdminVerificationsPage() {
                     <strong>Motivo registrado:</strong> {selected.decisionReason}
                   </p>
                 )}
+
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-800">Auditoría</h3>
+                  {selected.events.length === 0 ? (
+                    <p className="mt-1 text-sm text-slate-500">Sin eventos registrados.</p>
+                  ) : (
+                    <ul className="mt-2 space-y-2">
+                      {selected.events.map((event) => (
+                        <li key={event.id} className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                          <p className="font-semibold text-slate-800">
+                            {event.action} · {event.previousStatus ?? '—'} → {event.newStatus ?? '—'}
+                          </p>
+                          <p className="mt-0.5">
+                            {formatDate(event.createdAt)} · {event.actorType} · {event.dataOrigin}
+                          </p>
+                          {event.reason && <p className="mt-1">{event.reason}</p>}
+                          {event.source && <p className="text-slate-400">Fuente: {event.source}</p>}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
 
                 {['submitted', 'in_review'].includes(selected.status) && (
                   <div className="space-y-4 border-t border-slate-100 pt-4">

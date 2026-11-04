@@ -21,7 +21,7 @@ export default function UsersPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [showInvite, setShowInvite] = useState(false);
 
-  const canManage = roleAtLeast(role, 'manager');
+  const canManage = roleAtLeast(role, 'admin');
   const canRemove = roleAtLeast(role, 'admin');
 
   const load = useCallback(async () => {

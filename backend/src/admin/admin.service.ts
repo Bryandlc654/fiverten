@@ -192,13 +192,12 @@ export class AdminService {
         });
         if (!role) throw new NotFoundException('Rol no encontrado');
         data.role = { connect: { id: role.id } };
-        data.isOwner = dto.role === 'owner';
       }
       if (dto.isActive !== undefined) {
         data.isActive = dto.isActive;
       }
 
-      if (membership.isOwner && (dto.role !== 'owner' || dto.isActive === false)) {
+      if (membership.isOwner && dto.isActive === false) {
         const owners = await tx.organizationMembership.count({
           where: { organizationId: orgId, isOwner: true, isActive: true },
         });
@@ -291,12 +290,42 @@ export class AdminService {
       if (!org) {
         throw new NotFoundException('Empresa no encontrada');
       }
-      const data: Prisma.OrganizationUpdateInput = { ...dto, updatedBy: actorId };
+      const { verificationReason, ...changes } = dto;
+      if (
+        dto.verificationStatus !== undefined &&
+        dto.verificationStatus !== org.verificationStatus &&
+        !verificationReason?.trim()
+      ) {
+        throw new BadRequestException(
+          'Indica un motivo para cambiar el estado de verificación',
+        );
+      }
+      const data: Prisma.OrganizationUpdateInput = { ...changes, updatedBy: actorId };
       if (dto.verificationStatus === 'verified') {
         data.verifiedAt = new Date();
         data.verificationComputedAt = new Date();
       }
       const updated = await tx.organization.update({ where: { id }, data });
+      if (
+        dto.verificationStatus !== undefined &&
+        dto.verificationStatus !== org.verificationStatus
+      ) {
+        await tx.verificationEvent.create({
+          data: {
+            organizationId: id,
+            actorId,
+            actorType: 'fiverten_admin',
+            action: 'manual_status_change',
+            previousStatus: org.verificationStatus,
+            newStatus: dto.verificationStatus,
+            reason: verificationReason!.trim(),
+            source: 'admin_panel',
+            evidence: `organization:${id}`,
+            dataOrigin: 'fiverten_verified',
+            expiresAt: updated.verificationExpiresAt,
+          },
+        });
+      }
       return toOrganizationDetail(updated);
     });
   }
@@ -345,6 +374,7 @@ export class AdminService {
           isVerified: user.isVerified,
           isSuperAdmin: user.isSuperAdmin,
           isSupportAgent: user.isSupportAgent,
+          isVerifier: user.isVerifier,
           createdAt: user.createdAt,
           lastLoginAt: user.lastLoginAt,
           organization: user.memberships[0]?.organization
@@ -380,6 +410,7 @@ export class AdminService {
           isVerified: dto.isVerified,
           isSuperAdmin: dto.isSuperAdmin,
           isSupportAgent: dto.isSupportAgent,
+          isVerifier: dto.isVerifier,
           updatedBy: actorId,
         },
       });
@@ -393,6 +424,7 @@ export class AdminService {
         isVerified: updated.isVerified,
         isSuperAdmin: updated.isSuperAdmin,
         isSupportAgent: updated.isSupportAgent,
+        isVerifier: updated.isVerifier,
       };
     });
   }

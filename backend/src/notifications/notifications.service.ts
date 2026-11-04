@@ -169,7 +169,7 @@ export class NotificationsService {
         });
       }
       const managers = memberships
-        .filter((m) => roleAtLeast(effectiveRole(m.role.baseRole, m.isOwner), 'manager'))
+        .filter((m) => roleAtLeast(effectiveRole(m.role.baseRole, m.isOwner), 'editor'))
         .map((m) => m.user.email);
       const emails = managers.length > 0 ? managers : org.email ? [org.email] : [];
       return { title, body, negative, emails };

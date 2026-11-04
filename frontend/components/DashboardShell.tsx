@@ -113,6 +113,22 @@ const SUPPORT_NAV: NavItem[] = [
   { key: 'security', label: 'Seguridad', icon: 'shield_lock', href: '/app/configuracion/seguridad' },
 ];
 
+const VERIFIER_NAV: NavItem[] = [
+  {
+    key: 'adminVerifications',
+    label: 'Verificaciones',
+    icon: 'fact_check',
+    href: '/admin/verificaciones',
+  },
+  {
+    key: 'adminCertifications',
+    label: 'Certificaciones',
+    icon: 'workspace_premium',
+    href: '/admin/certificaciones',
+  },
+  { key: 'profileEdit', label: 'Mi cuenta', icon: 'account_circle', href: '/app/perfil/cuenta' },
+];
+
 export default function DashboardShell({
   active,
   title,
@@ -131,6 +147,7 @@ export default function DashboardShell({
     isLoading,
     isSuperAdmin,
     isSupportAgent,
+    isVerifier,
     logout,
   } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
@@ -193,9 +210,11 @@ export default function DashboardShell({
 
   const visibleNav = isSuperAdmin
     ? ADMIN_NAV
-    : isSupportAgent
-      ? SUPPORT_NAV
-      : TENANT_NAV;
+    : isVerifier
+      ? VERIFIER_NAV
+      : isSupportAgent
+        ? SUPPORT_NAV
+        : TENANT_NAV;
 
   return (
     <div className="flex-1 flex min-h-screen bg-slate-50 text-slate-900">

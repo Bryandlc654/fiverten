@@ -97,7 +97,7 @@ export class ReviewsController {
   /** La empresa no puede ocultar reseñas: solo reportarlas a moderación. */
   @Post(':id/report')
   @HttpCode(HttpStatus.OK)
-  @Roles('manager')
+  @Roles('editor')
   report(
     @CurrentUser('organizationId') orgId: string | null,
     @CurrentUser('userId') userId: string,

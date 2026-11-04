@@ -165,7 +165,7 @@ function CompanyCaseDetail({ id, onChange }: { id: string; onChange: () => void 
 
   const badge = caseBadge(data.status, data.outcome);
   const canWrite = data.permissions.canWrite && roleAtLeast(role, 'editor');
-  const canAgree = data.permissions.canAgree && roleAtLeast(role, 'manager');
+  const canAgree = data.permissions.canAgree && roleAtLeast(role, 'editor');
   const open = data.status !== 'closed';
 
   return (

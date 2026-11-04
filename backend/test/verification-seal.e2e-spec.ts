@@ -19,6 +19,7 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
   let http: () => HttpAgent;
   let companyToken: string;
   let adminToken: string;
+  let verifierToken: string;
   let publicId: string;
   let slug: string;
   let requestId: string;
@@ -82,6 +83,20 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
       .send({ email: 'seal-admin@fiverten.test', password: PASSWORD })
       .expect(200);
     adminToken = login.body.accessToken as string;
+
+    await http()
+      .post(`${AUTH}/register`)
+      .send({ email: 'seal-verifier@fiverten.test', password: PASSWORD, companyName: 'Verificador Seal' })
+      .expect(201);
+    await prisma.user.update({
+      where: { email: 'seal-verifier@fiverten.test' },
+      data: { isVerifier: true, isFivertenStaff: true },
+    });
+    const verifierLogin = await http()
+      .post(`${AUTH}/login`)
+      .send({ email: 'seal-verifier@fiverten.test', password: PASSWORD })
+      .expect(200);
+    verifierToken = verifierLogin.body.accessToken as string;
   });
 
   afterAll(async () => {
@@ -123,6 +138,11 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
     const submitted = await http().post(`${VERIFY}/submit`).set(company()).expect(200);
     requestId = submitted.body.id as string;
     expect(submitted.body.status).toBe('submitted');
+    expect(submitted.body.events[0]).toMatchObject({
+      action: 'submitted',
+      newStatus: 'pending',
+      dataOrigin: 'company_submitted',
+    });
 
     const status = await http().get(VERIFY).set(company()).expect(200);
     expect(status.body.status).toBe('pending');
@@ -148,6 +168,22 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
       .send({ expiresInDays: 365, note: 'Documentación correcta' })
       .expect(200);
     expect(approved.body.status).toBe('approved');
+    expect(approved.body.events[0]).toMatchObject({
+      action: 'approved',
+      previousStatus: 'pending',
+      newStatus: 'verified',
+      dataOrigin: 'fiverten_verified',
+    });
+
+    const verifierList = await http()
+      .get(ADMIN)
+      .set({ Authorization: `Bearer ${verifierToken}` })
+      .expect(200);
+    expect(verifierList.body.total).toBeGreaterThanOrEqual(0);
+    await http()
+      .get('/api/admin/stats')
+      .set({ Authorization: `Bearer ${verifierToken}` })
+      .expect(403);
 
     const status = await http().get(VERIFY).set(company()).expect(200);
     expect(status.body.status).toBe('verified');
@@ -210,6 +246,11 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
       issuer: 'AENOR',
       credentialId: 'ISO-123',
     });
+
+    await http()
+      .delete(`${VERIFY}/certifications/${created.body.id}`)
+      .set(company())
+      .expect(400);
   });
 
   it('vincula opiniones verificadas a proyectos comprobados', async () => {

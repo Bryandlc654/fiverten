@@ -103,8 +103,8 @@ describe('FIVERTEN Miembros e invitaciones (e2e)', () => {
 
     it('invitar no crea usuario ni membresía hasta que el invitado acepta', async () => {
       const email = 'responsable@jerarquia.test';
-      const response = await invite(ownerToken, { email, role: 'manager' }).expect(201);
-      expect(response.body).toMatchObject({ email, role: 'manager' });
+      const response = await invite(ownerToken, { email, role: 'editor' }).expect(201);
+      expect(response.body).toMatchObject({ email, role: 'editor' });
       expect(inviteTokens.get(email)).toEqual(expect.any(String));
 
       expect(await prisma.user.findUnique({ where: { email } })).toBeNull();
@@ -125,14 +125,14 @@ describe('FIVERTEN Miembros e invitaciones (e2e)', () => {
         .expect(200);
       expect(preview.body).toMatchObject({
         email,
-        role: 'manager',
+        role: 'editor',
         hasAccount: false,
         organization: { tradeName: 'Jerarquía S.L.' },
       });
 
       await acceptNew(email, { firstName: 'Rosa' }).expect(200);
       const members = await listMembers(ownerToken);
-      expect(members.find((m) => m.email === email)?.role).toBe('manager');
+      expect(members.find((m) => m.email === email)?.role).toBe('editor');
 
       const user = await prisma.user.findUnique({ where: { email } });
       expect(user?.emailVerifiedAt).not.toBeNull();
@@ -203,44 +203,52 @@ describe('FIVERTEN Miembros e invitaciones (e2e)', () => {
     });
   });
 
-  describe('como responsable (manager)', () => {
-    let managerToken: string;
+  describe('como editor', () => {
+    let editorToken: string;
 
     beforeAll(async () => {
-      managerToken = await login('responsable@jerarquia.test');
+      editorToken = await login('responsable@jerarquia.test');
       await inviteAndJoin(ownerToken, 'pares@jerarquia.test', 'admin');
     });
 
+    it('NO puede invitar ni gestionar el equipo', async () => {
+      await invite(editorToken, { email: 'editor@jerarquia.test', role: 'viewer' }).expect(403);
+    });
+  });
+
+  describe('como admin no propietario', () => {
+    let adminToken: string;
+    let adminMembershipId: string;
+
+    beforeAll(async () => {
+      adminToken = await login('pares@jerarquia.test');
+      const members = await listMembers(adminToken);
+      adminMembershipId = members.find((member) => member.email === 'pares@jerarquia.test')!
+        .membershipId;
+    });
+
     it('puede invitar a un editor (rango inferior)', async () => {
-      await invite(managerToken, { email: 'editor@jerarquia.test', role: 'editor' }).expect(201);
+      await invite(adminToken, { email: 'editor@jerarquia.test', role: 'editor' }).expect(201);
     });
 
-    it('NO puede invitar a otro propietario (escalada bloqueada)', async () => {
-      await invite(managerToken, { email: 'nuevo-owner@jerarquia.test', role: 'owner' }).expect(
+    it('NO puede invitar a otro administrador', async () => {
+      await invite(adminToken, { email: 'nuevo-admin@jerarquia.test', role: 'admin' }).expect(
         403,
       );
     });
 
-    it('NO puede invitar a un administrador', async () => {
-      await invite(managerToken, { email: 'nuevo-admin@jerarquia.test', role: 'admin' }).expect(
-        403,
-      );
-    });
-
-    it('NO puede ascenderse a sí mismo ni a un par a propietario', async () => {
-      const members = await listMembers(managerToken);
-      const admin = members.find((member) => member.email === 'pares@jerarquia.test')!;
+    it('NO puede modificarse a sí mismo ni a otro admin', async () => {
       await http()
-        .patch(`${MEMBERS}/${admin.membershipId}`)
-        .set('Authorization', `Bearer ${managerToken}`)
-        .send({ role: 'owner' })
+        .patch(`${MEMBERS}/${adminMembershipId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ role: 'viewer' })
         .expect(403);
     });
 
     it('NO puede desactivar al propietario', async () => {
       await http()
         .patch(`${MEMBERS}/${ownerMembershipId}`)
-        .set('Authorization', `Bearer ${managerToken}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({ isActive: false })
         .expect(403);
     });
@@ -248,7 +256,7 @@ describe('FIVERTEN Miembros e invitaciones (e2e)', () => {
     it('NO puede eliminar al propietario', async () => {
       await http()
         .delete(`${MEMBERS}/${ownerMembershipId}`)
-        .set('Authorization', `Bearer ${managerToken}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(403);
     });
   });
@@ -266,8 +274,12 @@ describe('FIVERTEN Miembros e invitaciones (e2e)', () => {
 
   describe('el rol se lee de la base de datos, no del token', () => {
     it('al degradar a alguien pierde los permisos con el mismo access token', async () => {
-      const token = await inviteAndJoin(ownerToken, 'degradado@jerarquia.test', 'manager');
-      await invite(token, { email: 'antes@jerarquia.test', role: 'viewer' }).expect(201);
+      const token = await inviteAndJoin(ownerToken, 'degradado@jerarquia.test', 'editor');
+      await http()
+        .patch('/api/organizations/me')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ description: 'Perfil editable por un editor' })
+        .expect(200);
 
       const members = await listMembers(ownerToken);
       const target = members.find((m) => m.email === 'degradado@jerarquia.test')!;
@@ -277,7 +289,11 @@ describe('FIVERTEN Miembros e invitaciones (e2e)', () => {
         .send({ role: 'viewer' })
         .expect(200);
 
-      await invite(token, { email: 'despues@jerarquia.test', role: 'viewer' }).expect(403);
+      await http()
+        .patch('/api/organizations/me')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ description: 'Ya no debería poder editar' })
+        .expect(403);
     });
 
     it('al expulsar a alguien pierde el acceso a la empresa con el mismo access token', async () => {

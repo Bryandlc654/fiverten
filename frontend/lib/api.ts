@@ -37,6 +37,7 @@ export interface User {
   isFivertenStaff?: boolean;
   /** Rol de plataforma para el panel de soporte. */
   isSupportAgent?: boolean;
+  isVerifier?: boolean;
   /** Verificación en dos pasos (TOTP). */
   mfaEnabled?: boolean;
 }
@@ -556,6 +557,7 @@ export interface AdminUser {
   isVerified: boolean;
   isSuperAdmin: boolean;
   isSupportAgent: boolean;
+  isVerifier: boolean;
   createdAt: string;
   lastLoginAt: string | null;
   organization: { id: string; tradeName: string } | null;
@@ -877,6 +879,7 @@ export interface VerificationDocument {
   filename: string;
   mimeType: string;
   size: number;
+  dataOrigin?: string;
   createdAt: string;
 }
 
@@ -885,8 +888,24 @@ export interface VerificationProject {
   name: string;
   description: string | null;
   url: string | null;
+  dataOrigin?: string;
   createdAt: string;
   documents: VerificationDocument[];
+}
+
+export interface VerificationEvent {
+  id: string;
+  actorId: string | null;
+  actorType: string;
+  action: string;
+  previousStatus: string | null;
+  newStatus: string | null;
+  reason: string | null;
+  source: string | null;
+  evidence: string | null;
+  dataOrigin: string;
+  expiresAt: string | null;
+  createdAt: string;
 }
 
 export interface VerificationRequest {
@@ -908,6 +927,7 @@ export interface VerificationRequest {
   };
   documents: VerificationDocument[];
   projects: VerificationProject[];
+  events: VerificationEvent[];
 }
 
 export interface VerificationStatusResponse {
@@ -1831,6 +1851,7 @@ export const api = {
       isVerified?: boolean;
       isSuperAdmin?: boolean;
       isSupportAgent?: boolean;
+      isVerifier?: boolean;
     },
   ): Promise<AdminUser> {
     return request<AdminUser>(`/admin/users/${id}`, {

@@ -45,6 +45,7 @@ interface SessionSubject {
   isSuperAdmin: boolean;
   isStaff: boolean;
   isSupportAgent: boolean;
+  isVerifier: boolean;
 }
 
 @Injectable()
@@ -166,6 +167,7 @@ export class AuthService {
             isSuperAdmin: created.user.isSuperAdmin,
             isStaff: created.user.isFivertenStaff,
             isSupportAgent: created.user.isSupportAgent,
+            isVerifier: created.user.isVerifier,
           },
           ctx,
         );
@@ -290,6 +292,7 @@ export class AuthService {
         isSuperAdmin: user.isSuperAdmin,
         isStaff: user.isFivertenStaff,
         isSupportAgent: user.isSupportAgent,
+        isVerifier: user.isVerifier,
       },
       ctx,
     );
@@ -482,6 +485,7 @@ export class AuthService {
         isSuperAdmin: token.user.isSuperAdmin,
         isStaff: token.user.isFivertenStaff,
         isSupportAgent: token.user.isSupportAgent,
+        isVerifier: token.user.isVerifier,
       },
       token.sessionId,
     );
@@ -542,6 +546,7 @@ export class AuthService {
         isSuperAdmin: user.isSuperAdmin,
         isFivertenStaff: user.isFivertenStaff,
         isSupportAgent: user.isSupportAgent,
+        isVerifier: user.isVerifier,
         isActive: user.isActive,
         mfaEnabled: user.mfaEnabled,
       },
@@ -572,6 +577,7 @@ export class AuthService {
       isSuperAdmin: user.isSuperAdmin,
       isFivertenStaff: user.isFivertenStaff,
       isSupportAgent: user.isSupportAgent,
+      isVerifier: user.isVerifier,
     };
   }
 
@@ -1069,6 +1075,7 @@ export class AuthService {
       root: subject.isSuperAdmin,
       staff: subject.isStaff,
       support: subject.isSupportAgent,
+      verifier: subject.isVerifier,
     });
   }
 
@@ -1103,6 +1110,7 @@ export class AuthService {
         isSuperAdmin: user.isSuperAdmin,
         isFivertenStaff: user.isFivertenStaff,
         isSupportAgent: user.isSupportAgent,
+        isVerifier: user.isVerifier,
         mfaEnabled: user.mfaEnabled,
       },
       organization: organization
@@ -1120,6 +1128,7 @@ export class AuthService {
       isSuperAdmin: user.isSuperAdmin,
       isFivertenStaff: user.isFivertenStaff,
       isSupportAgent: user.isSupportAgent,
+      isVerifier: user.isVerifier,
     };
   }
 }

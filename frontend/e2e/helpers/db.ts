@@ -205,6 +205,14 @@ export async function promoteToSuperAdmin(email: string): Promise<void> {
   await db().user.update({ where: { email }, data: { isSuperAdmin: true, isFivertenStaff: true } });
 }
 
+/** Da acceso de Verificador FIVERTEN (revisión de evidencias). */
+export async function promoteToVerifier(email: string): Promise<void> {
+  await db().user.update({
+    where: { email },
+    data: { isVerifier: true, isFivertenStaff: true },
+  });
+}
+
 /** Da acceso al panel de soporte (rol de plataforma). */
 export async function promoteToSupportAgent(email: string): Promise<void> {
   await db().user.update({ where: { email }, data: { isSupportAgent: true } });

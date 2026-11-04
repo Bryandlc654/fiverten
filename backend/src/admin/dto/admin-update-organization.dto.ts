@@ -58,6 +58,12 @@ export class AdminUpdateOrganizationDto {
   @IsIn(VERIFICATION_STATUSES)
   verificationStatus?: (typeof VERIFICATION_STATUSES)[number];
 
+  /** Obligatorio cuando se cambia manualmente el estado de verificación. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  verificationReason?: string;
+
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;

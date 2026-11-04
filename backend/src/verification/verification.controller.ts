@@ -24,10 +24,10 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { PlatformAdmin } from '../auth/decorators/platform-admin.decorator';
+import { VerificationReviewer } from '../auth/decorators/verification-reviewer.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { PlatformAdminGuard } from '../auth/guards/platform-admin.guard';
+import { VerificationReviewerGuard } from '../auth/guards/verification-reviewer.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import {
   ApproveVerificationDto,
@@ -56,7 +56,7 @@ export class CompanyVerificationController {
   }
 
   @Post('documents')
-  @Roles('admin')
+  @Roles('editor')
   @UseInterceptors(
     FileInterceptor('file', { limits: { fileSize: MAX_VERIFICATION_FILE_BYTES } }),
   )
@@ -71,7 +71,7 @@ export class CompanyVerificationController {
   }
 
   @Delete('documents/:id')
-  @Roles('admin')
+  @Roles('editor')
   @HttpCode(HttpStatus.OK)
   deleteDocument(
     @CurrentUser('organizationId') orgId: string | null,
@@ -81,6 +81,7 @@ export class CompanyVerificationController {
   }
 
   @Get('documents/:id')
+  @Roles('editor')
   @Header('Cache-Control', 'private, no-store')
   async document(
     @CurrentUser('organizationId') orgId: string | null,
@@ -94,7 +95,7 @@ export class CompanyVerificationController {
   }
 
   @Post('projects')
-  @Roles('admin')
+  @Roles('editor')
   addProject(
     @CurrentUser('organizationId') orgId: string | null,
     @CurrentUser('userId') userId: string,
@@ -104,7 +105,7 @@ export class CompanyVerificationController {
   }
 
   @Post('projects/:id/documents')
-  @Roles('admin')
+  @Roles('editor')
   @UseInterceptors(
     FileInterceptor('file', { limits: { fileSize: MAX_VERIFICATION_FILE_BYTES } }),
   )
@@ -124,7 +125,7 @@ export class CompanyVerificationController {
   }
 
   @Delete('projects/:id')
-  @Roles('admin')
+  @Roles('editor')
   @HttpCode(HttpStatus.OK)
   deleteProject(
     @CurrentUser('organizationId') orgId: string | null,
@@ -156,8 +157,11 @@ export class CompanyVerificationController {
   @Post('submit')
   @Roles('admin')
   @HttpCode(HttpStatus.OK)
-  submit(@CurrentUser('organizationId') orgId: string | null) {
-    return this.verification.submit(this.requireOrg(orgId));
+  submit(
+    @CurrentUser('organizationId') orgId: string | null,
+    @CurrentUser('userId') userId: string,
+  ) {
+    return this.verification.submit(this.requireOrg(orgId), userId);
   }
 
   private requireOrg(orgId: string | null): string {
@@ -193,8 +197,8 @@ export class PublicVerificationController {
 }
 
 @Controller('admin/verifications')
-@UseGuards(JwtAuthGuard, PlatformAdminGuard)
-@PlatformAdmin()
+@UseGuards(JwtAuthGuard, VerificationReviewerGuard)
+@VerificationReviewer()
 export class AdminVerificationController {
   constructor(private readonly verification: VerificationService) {}
 

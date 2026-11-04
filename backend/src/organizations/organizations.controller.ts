@@ -34,7 +34,7 @@ export class OrganizationsController {
   }
 
   @Patch('me')
-  @Roles('admin')
+  @Roles('editor')
   updateMine(
     @CurrentUser('organizationId') orgId: string | null,
     @CurrentUser('userId') userId: string,
@@ -50,13 +50,13 @@ export class OrganizationsController {
 
   // Las altas van por invitación: el invitado acepta desde el enlace del correo.
   @Get('me/invitations')
-  @Roles('manager')
+  @Roles('admin')
   listInvitations(@CurrentUser('organizationId') orgId: string | null) {
     return this.invitations.listPending(this.requireOrg(orgId));
   }
 
   @Post('me/invitations')
-  @Roles('manager')
+  @Roles('admin')
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   invite(
     @CurrentUser('organizationId') orgId: string | null,
@@ -67,7 +67,7 @@ export class OrganizationsController {
   }
 
   @Delete('me/invitations/:id')
-  @Roles('manager')
+  @Roles('admin')
   revokeInvitation(
     @CurrentUser('organizationId') orgId: string | null,
     @CurrentUser('userId') userId: string,
@@ -77,7 +77,7 @@ export class OrganizationsController {
   }
 
   @Patch('me/members/:id')
-  @Roles('manager')
+  @Roles('admin')
   updateMember(
     @CurrentUser('organizationId') orgId: string | null,
     @CurrentUser('userId') userId: string,

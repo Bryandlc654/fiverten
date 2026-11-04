@@ -208,6 +208,7 @@ export const rlsStatements: string[] = [
   ...tenantTablePolicy('verification_requests'),
   ...tenantTablePolicy('verification_documents'),
   ...tenantTablePolicy('verification_projects'),
+  ...tenantTablePolicy('verification_events'),
   ...tenantTablePolicy('certifications'),
   // Solicitudes de captación: solo las gestiona el equipo de plataforma.
   ...platformTablePolicy('verification_inquiries'),

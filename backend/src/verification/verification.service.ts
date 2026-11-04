@@ -57,6 +57,7 @@ const REQUEST_INCLUDE = {
       filename: true,
       mimeType: true,
       size: true,
+      dataOrigin: true,
       createdAt: true,
     },
     orderBy: { createdAt: 'asc' as const },
@@ -72,11 +73,15 @@ const REQUEST_INCLUDE = {
           filename: true,
           mimeType: true,
           size: true,
+          dataOrigin: true,
           createdAt: true,
         },
         orderBy: { createdAt: 'asc' as const },
       },
     },
+  },
+  events: {
+    orderBy: { createdAt: 'desc' as const },
   },
   _count: { select: { documents: true, projects: true } },
 } satisfies Prisma.VerificationRequestInclude;
@@ -314,7 +319,7 @@ export class VerificationService {
     });
   }
 
-  async submit(orgId: string) {
+  async submit(orgId: string, actorId: string) {
     const [requiredDocs, minProjects] = await Promise.all([
       this.settings.get<string[]>('verification.required_documents'),
       this.settings.get<number>('verification.min_projects'),
@@ -381,7 +386,29 @@ export class VerificationService {
           data: { verificationStatus: 'pending', verificationComputedAt: new Date() },
         });
       }
-      return this.requestView(updated);
+      await tx.verificationEvent.create({
+        data: {
+          organizationId: orgId,
+          requestId: updated.id,
+          actorId,
+          actorType: 'company_admin',
+          action: status === 'verified' ? 'renewal_submitted' : 'submitted',
+          previousStatus: status,
+          newStatus: status === 'verified' ? 'verified' : 'pending',
+          reason:
+            status === 'verified'
+              ? 'Solicitud de renovación enviada por la empresa'
+              : 'Solicitud de verificación enviada por la empresa',
+          source: 'company_submission',
+          evidence: updated.id,
+          dataOrigin: 'company_submitted',
+        },
+      });
+      const refreshed = await tx.verificationRequest.findUniqueOrThrow({
+        where: { id: updated.id },
+        include: REQUEST_INCLUDE,
+      });
+      return this.requestView(refreshed);
     });
   }
 
@@ -548,9 +575,14 @@ export class VerificationService {
     return this.prisma.withContext({ orgId }, async (tx) => {
       const certification = await tx.certification.findFirst({
         where: { id, organizationId: orgId },
-        select: { id: true },
+        select: { id: true, status: true },
       });
       if (!certification) throw new NotFoundException('Certificación no encontrada');
+      if (certification.status === 'verified') {
+        throw new BadRequestException(
+          'Una certificación validada solo puede retirarse mediante una nueva revisión',
+        );
+      }
       await tx.certification.delete({ where: { id } });
       return { success: true };
     });
@@ -654,13 +686,21 @@ export class VerificationService {
     const defaultDays = Number(await this.settings.get<number>('verification.expiry_days'));
     const days = dto.expiresInDays ?? (Number(defaultDays) || 365);
     await this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
-      const request = await tx.verificationRequest.findUnique({ where: { id } });
+      const request = await tx.verificationRequest.findUnique({
+        where: { id },
+        include: {
+          organization: {
+            select: { verificationStatus: true, verificationExpiresAt: true },
+          },
+        },
+      });
       if (!request) throw new NotFoundException('Solicitud no encontrada');
       if (!['submitted', 'in_review'].includes(request.status)) {
         throw new BadRequestException('La solicitud ya está cerrada');
       }
       const now = new Date();
       const expiresAt = new Date(now.getTime() + days * DAY_MS);
+      const previousStatus = effectiveVerificationStatus(request.organization);
       await tx.verificationRequest.update({
         where: { id },
         data: {
@@ -680,6 +720,22 @@ export class VerificationService {
           verificationComputedAt: now,
         },
       });
+      await tx.verificationEvent.create({
+        data: {
+          organizationId: request.organizationId,
+          requestId: request.id,
+          actorId: reviewerId,
+          actorType: await this.reviewerType(tx, reviewerId),
+          action: 'approved',
+          previousStatus,
+          newStatus: 'verified',
+          reason: dto.note?.trim() || 'Verificación aprobada',
+          source: 'FIVERTEN review',
+          evidence: `verification_request:${request.id}`,
+          dataOrigin: 'fiverten_verified',
+          expiresAt,
+        },
+      });
     });
     return this.adminGet(id);
   }
@@ -695,6 +751,7 @@ export class VerificationService {
         throw new BadRequestException('La solicitud ya está cerrada');
       }
       const now = new Date();
+      const previousStatus = effectiveVerificationStatus(request.organization);
       await tx.verificationRequest.update({
         where: { id },
         data: {
@@ -719,15 +776,38 @@ export class VerificationService {
           },
         });
       }
+      await tx.verificationEvent.create({
+        data: {
+          organizationId: request.organizationId,
+          requestId: request.id,
+          actorId: reviewerId,
+          actorType: await this.reviewerType(tx, reviewerId),
+          action: 'rejected',
+          previousStatus,
+          newStatus: stillVerified ? 'verified' : 'rejected',
+          reason: dto.reason.trim(),
+          source: 'FIVERTEN review',
+          evidence: `verification_request:${request.id}`,
+          dataOrigin: 'fiverten_verified',
+        },
+      });
     });
     return this.adminGet(id);
   }
 
   async revoke(id: string, reviewerId: string, dto: RevokeVerificationDto) {
     await this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
-      const request = await tx.verificationRequest.findUnique({ where: { id } });
+      const request = await tx.verificationRequest.findUnique({
+        where: { id },
+        include: {
+          organization: {
+            select: { verificationStatus: true, verificationExpiresAt: true },
+          },
+        },
+      });
       if (!request) throw new NotFoundException('Solicitud no encontrada');
       const now = new Date();
+      const previousStatus = effectiveVerificationStatus(request.organization);
       await tx.verificationRequest.update({
         where: { id },
         data: {
@@ -744,6 +824,22 @@ export class VerificationService {
           verificationStatus: 'expired',
           verificationExpiresAt: now,
           verificationComputedAt: now,
+        },
+      });
+      await tx.verificationEvent.create({
+        data: {
+          organizationId: request.organizationId,
+          requestId: request.id,
+          actorId: reviewerId,
+          actorType: await this.reviewerType(tx, reviewerId),
+          action: 'revoked',
+          previousStatus,
+          newStatus: 'expired',
+          reason: dto.reason?.trim() || 'Verificación revocada',
+          source: 'FIVERTEN review',
+          evidence: `verification_request:${request.id}`,
+          dataOrigin: 'fiverten_verified',
+          expiresAt: now,
         },
       });
     });
@@ -922,6 +1018,17 @@ export class VerificationService {
     return draft;
   }
 
+  private async reviewerType(
+    tx: Prisma.TransactionClient,
+    userId: string,
+  ): Promise<'fiverten_admin' | 'fiverten_verifier'> {
+    const user = await tx.user.findUnique({
+      where: { id: userId },
+      select: { isSuperAdmin: true, isVerifier: true },
+    });
+    return user?.isSuperAdmin ? 'fiverten_admin' : 'fiverten_verifier';
+  }
+
   private requestView(
     request: Prisma.VerificationRequestGetPayload<{ include: typeof REQUEST_INCLUDE }>,
   ) {
@@ -935,11 +1042,13 @@ export class VerificationService {
       createdAt: request.createdAt,
       organization: request.organization,
       documents: request.documents,
+      events: request.events,
       projects: request.projects.map((project) => ({
         id: project.id,
         name: project.name,
         description: project.description,
         url: project.url,
+        dataOrigin: project.dataOrigin,
         createdAt: project.createdAt,
         documents: project.documents,
       })),

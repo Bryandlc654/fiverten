@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { canSeed, promoteToSuperAdmin } from './helpers/db';
+import { canSeed, promoteToSuperAdmin, promoteToVerifier } from './helpers/db';
 import { BACKEND_URL, loginInBrowser, seedOrganization } from './helpers/seed';
 
 test.describe('Certificaciones y solicitudes (super admin)', () => {
@@ -54,5 +54,18 @@ test.describe('Certificaciones y solicitudes (super admin)', () => {
     await page.getByText(inquiryName, { exact: true }).click();
     await page.getByRole('button', { name: 'Marcar contactada' }).click();
     await expect(page.getByText('Solicitud actualizada')).toBeVisible();
+  });
+
+  test('el verificador FIVERTEN accede solo al área de revisión', async ({ page, request }) => {
+    test.skip(!canSeed(), 'Define E2E_DATABASE_URL para promocionar al verificador');
+
+    const organization = await seedOrganization(request, `Verificador ${Date.now()}`);
+    await promoteToVerifier(organization.email);
+    await loginInBrowser(page, organization);
+    await expect(page).toHaveURL(/\/admin\/verificaciones$/);
+    await expect(page.getByRole('heading', { name: 'Verificaciones' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Certificaciones' })).toBeVisible();
+    await page.goto('/admin');
+    await expect(page).toHaveURL(/\/app$/);
   });
 });
