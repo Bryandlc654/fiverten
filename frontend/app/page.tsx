@@ -233,42 +233,15 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="relative mx-auto w-full max-w-2xl lg:max-w-none lg:pl-4">
-              <div
-                aria-hidden
-                className="absolute -inset-8 -z-10 rounded-[3rem] bg-blue-600/25 blur-3xl"
-              />
-
-              <div className="overflow-hidden rounded-2xl border border-white/15 bg-white shadow-[0_40px_120px_rgba(0,0,0,.55)]">
-                <div className="flex items-center gap-1.5 border-b border-slate-200 bg-slate-100 px-4 py-2.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-                  <span className="mx-auto flex min-w-0 items-center gap-1.5 rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">
-                    <svg
-                      className="h-3 w-3 shrink-0 text-emerald-600"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <rect x="4" y="10" width="16" height="10" rx="2" />
-                      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-                    </svg>
-                    <span className="truncate font-mono text-[10px] text-slate-500">
-                      fiverten.com/empresa/clinica-dental-sonrisa
-                    </span>
-                  </span>
-                  <span className="hidden w-8 sm:block" />
-                </div>
+            <div className="relative -mx-5 lg:mx-0 lg:-mr-16 xl:-mr-[calc((100vw-1280px)/2+4rem)]">
+              <div className="relative h-[240px] overflow-hidden sm:h-[360px] lg:h-[540px] lg:rounded-l-[2.5rem] xl:h-[600px]">
                 <Image
                   src="/hero-perfil-fiverten.png"
                   alt="Perfil público verificado de una empresa en FIVERTEN"
-                  width={1917}
-                  height={858}
+                  fill
                   priority
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="h-auto w-full"
+                  sizes="(max-width: 1024px) 100vw, 55vw"
+                  className="object-cover object-left-top"
                 />
               </div>
 
@@ -277,15 +250,8 @@ export default function HomePage() {
                 alt="Sello FIVERTEN de empresa verificada"
                 width={512}
                 height={512}
-                className="absolute -bottom-8 -left-3 h-20 w-20 drop-shadow-[0_18px_35px_rgba(0,0,0,.45)] sm:h-24 sm:w-24 lg:-left-9 lg:h-28 lg:w-28"
+                className="absolute -bottom-6 left-4 h-24 w-24 drop-shadow-[0_18px_35px_rgba(0,0,0,.45)] sm:left-6 sm:h-28 sm:w-28 lg:-left-10 lg:bottom-8 lg:h-32 lg:w-32"
               />
-
-              <div className="absolute -right-2 top-1/2 hidden -translate-y-1/2 rounded-xl border border-emerald-400/25 bg-ink/90 px-4 py-3 shadow-xl backdrop-blur md:block lg:-right-6">
-                <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-emerald-300">
-                  Estado del sello
-                </p>
-                <p className="mt-0.5 text-sm font-bold text-white">Verificación vigente</p>
-              </div>
             </div>
           </div>
         </section>
