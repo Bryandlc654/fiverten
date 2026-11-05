@@ -88,7 +88,7 @@ test.describe('Web pública', () => {
 
     await page.goto('/soluciones');
     await expect(
-      page.getByRole('heading', { name: /Reputación verificable para cada tipo de negocio/ }),
+      page.getByRole('heading', { name: /Reputación verificable para cada negocio/ }),
     ).toBeVisible();
 
     await page.goto('/recursos');
