@@ -497,6 +497,8 @@ export class VerificationService {
         status,
         verifiedAt: org.verifiedAt,
         expiresAt: org.verificationExpiresAt,
+        reviewedAt: approved?.reviewedAt ?? null,
+        documentsCount: approved?.documents.length ?? 0,
         categories,
         certifications: certifications.map((certification) => ({
           id: certification.id,

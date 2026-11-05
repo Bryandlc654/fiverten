@@ -207,6 +207,8 @@ export interface PublicVerification {
   status: VerificationStatus;
   verifiedAt: string | null;
   expiresAt: string | null;
+  reviewedAt: string | null;
+  documentsCount: number;
   categories: string[];
   certifications: PublicCertification[];
   projects: PublicVerificationProject[];
