@@ -130,7 +130,19 @@ export default function HomePage() {
           id="inicio"
           className="home-noise relative isolate overflow-hidden bg-ink pb-24 pt-36 text-white lg:pb-32 lg:pt-44"
         >
-          <div className="home-grid-bg absolute inset-0 -z-10" />
+          <div className="absolute inset-0 -z-20">
+            <Image
+              src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=2200&q=90"
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover object-center opacity-45"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/95 to-ink/45" />
+            <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-ink/30" />
+          </div>
+          <div className="home-grid-bg absolute inset-0 -z-10 opacity-40" />
           <div className="home-orb absolute -right-32 top-16 -z-10 h-[470px] w-[470px] rounded-full bg-aqua/15 blur-3xl" />
           <div className="home-orb home-orb-delay absolute -left-40 bottom-0 -z-10 h-[360px] w-[360px] rounded-full bg-blue-500/15 blur-3xl" />
           <div className="mx-auto grid max-w-7xl items-center gap-14 px-5 lg:grid-cols-[1.04fr_.96fr] lg:px-8">
@@ -189,110 +201,15 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="relative mx-auto w-full max-w-[590px]">
-              <div className="absolute -inset-7 rounded-[3rem] bg-aqua/10 blur-3xl" />
-              <div className="relative rounded-[2rem] border border-white/15 bg-[#10243d]/90 p-3 shadow-2xl backdrop-blur-xl sm:p-5">
-                <div className="flex items-center justify-between px-3 pb-4 pt-2">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-rose-400" />
-                    <span className="h-2 w-2 rounded-full bg-amber-300" />
-                    <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                  </div>
-                  <span className="text-[10px] font-bold tracking-[.2em] text-slate-500">
-                    FIVERTEN / TRUST PROFILE
-                  </span>
-                  <span className="text-xs text-slate-500">•••</span>
-                </div>
-                <div className="overflow-hidden rounded-2xl bg-[#F5F8FC] text-ink">
-                  <div className="relative h-36 overflow-hidden bg-[#dce9ec]">
-                    <Image
-                      src="https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=85"
-                      alt="Oficina profesional luminosa"
-                      fill
-                      sizes="(max-width: 640px) 100vw, 590px"
-                      className="object-cover opacity-80"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#0b2138]/70 to-transparent" />
-                    <div className="absolute bottom-4 left-5 text-white">
-                      <p className="text-[10px] font-bold tracking-[.2em] text-aqua">
-                        PERFIL DE EMPRESA
-                      </p>
-                      <p className="mt-1 text-xl font-extrabold">Estudio Norte</p>
-                    </div>
-                    <div className="absolute right-4 top-4 rounded-full border border-white/30 bg-white/20 px-3 py-1 text-[10px] font-semibold text-white backdrop-blur">
-                      PERFIL PÚBLICO
-                    </div>
-                  </div>
-                  <div className="p-5 sm:p-6">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs text-slate-500">Estado de confianza</p>
-                        <div className="mt-1 flex items-center gap-2 text-sm font-bold text-emerald-700">
-                          <span className="grid h-6 w-6 place-items-center rounded-full bg-emerald-100">✓</span>
-                          Empresa verificada
-                        </div>
-                      </div>
-                      <div className="rounded-xl bg-white px-4 py-2 text-right shadow-sm">
-                        <p className="text-[10px] uppercase tracking-wider text-slate-400">Reseñas</p>
-                        <p className="text-lg font-extrabold">
-                          4.9 <span className="text-amber-400">★★★★★</span>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="my-5 h-px bg-slate-200" />
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="rounded-xl bg-white p-3">
-                        <p className="text-[10px] text-slate-400">Identidad</p>
-                        <p className="mt-1 text-xs font-bold text-emerald-700">Validada</p>
-                      </div>
-                      <div className="rounded-xl bg-white p-3">
-                        <p className="text-[10px] text-slate-400">Documentos</p>
-                        <p className="mt-1 text-xs font-bold text-emerald-700">Revisados</p>
-                      </div>
-                      <div className="rounded-xl bg-white p-3">
-                        <p className="text-[10px] text-slate-400">Vigencia</p>
-                        <p className="mt-1 text-xs font-bold text-ink">365 días</p>
-                      </div>
-                    </div>
-                    <div className="mt-5 flex items-center justify-between rounded-xl border border-aqua/30 bg-aqua/10 p-3">
-                      <div className="flex items-center gap-3">
-                        <span className="home-badge-ring relative grid h-10 w-10 place-items-center rounded-full bg-ink text-aqua">
-                          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="m12 2 2.2 2.3 3.2-.1 1.1 3 2.7 1.7-1 3 1 3-2.7 1.7-1.1 3-3.2-.1L12 21l-2.2-2.3-3.2.1-1.1-3-2.7-1.7 1-3-1-3 2.7-1.7 1.1-3 3.2.1L12 2Z" />
-                            <path d="m8.5 12 2.2 2.2 4.8-4.8" />
-                          </svg>
-                        </span>
-                        <div>
-                          <p className="text-xs font-bold">Sello FIVERTEN activo</p>
-                          <p className="text-[10px] text-slate-500">Verificación vigente</p>
-                        </div>
-                      </div>
-                      <span className="text-xs font-bold text-emerald-700">● ACTIVO</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between px-3 pb-1 pt-4 text-[10px] text-slate-500">
-                  <span>Vista ilustrativa de un perfil público</span>
-                  <span>fiverten.com</span>
-                </div>
-              </div>
-              <div className="home-glass absolute -left-8 top-24 hidden -translate-x-2 rounded-2xl p-4 shadow-glow sm:block">
-                <div className="flex items-center gap-3">
-                  <span className="grid h-9 w-9 place-items-center rounded-xl bg-aqua text-ink">✓</span>
-                  <div>
-                    <p className="text-xs font-bold text-white">Identidad revisada</p>
-                    <p className="text-[10px] text-slate-400">Validación documental</p>
-                  </div>
-                </div>
-              </div>
-              <div className="home-glass absolute -bottom-7 -right-5 hidden rounded-2xl p-4 shadow-glow sm:block">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-                  Sello dinámico
-                </p>
-                <p className="mt-1 text-sm font-bold text-white">
-                  Siempre actualizado <span className="text-aqua">↗</span>
-                </p>
-              </div>
+                        <div className="relative -mx-5 h-[360px] overflow-hidden sm:h-[460px] lg:mx-0 lg:h-[560px] lg:-mr-16 lg:rounded-l-[3rem] xl:h-[620px] xl:-mr-32 2xl:-mr-56">
+              <Image
+                src="https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1600&q=90"
+                alt="Espacio de trabajo de una empresa verificada"
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 55vw"
+                className="object-cover object-left"
+              />
             </div>
           </div>
         </section>
