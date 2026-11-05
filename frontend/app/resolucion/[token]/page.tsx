@@ -8,7 +8,7 @@ import { Alert, Badge, LoadingRow, inputClass } from '../../../components/ui';
 import { ApiError, api, type ClientResolution, type ResolutionStatus } from '../../../lib/api';
 
 const STATUS_LABELS: Record<ResolutionStatus, { label: string; tone: string }> = {
-  open: { label: 'Abierta', tone: 'bg-blue-50 text-blue-600' },
+  open: { label: 'Abierta', tone: 'bg-blue-50 text-blue-700' },
   in_progress: { label: 'En curso', tone: 'bg-amber-50 text-amber-600' },
   accepted: { label: 'Resuelta', tone: 'bg-emerald-50 text-emerald-600' },
   rejected: { label: 'Sin acuerdo', tone: 'bg-red-50 text-red-600' },
@@ -161,7 +161,7 @@ export default function ResolutionPage() {
                   <button
                     type="button"
                     onClick={() => setEditing(true)}
-                    className="text-xs font-semibold text-[#2563eb] hover:underline"
+                    className="text-xs font-semibold text-[#356CFF] hover:underline"
                   >
                     Editar mi reseña
                   </button>
@@ -213,7 +213,7 @@ export default function ResolutionPage() {
                     <button
                       type="submit"
                       disabled={busy || body.trim().length < 10 || rating < 1}
-                      className="rounded-lg bg-[#2563eb] px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-60"
+                      className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-60"
                     >
                       {busy ? 'Guardando…' : 'Guardar cambios'}
                     </button>
@@ -276,7 +276,7 @@ export default function ResolutionPage() {
                     <button
                       type="submit"
                       disabled={busy || message.trim().length < 2}
-                      className="rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-60"
+                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-60"
                     >
                       {busy ? 'Enviando…' : 'Enviar mensaje'}
                     </button>

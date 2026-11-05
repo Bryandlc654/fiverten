@@ -258,7 +258,7 @@ export default function SecurityPage() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60 sm:w-auto"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60 sm:w-auto"
             >
               <span className="material-symbols-outlined text-[18px]">key</span>
               {saving ? 'Guardando…' : 'Cambiar contraseña'}
@@ -348,7 +348,7 @@ export default function SecurityPage() {
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
                 <span className="material-symbols-outlined text-[22px]">verified_user</span>
               </span>
               <div>
@@ -360,9 +360,7 @@ export default function SecurityPage() {
             </div>
             <span
               className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                mfaEnabled
-                  ? 'bg-emerald-50 text-emerald-600'
-                  : 'bg-slate-100 text-slate-600'
+                mfaEnabled ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-600'
               }`}
             >
               {mfaEnabled === null ? 'Cargando…' : mfaEnabled ? 'Activada' : 'Desactivada'}
@@ -385,7 +383,7 @@ export default function SecurityPage() {
               type="button"
               onClick={() => void startMfaSetup()}
               disabled={mfaBusy}
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
             >
               <span className="material-symbols-outlined text-[18px]">qr_code_2</span>
               {mfaBusy ? 'Preparando…' : 'Activar verificación en dos pasos'}
@@ -407,7 +405,7 @@ export default function SecurityPage() {
                 </code>
                 <a
                   href={mfaSetup.otpauthUrl}
-                  className="mt-3 inline-flex text-xs font-semibold text-blue-600 hover:underline"
+                  className="mt-3 inline-flex text-xs font-semibold text-blue-700 hover:underline"
                 >
                   Abrir en la aplicación autenticadora
                 </a>
@@ -434,7 +432,7 @@ export default function SecurityPage() {
                     type="button"
                     onClick={() => void confirmMfa()}
                     disabled={mfaBusy || mfaCode.length !== 6}
-                    className="inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
                   >
                     {mfaBusy ? 'Activando…' : 'Confirmar y activar'}
                   </button>

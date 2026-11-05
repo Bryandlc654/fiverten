@@ -81,12 +81,10 @@ export default function SolutionsPage() {
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-aqua/25 bg-aqua/10 px-4 py-2 text-xs font-semibold tracking-wide text-aqua">
               SOLUCIONES POR TIPO DE NEGOCIO
             </div>
-            <h1 className="font-display max-w-3xl text-5xl font-extrabold leading-[1.04] tracking-[-.055em] sm:text-6xl">
+            <h1 className="font-display max-w-3xl text-5xl font-bold leading-[1.04] tracking-[-.055em] sm:text-6xl">
               Reputación verificable
               <br />
-              <span className="bg-gradient-to-r from-aqua via-mint to-white bg-clip-text text-transparent">
-                para cada negocio.
-              </span>
+              <span className="text-aqua">para cada negocio.</span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-8 text-slate-300 sm:text-lg">
               FIVERTEN se adapta a empresas que necesitan demostrar confianza, recoger opiniones y
@@ -95,7 +93,7 @@ export default function SolutionsPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/verificar-empresa"
-                className="home-shine inline-flex items-center justify-center gap-2 rounded-full bg-aqua px-6 py-3 text-sm font-bold text-ink transition hover:-translate-y-0.5 hover:bg-mint"
+                className="home-shine inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-blue-700"
               >
                 Verificar mi empresa <span>→</span>
               </Link>
@@ -109,9 +107,7 @@ export default function SolutionsPage() {
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
-            <p className="text-xs font-bold uppercase tracking-[.2em] text-aqua">
-              Una base común
-            </p>
+            <p className="text-xs font-bold uppercase tracking-[.2em] text-aqua">Una base común</p>
             <ul className="mt-5 space-y-4 text-sm text-slate-300">
               {CAPABILITIES.map((item) => (
                 <li key={item} className="flex gap-3">
@@ -132,10 +128,10 @@ export default function SolutionsPage() {
         <section className="bg-white py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="max-w-3xl">
-              <span className="text-xs font-bold uppercase tracking-[.2em] text-teal-700">
+              <span className="text-xs font-bold uppercase tracking-[.2em] text-slate-500">
                 Casos de uso
               </span>
-              <h2 className="font-display mt-3 text-3xl font-extrabold tracking-[-.045em] text-slate-900 sm:text-4xl">
+              <h2 className="font-display mt-3 text-3xl font-bold tracking-[-.045em] text-slate-900 sm:text-4xl">
                 Tu sector, tu forma de demostrar confianza.
               </h2>
               <p className="mt-4 text-sm leading-7 text-slate-500">
@@ -151,7 +147,7 @@ export default function SolutionsPage() {
                   className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-aqua/60 hover:shadow-lg"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="grid h-11 w-11 place-items-center rounded-xl bg-teal-50 text-teal-700">
+                    <span className="grid h-11 w-11 place-items-center rounded-xl bg-blue-50 text-blue-700">
                       <SolutionIcon name={item.icon} />
                     </span>
                     <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
@@ -162,7 +158,7 @@ export default function SolutionsPage() {
                   <p className="mt-2 flex-1 text-xs leading-6 text-slate-500">{item.text}</p>
                   <Link
                     href={item.link}
-                    className="mt-5 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 transition group-hover:gap-2"
+                    className="mt-5 inline-flex items-center gap-1 text-xs font-semibold text-blue-700 transition group-hover:gap-2"
                   >
                     {item.cta} <span>→</span>
                   </Link>
@@ -172,13 +168,13 @@ export default function SolutionsPage() {
           </div>
         </section>
 
-        <section className="bg-[#f4f7fa] py-20 lg:py-24">
+        <section className="bg-[#F4F3EF] py-20 lg:py-24">
           <div className="mx-auto grid max-w-7xl gap-8 px-5 lg:grid-cols-[1fr_1fr] lg:px-8">
             <div>
-              <span className="text-xs font-bold uppercase tracking-[.2em] text-teal-700">
+              <span className="text-xs font-bold uppercase tracking-[.2em] text-slate-500">
                 Cómo encaja FIVERTEN
               </span>
-              <h2 className="font-display mt-3 text-3xl font-extrabold tracking-[-.045em] text-slate-900 sm:text-4xl">
+              <h2 className="font-display mt-3 text-3xl font-bold tracking-[-.045em] text-slate-900 sm:text-4xl">
                 Menos promesas. Más evidencia.
               </h2>
               <p className="mt-4 text-sm leading-7 text-slate-500">
@@ -222,7 +218,7 @@ export default function SolutionsPage() {
             <span className="inline-flex items-center gap-2 rounded-full border border-aqua/25 bg-aqua/10 px-4 py-2 text-xs font-bold tracking-widest text-aqua">
               TU CASO TAMBIÉN CUENTA
             </span>
-            <h2 className="font-display mt-6 text-3xl font-extrabold tracking-[-.05em] sm:text-5xl">
+            <h2 className="font-display mt-6 text-3xl font-bold tracking-[-.05em] sm:text-5xl">
               ¿No encajas en ninguna categoría?
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
@@ -231,7 +227,7 @@ export default function SolutionsPage() {
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <Link
                 href="/verificar-empresa"
-                className="rounded-full bg-aqua px-6 py-3 text-sm font-bold text-ink transition hover:-translate-y-0.5 hover:bg-mint"
+                className="rounded-full bg-blue-600 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-blue-700"
               >
                 Hablar con FIVERTEN
               </Link>
@@ -255,14 +251,24 @@ function SolutionIcon({ name }: { name: string }) {
   if (name === 'storefront') {
     return (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path d="M4 9h16l-1-5H5L4 9Zm0 0v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9M9 21v-6h6v6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        <path
+          d="M4 9h16l-1-5H5L4 9Zm0 0v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9M9 21v-6h6v6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
       </svg>
     );
   }
   if (name === 'health_and_safety') {
     return (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6l8-3Z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        <path
+          d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6l8-3Z"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
         <path d="M12 8v6m-3-3h6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
       </svg>
     );
@@ -270,28 +276,53 @@ function SolutionIcon({ name }: { name: string }) {
   if (name === 'apartment') {
     return (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path d="M4 21V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v16M9 7h1m-1 4h1m-1 4h1m6-6h1a2 2 0 0 1 2 2v9M4 21h16" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
+        <path
+          d="M4 21V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v16M9 7h1m-1 4h1m-1 4h1m6-6h1a2 2 0 0 1 2 2v9M4 21h16"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.7"
+        />
       </svg>
     );
   }
   if (name === 'restaurant') {
     return (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path d="M7 3v8m0 0v10M4 3v5a3 3 0 0 0 6 0V3M16 3v18M16 3c3 1 4 4 4 7h-4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
+        <path
+          d="M7 3v8m0 0v10M4 3v5a3 3 0 0 0 6 0V3M16 3v18M16 3c3 1 4 4 4 7h-4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.7"
+        />
       </svg>
     );
   }
   if (name === 'rocket_launch') {
     return (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path d="M14 4c3-1 6 0 6 0s1 3 0 6c-1.5 4.5-6 8-9 9l-3-3c1-3 4.5-7.5 9-9Z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
-        <path d="m9 15-3 3m1-7-4 1 3 3m7-1 1 4 3-3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
+        <path
+          d="M14 4c3-1 6 0 6 0s1 3 0 6c-1.5 4.5-6 8-9 9l-3-3c1-3 4.5-7.5 9-9Z"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.7"
+        />
+        <path
+          d="m9 15-3 3m1-7-4 1 3 3m7-1 1 4 3-3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.7"
+        />
       </svg>
     );
   }
   return (
     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1m-1 4h1m4-4h1m-1 4h1" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
+      <path
+        d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1m-1 4h1m4-4h1m-1 4h1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.7"
+      />
     </svg>
   );
 }

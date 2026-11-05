@@ -14,7 +14,7 @@ import {
 
 const STATUS_LABELS: Record<string, { label: string; tone: string }> = {
   draft: { label: 'Borrador', tone: 'bg-slate-100 text-slate-500' },
-  active: { label: 'Activa', tone: 'bg-blue-50 text-blue-600' },
+  active: { label: 'Activa', tone: 'bg-blue-50 text-blue-700' },
   completed: { label: 'Completada', tone: 'bg-emerald-50 text-emerald-600' },
 };
 
@@ -88,7 +88,7 @@ export default function CampaignsPage() {
         {notice && <Alert tone="success">{notice}</Alert>}
 
         <div className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/70 px-4 py-3 text-sm text-blue-800">
-          <span className="material-symbols-outlined text-[20px] text-blue-600">lock</span>
+          <span className="material-symbols-outlined text-[20px] text-blue-700">lock</span>
           <p>
             Los nombres y correos de tus clientes son privados: solo los ve tu empresa. FIVERTEN no
             los publica en el perfil ni los comparte con otras empresas.
@@ -109,7 +109,7 @@ export default function CampaignsPage() {
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600"
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600"
           >
             <span className="material-symbols-outlined text-[18px]">campaign</span>
             Nueva campaña
@@ -140,7 +140,9 @@ export default function CampaignsPage() {
                         <p className="font-semibold text-slate-900">{campaign.name}</p>
                         <Badge
                           label={STATUS_LABELS[campaign.status]?.label ?? campaign.status}
-                          tone={STATUS_LABELS[campaign.status]?.tone ?? 'bg-slate-100 text-slate-500'}
+                          tone={
+                            STATUS_LABELS[campaign.status]?.tone ?? 'bg-slate-100 text-slate-500'
+                          }
                         />
                       </div>
                       <p className="mt-1 text-xs text-slate-500">
@@ -209,9 +211,7 @@ export default function CampaignsPage() {
           onClose={() => setCreating(false)}
           onCreated={async (campaign) => {
             setCreating(false);
-            setNotice(
-              `Campaña creada: ${campaign.stats.sent} solicitudes enviadas.`,
-            );
+            setNotice(`Campaña creada: ${campaign.stats.sent} solicitudes enviadas.`);
             await load();
             await openCampaign(campaign.id);
           }}
@@ -306,10 +306,7 @@ function CampaignModal({
             className={inputClass}
           />
         </Field>
-        <Field
-          label="Destinatarios (uno por línea: Nombre, email)"
-          className="block"
-        >
+        <Field label="Destinatarios (uno por línea: Nombre, email)" className="block">
           <textarea
             required
             rows={8}
@@ -334,7 +331,7 @@ function CampaignModal({
           <button
             type="submit"
             disabled={busy || parsed.length === 0}
-            className="rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
           >
             {busy ? 'Enviando…' : 'Crear y enviar'}
           </button>

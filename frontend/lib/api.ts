@@ -708,10 +708,7 @@ export interface OrganizationAnalytics {
 }
 
 export type PublicAnalyticsEvent =
-  | 'profile_view'
-  | 'contact_click'
-  | 'website_click'
-  | 'seal_download';
+  'profile_view' | 'contact_click' | 'website_click' | 'seal_download';
 
 export type ClientRelationStatus = 'invited' | 'active' | 'completed' | 'revoked';
 export type ClientVerificationLevel = 'identified' | 'confirmed' | 'verified';
@@ -773,12 +770,7 @@ export interface PlatformStats {
   reviews: { published: number; underReview: number; reported: number };
 }
 
-export type SubscriptionStatus =
-  | 'trialing'
-  | 'active'
-  | 'past_due'
-  | 'cancelled'
-  | 'expired';
+export type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'cancelled' | 'expired';
 export type BillingCycle = 'monthly' | 'yearly';
 export type PaymentStatus = 'paid' | 'pending' | 'failed' | 'refunded';
 
@@ -937,13 +929,7 @@ export interface PublicConfig {
 
 export type TicketStatus = 'open' | 'pending' | 'resolved' | 'closed';
 export type TicketPriority = 'low' | 'normal' | 'high' | 'urgent';
-export type TicketCategory =
-  | 'general'
-  | 'billing'
-  | 'reviews'
-  | 'technical'
-  | 'account'
-  | 'other';
+export type TicketCategory = 'general' | 'billing' | 'reviews' | 'technical' | 'account' | 'other';
 
 export interface SupportMessage {
   id: string;
@@ -1009,19 +995,9 @@ export interface SupportStats {
   mine: number;
 }
 
-export type VerificationStatus =
-  | 'not_verified'
-  | 'pending'
-  | 'verified'
-  | 'rejected'
-  | 'expired';
+export type VerificationStatus = 'not_verified' | 'pending' | 'verified' | 'rejected' | 'expired';
 
-export type VerificationDocumentCategory =
-  | 'identity'
-  | 'tax'
-  | 'address'
-  | 'project'
-  | 'other';
+export type VerificationDocumentCategory = 'identity' | 'tax' | 'address' | 'project' | 'other';
 
 export interface VerificationDocument {
   id: string;
@@ -1647,9 +1623,7 @@ export const api = {
   adminListPrivacyRequests(
     params: { status?: string; page?: number; pageSize?: number } = {},
   ): Promise<Paginated<PrivacyRequest>> {
-    return request<Paginated<PrivacyRequest>>(
-      `/admin/privacy/requests${buildQuery(params)}`,
-    );
+    return request<Paginated<PrivacyRequest>>(`/admin/privacy/requests${buildQuery(params)}`);
   },
   adminCompletePrivacyRequest(
     id: string,
@@ -1884,9 +1858,7 @@ export const api = {
 
   // Perfil público y reseñas (sin sesión)
   listReviewRequests(params: ListParams = {}): Promise<ReviewRequestList> {
-    return request<ReviewRequestList>(
-      `/organizations/me/review-requests${buildQuery(params)}`,
-    );
+    return request<ReviewRequestList>(`/organizations/me/review-requests${buildQuery(params)}`);
   },
   createReviewRequest(
     payload: CreateReviewRequestPayload,
@@ -1947,17 +1919,19 @@ export const api = {
       method: 'DELETE',
     });
   },
-  publicOrganizations(params: {
-    search?: string;
-    sector?: string;
-    country?: string;
-    verified?: boolean;
-    hasProjects?: boolean;
-    hasOpinions?: boolean;
-    sort?: 'relevance' | 'recent' | 'rating';
-    page?: number;
-    pageSize?: number;
-  } = {}): Promise<PublicDirectory> {
+  publicOrganizations(
+    params: {
+      search?: string;
+      sector?: string;
+      country?: string;
+      verified?: boolean;
+      hasProjects?: boolean;
+      hasOpinions?: boolean;
+      sort?: 'relevance' | 'recent' | 'rating';
+      page?: number;
+      pageSize?: number;
+    } = {},
+  ): Promise<PublicDirectory> {
     return request<PublicDirectory>(`/public/organizations${buildQuery(params)}`);
   },
   publicVerification(slug: string): Promise<PublicVerification> {
@@ -2337,16 +2311,13 @@ export const api = {
     });
   },
   deleteCertification(id: string): Promise<{ success: boolean }> {
-    return request<{ success: boolean }>(
-      `/organizations/me/verification/certifications/${id}`,
-      { method: 'DELETE' },
-    );
+    return request<{ success: boolean }>(`/organizations/me/verification/certifications/${id}`, {
+      method: 'DELETE',
+    });
   },
 
   // Verificación (super admin)
-  adminListVerifications(
-    params: ListParams = {},
-  ): Promise<Paginated<AdminVerificationSummary>> {
+  adminListVerifications(params: ListParams = {}): Promise<Paginated<AdminVerificationSummary>> {
     return request<Paginated<AdminVerificationSummary>>(
       `/admin/verifications${buildQuery(params)}`,
     );
@@ -2383,28 +2354,24 @@ export const api = {
   adminVerificationDocument(id: string, documentId: string): Promise<Blob> {
     return requestBlob(`/admin/verifications/${id}/documents/${documentId}`);
   },
-  adminListCertifications(
-    params: ListParams = {},
-  ): Promise<Paginated<AdminCertification>> {
+  adminListCertifications(params: ListParams = {}): Promise<Paginated<AdminCertification>> {
     return request<Paginated<AdminCertification>>(
       `/admin/verifications/certifications${buildQuery(params)}`,
     );
   },
   adminApproveCertification(id: string, note?: string): Promise<AdminCertification> {
-    return request<AdminCertification>(
-      `/admin/verifications/certifications/${id}/approve`,
-      { method: 'POST', body: JSON.stringify(note ? { note } : {}) },
-    );
+    return request<AdminCertification>(`/admin/verifications/certifications/${id}/approve`, {
+      method: 'POST',
+      body: JSON.stringify(note ? { note } : {}),
+    });
   },
   adminRejectCertification(id: string, reason: string): Promise<AdminCertification> {
-    return request<AdminCertification>(
-      `/admin/verifications/certifications/${id}/reject`,
-      { method: 'POST', body: JSON.stringify({ reason }) },
-    );
+    return request<AdminCertification>(`/admin/verifications/certifications/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
   },
-  adminListVerificationInquiries(
-    params: ListParams = {},
-  ): Promise<Paginated<VerificationInquiry>> {
+  adminListVerificationInquiries(params: ListParams = {}): Promise<Paginated<VerificationInquiry>> {
     return request<Paginated<VerificationInquiry>>(
       `/admin/verifications/inquiries${buildQuery(params)}`,
     );
@@ -2454,7 +2421,10 @@ export const api = {
       body: JSON.stringify(payload),
     });
   },
-  adminUpdateSubscription(id: string, payload: Record<string, unknown>): Promise<AdminSubscription> {
+  adminUpdateSubscription(
+    id: string,
+    payload: Record<string, unknown>,
+  ): Promise<AdminSubscription> {
     return request<AdminSubscription>(`/admin/subscriptions/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
@@ -2583,10 +2553,7 @@ export const api = {
   },
 
   // Ficha de empresa del super admin
-  adminOrganizationReviews(
-    id: string,
-    params: ListParams = {},
-  ): Promise<AdminReviewList> {
+  adminOrganizationReviews(id: string, params: ListParams = {}): Promise<AdminReviewList> {
     return request<AdminReviewList>(`/admin/organizations/${id}/reviews${buildQuery(params)}`);
   },
   adminOrganizationStats(id: string, months = 12): Promise<OrganizationStats> {
@@ -2602,7 +2569,10 @@ export const api = {
       body: JSON.stringify(payload),
     });
   },
-  adminRemoveOrganizationMember(orgId: string, membershipId: string): Promise<{ success: boolean }> {
+  adminRemoveOrganizationMember(
+    orgId: string,
+    membershipId: string,
+  ): Promise<{ success: boolean }> {
     return request<{ success: boolean }>(`/admin/organizations/${orgId}/members/${membershipId}`, {
       method: 'DELETE',
     });

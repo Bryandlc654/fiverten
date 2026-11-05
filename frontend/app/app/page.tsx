@@ -46,15 +46,8 @@ function completionOf(org: OrganizationDetail | null): number {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const {
-    user,
-    organization,
-    role,
-    isAuthenticated,
-    isLoading,
-    isSuperAdmin,
-    isSupportAgent,
-  } = useAuth();
+  const { user, organization, role, isAuthenticated, isLoading, isSuperAdmin, isSupportAgent } =
+    useAuth();
   const [notice, setNotice] = useState<string | null>(null);
   const [sendingVerification, setSendingVerification] = useState(false);
   const [stats, setStats] = useState<OrganizationStats | null>(null);
@@ -152,77 +145,73 @@ export default function DashboardPage() {
   const profileCompletion = completionOf(orgDetail);
 
   return (
-    <DashboardShell
-      active="overview"
-      title={company}
-      subtitle={`Panel de gestión · ${roleText}`}
-    >
+    <DashboardShell active="overview" title={company} subtitle={`Panel de gestión · ${roleText}`}>
       <div>
         {notice && (
-            <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-              {notice}
-            </div>
-          )}
+          <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+            {notice}
+          </div>
+        )}
 
-          {!user.isVerified && (
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              <span className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px]">mark_email_unread</span>
-                Tu correo aún no está verificado.
-              </span>
-              <button
-                type="button"
-                onClick={onResendVerification}
-                disabled={sendingVerification}
-                className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-600 disabled:opacity-60"
-              >
-                {sendingVerification ? 'Enviando…' : 'Reenviar verificación'}
-              </button>
-            </div>
-          )}
+        {!user.isVerified && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <span className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px]">mark_email_unread</span>
+              Tu correo aún no está verificado.
+            </span>
+            <button
+              type="button"
+              onClick={onResendVerification}
+              disabled={sendingVerification}
+              className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-600 disabled:opacity-60"
+            >
+              {sendingVerification ? 'Enviando…' : 'Reenviar verificación'}
+            </button>
+          </div>
+        )}
 
-          <WelcomeBanner
-            firstName={user.firstName}
-            isVerified={isVerified}
+        <WelcomeBanner
+          firstName={user.firstName}
+          isVerified={isVerified}
+          publicId={organization?.publicId}
+          slug={organization?.slug}
+          profileCompletion={profileCompletion}
+          pendingDocuments={pendingDocuments}
+          visits={analytics?.totals.visits ?? 0}
+          reviews={stats?.rating.total ?? 0}
+        />
+
+        {statsError && (
+          <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            No se pudieron cargar las estadísticas. Recarga la página para intentarlo de nuevo.
+          </div>
+        )}
+
+        <StatsGrid stats={stats} />
+
+        <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <div className="min-w-0 xl:col-span-2">
+            <PerformanceChart monthly={stats?.monthly ?? null} />
+          </div>
+          <SealCard
+            publicUrl={publicUrl}
             publicId={organization?.publicId}
-            slug={organization?.slug}
-            profileCompletion={profileCompletion}
-            pendingDocuments={pendingDocuments}
-            visits={analytics?.totals.visits ?? 0}
-            reviews={stats?.rating.total ?? 0}
+            embedToken={verification?.badge?.embedToken}
           />
+        </section>
 
-          {statsError && (
-            <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              No se pudieron cargar las estadísticas. Recarga la página para intentarlo de nuevo.
-            </div>
-          )}
+        <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <TasksCard org={orgDetail} stats={stats} />
+          <div className="min-w-0 xl:col-span-2">
+            <LatestReviews />
+          </div>
+        </section>
 
-          <StatsGrid stats={stats} />
-
-          <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
-            <div className="min-w-0 xl:col-span-2">
-              <PerformanceChart monthly={stats?.monthly ?? null} />
-            </div>
-            <SealCard
-              publicUrl={publicUrl}
-              publicId={organization?.publicId}
-              embedToken={verification?.badge?.embedToken}
-            />
-          </section>
-
-          <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
-            <TasksCard org={orgDetail} stats={stats} />
-            <div className="min-w-0 xl:col-span-2">
-              <LatestReviews />
-            </div>
-          </section>
-
-          <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
-            <RequestsCard stats={stats} />
-            <RatingDistribution stats={stats} />
-            <RecentActivity />
-          </section>
+        <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <RequestsCard stats={stats} />
+          <RatingDistribution stats={stats} />
+          <RecentActivity />
+        </section>
       </div>
     </DashboardShell>
   );

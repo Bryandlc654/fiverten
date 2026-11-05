@@ -24,7 +24,7 @@ export default function RecentActivity() {
       ) : items.length === 0 ? (
         <p className="mt-4 text-sm text-slate-500">
           Aquí aparecerán los avisos de nuevas reseñas. Puedes elegir cuáles recibir en{' '}
-          <Link href="/app/perfil" className="font-semibold text-blue-600 hover:underline">
+          <Link href="/app/perfil" className="font-semibold text-blue-700 hover:underline">
             Empresa
           </Link>
           .
@@ -37,7 +37,7 @@ export default function RecentActivity() {
               <li key={item.id} className="flex items-start gap-3">
                 <span
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                    negative ? 'bg-red-100 text-red-600' : 'bg-blue-50 text-blue-600'
+                    negative ? 'bg-red-100 text-red-600' : 'bg-blue-50 text-blue-700'
                   }`}
                 >
                   <span className="material-symbols-outlined text-[18px]">

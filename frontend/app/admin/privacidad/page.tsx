@@ -3,12 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import DashboardShell from '../../../components/DashboardShell';
 import { Alert, inputClass } from '../../../components/ui';
-import {
-  ApiError,
-  api,
-  type PrivacyRequest,
-  type PrivacyRequestStatus,
-} from '../../../lib/api';
+import { ApiError, api, type PrivacyRequest, type PrivacyRequestStatus } from '../../../lib/api';
 
 const TYPE_LABELS: Record<string, string> = {
   access: 'Acceso',

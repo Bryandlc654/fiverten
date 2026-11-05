@@ -127,7 +127,9 @@ export default function AdminCertificationsPage() {
             {loading ? (
               <p className="px-4 py-4 text-sm text-slate-500">Cargando certificaciones…</p>
             ) : items.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-slate-500">No hay certificaciones con estos filtros.</p>
+              <p className="px-4 py-6 text-sm text-slate-500">
+                No hay certificaciones con estos filtros.
+              </p>
             ) : (
               <ul className="divide-y divide-slate-100">
                 {items.map((item) => (
@@ -143,9 +145,7 @@ export default function AdminCertificationsPage() {
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <p className="truncate text-sm font-semibold text-slate-900">
-                          {item.name}
-                        </p>
+                        <p className="truncate text-sm font-semibold text-slate-900">{item.name}</p>
                         <Badge
                           label={STATUS[item.status]?.label ?? item.status}
                           tone={STATUS[item.status]?.tone ?? 'bg-slate-100 text-slate-500'}
@@ -208,7 +208,7 @@ export default function AdminCertificationsPage() {
                           href={selected.credentialUrl}
                           target="_blank"
                           rel="noopener noreferrer nofollow"
-                          className="text-blue-600 hover:underline"
+                          className="text-blue-700 hover:underline"
                         >
                           Abrir credencial
                         </a>
@@ -239,7 +239,8 @@ export default function AdminCertificationsPage() {
                         disabled={busy}
                         onClick={() =>
                           void run(
-                            () => api.adminApproveCertification(selected.id, note.trim() || undefined),
+                            () =>
+                              api.adminApproveCertification(selected.id, note.trim() || undefined),
                             'Certificación validada',
                           )
                         }

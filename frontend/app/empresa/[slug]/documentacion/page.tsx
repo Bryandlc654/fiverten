@@ -55,9 +55,7 @@ export default function PublicDocumentationPage() {
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
             Documentación verificada
           </p>
-          <h1 className="mt-1 text-2xl font-extrabold text-slate-900">
-            {data.organization.tradeName}
-          </h1>
+          <h1 className="mt-1 text-2xl font-bold text-slate-900">{data.organization.tradeName}</h1>
         </header>
         <CompanyPublicNav slug={slug} active="documentacion" />
 
@@ -72,11 +70,15 @@ export default function PublicDocumentationPage() {
           <dl className="mt-4 grid grid-cols-1 gap-3 border-t border-slate-100 pt-4 text-sm sm:grid-cols-2">
             <div>
               <dt className="text-slate-500">Verificada el</dt>
-              <dd className="font-medium text-slate-900">{formatVerificationDate(data.verifiedAt)}</dd>
+              <dd className="font-medium text-slate-900">
+                {formatVerificationDate(data.verifiedAt)}
+              </dd>
             </div>
             <div>
               <dt className="text-slate-500">Válida hasta</dt>
-              <dd className="font-medium text-slate-900">{formatVerificationDate(data.expiresAt)}</dd>
+              <dd className="font-medium text-slate-900">
+                {formatVerificationDate(data.expiresAt)}
+              </dd>
             </div>
           </dl>
         </section>

@@ -79,12 +79,18 @@ export default function VerifyCompanyPage() {
   const [sent, setSent] = useState(false);
 
   useEffect(() => {
-    api.publicPlans().then((data) => setPlans(data.plans)).catch(() => setPlans([]));
+    api
+      .publicPlans()
+      .then((data) => setPlans(data.plans))
+      .catch(() => setPlans([]));
     api
       .publicVerificationInfo()
       .then(setInfo)
       .catch(() => setInfo(null));
-    api.publicCatalogs().then(setCatalogs).catch(() => setCatalogs(null));
+    api
+      .publicCatalogs()
+      .then(setCatalogs)
+      .catch(() => setCatalogs(null));
   }, []);
 
   async function submit(event: FormEvent) {
@@ -132,12 +138,10 @@ export default function VerifyCompanyPage() {
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-aqua/25 bg-aqua/10 px-4 py-2 text-xs font-semibold tracking-wide text-aqua">
               VERIFICACIÓN DE EMPRESAS
             </div>
-            <h1 className="font-display max-w-3xl text-5xl font-extrabold leading-[1.04] tracking-[-.055em] sm:text-6xl">
+            <h1 className="font-display max-w-3xl text-5xl font-bold leading-[1.04] tracking-[-.055em] sm:text-6xl">
               Obtén el sello
               <br />
-              <span className="bg-gradient-to-r from-aqua via-mint to-white bg-clip-text text-transparent">
-                de empresa verificada.
-              </span>
+              <span className="text-aqua">de empresa verificada.</span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-8 text-slate-300 sm:text-lg">
               Un perfil público con identidad, documentación y evidencias revisadas. Sin
@@ -146,7 +150,7 @@ export default function VerifyCompanyPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
                 href="#solicitud"
-                className="home-shine inline-flex items-center justify-center gap-2 rounded-full bg-aqua px-6 py-3 text-sm font-bold text-ink transition hover:-translate-y-0.5 hover:bg-mint"
+                className="home-shine inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-blue-700"
               >
                 Iniciar solicitud <span>→</span>
               </a>
@@ -191,10 +195,10 @@ export default function VerifyCompanyPage() {
         <section id="proceso" className="bg-white py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="max-w-3xl">
-              <span className="text-xs font-bold uppercase tracking-[.2em] text-teal-700">
+              <span className="text-xs font-bold uppercase tracking-[.2em] text-slate-500">
                 Proceso
               </span>
-              <h2 className="font-display mt-3 text-3xl font-extrabold tracking-[-.045em] text-slate-900 sm:text-4xl">
+              <h2 className="font-display mt-3 text-3xl font-bold tracking-[-.045em] text-slate-900 sm:text-4xl">
                 Cinco pasos. Sin atajos.
               </h2>
               <p className="mt-4 text-sm leading-7 text-slate-500">
@@ -210,8 +214,8 @@ export default function VerifyCompanyPage() {
                   className="relative rounded-2xl border border-slate-200 bg-slate-50 p-5"
                 >
                   <span
-                    className={`grid h-10 w-10 place-items-center rounded-xl text-sm font-extrabold ${
-                      index === 4 ? 'bg-aqua text-ink' : 'bg-ink text-aqua'
+                    className={`grid h-10 w-10 place-items-center rounded-xl text-sm font-bold ${
+                      index === 4 ? 'bg-blue-600 text-white' : 'bg-ink text-aqua'
                     }`}
                   >
                     {String(index + 1).padStart(2, '0')}
@@ -235,13 +239,13 @@ export default function VerifyCompanyPage() {
           </div>
         </section>
 
-        <section className="bg-[#f4f7fa] py-20 lg:py-24">
+        <section className="bg-[#F4F3EF] py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="max-w-3xl">
-              <span className="text-xs font-bold uppercase tracking-[.2em] text-teal-700">
+              <span className="text-xs font-bold uppercase tracking-[.2em] text-slate-500">
                 Beneficios
               </span>
-              <h2 className="font-display mt-3 text-3xl font-extrabold tracking-[-.045em] text-slate-900 sm:text-4xl">
+              <h2 className="font-display mt-3 text-3xl font-bold tracking-[-.045em] text-slate-900 sm:text-4xl">
                 Más confianza, con evidencia.
               </h2>
               <p className="mt-4 text-sm leading-7 text-slate-500">
@@ -255,7 +259,7 @@ export default function VerifyCompanyPage() {
                   key={benefit.title}
                   className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
                 >
-                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-teal-50 text-teal-700">
+                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-700">
                     <BenefitIcon name={benefit.icon} />
                   </span>
                   <h3 className="mt-4 text-base font-bold text-slate-900">{benefit.title}</h3>
@@ -270,10 +274,10 @@ export default function VerifyCompanyPage() {
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div className="max-w-2xl">
-                <span className="text-xs font-bold uppercase tracking-[.2em] text-teal-700">
+                <span className="text-xs font-bold uppercase tracking-[.2em] text-slate-500">
                   Planes
                 </span>
-                <h2 className="font-display mt-3 text-3xl font-extrabold tracking-[-.045em] text-slate-900 sm:text-4xl">
+                <h2 className="font-display mt-3 text-3xl font-bold tracking-[-.045em] text-slate-900 sm:text-4xl">
                   Elige cómo crecer.
                 </h2>
                 <p className="mt-4 text-sm leading-7 text-slate-500">
@@ -281,7 +285,7 @@ export default function VerifyCompanyPage() {
                   referencia y quedan pendientes de confirmación comercial.
                 </p>
               </div>
-              <Link href="/precios" className="text-xs font-semibold text-blue-600 hover:underline">
+              <Link href="/precios" className="text-xs font-semibold text-blue-700 hover:underline">
                 Comparar en detalle →
               </Link>
             </div>
@@ -292,7 +296,7 @@ export default function VerifyCompanyPage() {
                   className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
                 >
                   <h3 className="text-sm font-bold text-slate-900">{plan.name}</h3>
-                  <p className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900">
+                  <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
                     {plan.priceMonthly > 0 ? `${plan.priceMonthly} €` : 'A medida'}
                     {plan.priceMonthly > 0 && (
                       <span className="text-xs font-medium text-slate-400">/mes</span>
@@ -321,13 +325,13 @@ export default function VerifyCompanyPage() {
           </div>
         </section>
 
-        <section id="solicitud" className="relative overflow-hidden bg-[#f4f7fa] py-20 lg:py-24">
+        <section id="solicitud" className="relative overflow-hidden bg-[#F4F3EF] py-20 lg:py-24">
           <div className="mx-auto grid max-w-7xl gap-8 px-5 lg:grid-cols-[.85fr_1.15fr] lg:px-8">
             <div>
-              <span className="text-xs font-bold uppercase tracking-[.2em] text-teal-700">
+              <span className="text-xs font-bold uppercase tracking-[.2em] text-slate-500">
                 Solicitud
               </span>
-              <h2 className="font-display mt-3 text-3xl font-extrabold tracking-[-.045em] text-slate-900 sm:text-4xl">
+              <h2 className="font-display mt-3 text-3xl font-bold tracking-[-.045em] text-slate-900 sm:text-4xl">
                 Cuéntanos quién eres.
               </h2>
               <p className="mt-4 text-sm leading-7 text-slate-500">
@@ -335,7 +339,9 @@ export default function VerifyCompanyPage() {
                 revisará el caso y te indicará los siguientes pasos.
               </p>
               <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 text-xs leading-6 text-slate-600">
-                <p><strong className="text-slate-900">Qué pasa después:</strong></p>
+                <p>
+                  <strong className="text-slate-900">Qué pasa después:</strong>
+                </p>
                 <ol className="mt-2 list-decimal space-y-1 pl-4">
                   <li>Registramos tu solicitud y enviamos confirmación.</li>
                   <li>El equipo contacta para validar identidad y documentación.</li>
@@ -512,21 +518,41 @@ function BenefitIcon({ name }: { name: string }) {
   if (name === 'shield') {
     return (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6l8-3Z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
-        <path d="m8.5 12 2.2 2.2 4.8-4.8" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        <path
+          d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6l8-3Z"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
+        <path
+          d="m8.5 12 2.2 2.2 4.8-4.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
       </svg>
     );
   }
   if (name === 'seal') {
     return (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path d="M12 2 14.5 4.5l3.5-.2 1.2 3.3 3 1.9-1.1 3.3 1.1 3.3-3 1.9-1.2 3.3-3.5-.2L12 23l-2.5-2.5-3.5.2-1.2-3.3-3-1.9 1.1-3.3-1.1-3.3 3-1.9L6 3.7l3.5.2L12 2Z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        <path
+          d="M12 2 14.5 4.5l3.5-.2 1.2 3.3 3 1.9-1.1 3.3 1.1 3.3-3 1.9-1.2 3.3-3.5-.2L12 23l-2.5-2.5-3.5.2-1.2-3.3-3-1.9 1.1-3.3-1.1-3.3 3-1.9L6 3.7l3.5.2L12 2Z"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
       </svg>
     );
   }
   return (
     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path d="M4 5h16v12H7l-3 3V5Z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+      <path
+        d="M4 5h16v12H7l-3 3V5Z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
       <path d="m8 10 2.5 2.5L16 8" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
     </svg>
   );

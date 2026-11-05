@@ -123,7 +123,7 @@ export default function ModerationItem({
           {openCase && (
             <Link
               href={`/admin/casos?id=${openCase.id}`}
-              className="inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-1.5 text-xs font-semibold text-[#2563eb] transition hover:bg-blue-50"
+              className="inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-1.5 text-xs font-semibold text-[#356CFF] transition hover:bg-blue-50"
             >
               <span className="material-symbols-outlined text-[16px]">policy</span>
               Ver caso de evidencias

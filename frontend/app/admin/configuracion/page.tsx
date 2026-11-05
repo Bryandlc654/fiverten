@@ -156,10 +156,26 @@ export default function AdminConfigPage() {
                 })
               }
               fields={[
-                { key: 'siteName', label: 'Nombre de la plataforma', value: String(value('general.site_name') ?? 'FIVERTEN') },
-                { key: 'supportEmail', label: 'Correo de soporte', value: String(value('general.support_email') ?? '') },
-                { key: 'defaultLocale', label: 'Idioma por defecto', value: String(value('general.default_locale') ?? 'es') },
-                { key: 'defaultCurrency', label: 'Moneda por defecto', value: String(value('general.default_currency') ?? 'EUR') },
+                {
+                  key: 'siteName',
+                  label: 'Nombre de la plataforma',
+                  value: String(value('general.site_name') ?? 'FIVERTEN'),
+                },
+                {
+                  key: 'supportEmail',
+                  label: 'Correo de soporte',
+                  value: String(value('general.support_email') ?? ''),
+                },
+                {
+                  key: 'defaultLocale',
+                  label: 'Idioma por defecto',
+                  value: String(value('general.default_locale') ?? 'es'),
+                },
+                {
+                  key: 'defaultCurrency',
+                  label: 'Moneda por defecto',
+                  value: String(value('general.default_currency') ?? 'EUR'),
+                },
                 {
                   key: 'registrationsEnabled',
                   label: 'Permitir registro de empresas',
@@ -298,9 +314,14 @@ export default function AdminConfigPage() {
               </p>
               <ul className="mt-4 divide-y divide-slate-100">
                 {templates.map((template) => (
-                  <li key={template.code} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                  <li
+                    key={template.code}
+                    className="flex flex-wrap items-center justify-between gap-3 py-3"
+                  >
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-slate-900">{template.code}</p>
+                      <p className="truncate text-sm font-semibold text-slate-900">
+                        {template.code}
+                      </p>
                       <p className="truncate text-xs text-slate-500">{template.subject}</p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -394,7 +415,10 @@ export default function AdminConfigPage() {
                 { key: 'slug', label: 'Slug (opcional)' },
               ]}
               onAdd={(form) =>
-                run(() => api.adminCreateSector({ name: form.name, slug: form.slug }), 'Categoría creada')
+                run(
+                  () => api.adminCreateSector({ name: form.name, slug: form.slug }),
+                  'Categoría creada',
+                )
               }
               onDelete={(id) => run(() => api.adminDeleteSector(id), 'Categoría eliminada')}
               onToggle={(id, active) =>
@@ -476,7 +500,10 @@ export default function AdminConfigPage() {
               }
               onDelete={(id) => run(() => api.adminDeleteReportReason(id), 'Motivo eliminado')}
               onToggle={(id, active) =>
-                run(() => api.adminUpdateReportReason(id, { isActive: active }), 'Motivo actualizado')
+                run(
+                  () => api.adminUpdateReportReason(id, { isActive: active }),
+                  'Motivo actualizado',
+                )
               }
             />
           )}
@@ -563,7 +590,7 @@ function SettingsForm({
       <button
         type="submit"
         disabled={busy}
-        className="mt-4 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+        className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
       >
         {busy ? 'Guardando…' : 'Guardar cambios'}
       </button>
@@ -611,7 +638,7 @@ function CatalogTable({
         ))}
         <button
           type="submit"
-          className="self-end rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white"
+          className="self-end rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
         >
           Añadir
         </button>
@@ -739,7 +766,7 @@ function TemplateModal({
           <button
             type="submit"
             disabled={busy}
-            className="rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
           >
             Guardar
           </button>

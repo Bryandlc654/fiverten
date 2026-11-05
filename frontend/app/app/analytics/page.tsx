@@ -43,7 +43,9 @@ function percent(value: number | null): string {
 
 function trend(current: number, previous: number): { label: string; positive: boolean | null } {
   if (previous === 0) {
-    return current > 0 ? { label: 'Nuevo', positive: true } : { label: 'Sin cambios', positive: null };
+    return current > 0
+      ? { label: 'Nuevo', positive: true }
+      : { label: 'Sin cambios', positive: null };
   }
   const change = Math.round(((current - previous) / previous) * 100);
   return {
@@ -129,7 +131,7 @@ function SourceList({ analytics }: { analytics: OrganizationAnalytics }) {
                 </div>
                 <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
                   <div
-                    className="h-full rounded-full bg-[#2563eb]"
+                    className="h-full rounded-full bg-blue-600"
                     style={{ width: `${Math.max(4, (total / max) * 100)}%` }}
                   />
                 </div>
@@ -245,7 +247,7 @@ export default function AnalyticsPage() {
                 value={formatNumber(totals.visits)}
                 hint="Sesiones únicas registradas"
                 icon="visibility"
-                tone="bg-blue-50 text-blue-600"
+                tone="bg-blue-50 text-blue-700"
                 trendValue={trend(totals.visits, previous.visits)}
               />
               <Kpi
@@ -269,7 +271,7 @@ export default function AnalyticsPage() {
                 value={formatNumber(totals.conversions)}
                 hint={conversionHint(totals)}
                 icon="task_alt"
-                tone="bg-violet-50 text-violet-600"
+                tone="bg-slate-100 text-slate-600"
                 trendValue={trend(totals.conversions, previous.conversions)}
               />
               <Kpi

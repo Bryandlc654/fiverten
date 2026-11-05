@@ -221,7 +221,11 @@ export default function VerificationPage() {
         title="Sello y verificación"
         subtitle="Verificación de identidad y sello para tu web"
       >
-        {error ? <Alert tone="error">{error}</Alert> : <p className="text-sm text-slate-500">Cargando verificación…</p>}
+        {error ? (
+          <Alert tone="error">{error}</Alert>
+        ) : (
+          <p className="text-sm text-slate-500">Cargando verificación…</p>
+        )}
       </DashboardShell>
     );
   }
@@ -265,7 +269,9 @@ export default function VerificationPage() {
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                 Estado de verificación
               </p>
-              <h2 className="mt-1 text-xl font-bold text-slate-900">{data.organization.tradeName}</h2>
+              <h2 className="mt-1 text-xl font-bold text-slate-900">
+                {data.organization.tradeName}
+              </h2>
               <p className="mt-1 text-sm text-slate-600">{status.help}</p>
             </div>
             <Badge label={status.label} tone={status.tone} />
@@ -273,11 +279,13 @@ export default function VerificationPage() {
           <dl className="mt-4 grid grid-cols-1 gap-2 border-t border-slate-100 pt-4 text-sm sm:grid-cols-3">
             <div>
               <dt className="text-slate-500">Verificada el</dt>
-              <dd className="font-medium text-slate-900">{formatDate(data.verifiedAt)}</dd>
+              <dd className="font-mono font-medium text-slate-900">
+                {formatDate(data.verifiedAt)}
+              </dd>
             </div>
             <div>
               <dt className="text-slate-500">Válida hasta</dt>
-              <dd className="font-medium text-slate-900">{formatDate(data.expiresAt)}</dd>
+              <dd className="font-mono font-medium text-slate-900">{formatDate(data.expiresAt)}</dd>
             </div>
             <div>
               <dt className="text-slate-500">Plazo de revisión</dt>
@@ -296,11 +304,14 @@ export default function VerificationPage() {
               <h3 className="text-sm font-semibold text-slate-800">Historial de verificación</h3>
               <ul className="mt-2 space-y-2">
                 {request.events.map((event) => (
-                  <li key={event.id} className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                  <li
+                    key={event.id}
+                    className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600"
+                  >
                     <p className="font-semibold text-slate-800">
                       {event.action} · {event.previousStatus ?? '—'} → {event.newStatus ?? '—'}
                     </p>
-                    <p className="mt-0.5">{formatDate(event.createdAt)}</p>
+                    <p className="mt-0.5 font-mono">{formatDate(event.createdAt)}</p>
                     {event.reason && <p className="mt-1">{event.reason}</p>}
                   </li>
                 ))}
@@ -328,7 +339,7 @@ export default function VerificationPage() {
                   href={sealPng}
                   download={`fiverten-sello-${data.organization.publicId}.png`}
                   onClick={trackSealDownload}
-                  className="inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600"
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600"
                 >
                   <span className="material-symbols-outlined text-[18px]">download</span>
                   Descargar PNG
@@ -446,9 +457,7 @@ export default function VerificationPage() {
                         : certification.status === 'rejected'
                           ? 'Rechazada'
                           : 'En revisión'}
-                      {certification.decisionReason
-                        ? ` · ${certification.decisionReason}`
-                        : ''}
+                      {certification.decisionReason ? ` · ${certification.decisionReason}` : ''}
                     </p>
                   </div>
                   <button
@@ -473,16 +482,20 @@ export default function VerificationPage() {
         <section className="rounded-xl border border-slate-200 bg-white p-5">
           <h2 className="text-base font-bold text-slate-900">Requisitos</h2>
           <p className="mt-1 text-xs text-slate-500">
-            Incluido en todos los planes. La empresa nunca puede autoverificarse: FIVERTEN revisa
-            y aprueba la documentación.
+            Incluido en todos los planes. La empresa nunca puede autoverificarse: FIVERTEN revisa y
+            aprueba la documentación.
           </p>
           <ul className="mt-3 grid grid-cols-1 gap-2 text-sm text-slate-700 sm:grid-cols-2">
-            <li>Documentos obligatorios: {required.map((item) => CATEGORIES[item] ?? item).join(', ')}</li>
+            <li>
+              Documentos obligatorios: {required.map((item) => CATEGORIES[item] ?? item).join(', ')}
+            </li>
             <li>Proyectos o evidencias mínimas: {data.requirements.minProjects}</li>
             <li>Revisión estimada: {data.requirements.reviewDays} días hábiles</li>
             <li>Validez del sello: {data.requirements.expiryDays} días</li>
             <li>Renovación: desde {data.requirements.renewalDays} días antes del vencimiento</li>
-            <li>Criterios: documentación legible, datos fiscales coincidentes y evidencia verificable</li>
+            <li>
+              Criterios: documentación legible, datos fiscales coincidentes y evidencia verificable
+            </li>
           </ul>
         </section>
 
@@ -500,7 +513,9 @@ export default function VerificationPage() {
               <Field label="Tipo de documento" className="block">
                 <select
                   value={category}
-                  onChange={(event) => setCategory(event.target.value as VerificationDocumentCategory)}
+                  onChange={(event) =>
+                    setCategory(event.target.value as VerificationDocumentCategory)
+                  }
                   className={inputClass}
                 >
                   {Object.entries(CATEGORIES).map(([key, label]) => (
@@ -529,7 +544,10 @@ export default function VerificationPage() {
 
             <ul className="mt-4 divide-y divide-slate-100">
               {documents.map((document) => (
-                <li key={document.id} className="flex items-center justify-between gap-2 py-2 text-sm">
+                <li
+                  key={document.id}
+                  className="flex items-center justify-between gap-2 py-2 text-sm"
+                >
                   <div className="min-w-0">
                     <p className="truncate font-medium text-slate-900">{document.filename}</p>
                     <p className="text-xs text-slate-500">
@@ -595,9 +613,7 @@ export default function VerificationPage() {
                     type="file"
                     multiple
                     accept="application/pdf,image/jpeg,image/png,image/webp,image/avif"
-                    onChange={(event) =>
-                      setProjectFiles(Array.from(event.target.files ?? []))
-                    }
+                    onChange={(event) => setProjectFiles(Array.from(event.target.files ?? []))}
                     className={`${inputClass} mt-1`}
                   />
                 </label>
@@ -611,7 +627,10 @@ export default function VerificationPage() {
 
             <ul className="mt-3 divide-y divide-slate-100">
               {projects.map((project) => (
-                <li key={project.id} className="flex items-center justify-between gap-2 py-2 text-sm">
+                <li
+                  key={project.id}
+                  className="flex items-center justify-between gap-2 py-2 text-sm"
+                >
                   <div className="min-w-0">
                     <p className="truncate font-medium text-slate-900">{project.name}</p>
                     {project.description && (
@@ -645,7 +664,7 @@ export default function VerificationPage() {
                 type="button"
                 onClick={() => void submit()}
                 disabled={busy || !canSend}
-                className="rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+                className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
               >
                 {busy ? 'Enviando…' : 'Enviar solicitud a FIVERTEN'}
               </button>

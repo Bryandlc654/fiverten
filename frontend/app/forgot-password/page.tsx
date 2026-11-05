@@ -37,9 +37,9 @@ export default function ForgotPasswordPage() {
             <div
               className="error"
               style={{
-                background: 'rgba(34,197,94,0.12)',
-                borderColor: 'rgba(34,197,94,0.4)',
-                color: '#86efac',
+                background: 'rgba(23,115,71,0.08)',
+                borderColor: 'rgba(23,115,71,0.3)',
+                color: '#177347',
               }}
             >
               Si el correo existe, recibirás un enlace en unos minutos.

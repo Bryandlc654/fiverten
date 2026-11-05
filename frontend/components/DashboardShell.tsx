@@ -111,13 +111,23 @@ const ADMIN_NAV: NavItem[] = [
   },
   { key: 'adminSupport', label: 'Soporte', icon: 'support_agent', href: '/admin/soporte' },
   { key: 'profileEdit', label: 'Mi cuenta', icon: 'account_circle', href: '/app/perfil/cuenta' },
-  { key: 'security', label: 'Seguridad', icon: 'shield_lock', href: '/app/configuracion/seguridad' },
+  {
+    key: 'security',
+    label: 'Seguridad',
+    icon: 'shield_lock',
+    href: '/app/configuracion/seguridad',
+  },
 ];
 
 const SUPPORT_NAV: NavItem[] = [
   { key: 'adminSupport', label: 'Soporte', icon: 'support_agent', href: '/admin/soporte' },
   { key: 'profileEdit', label: 'Mi cuenta', icon: 'account_circle', href: '/app/perfil/cuenta' },
-  { key: 'security', label: 'Seguridad', icon: 'shield_lock', href: '/app/configuracion/seguridad' },
+  {
+    key: 'security',
+    label: 'Seguridad',
+    icon: 'shield_lock',
+    href: '/app/configuracion/seguridad',
+  },
 ];
 
 const VERIFIER_NAV: NavItem[] = [
@@ -233,7 +243,7 @@ export default function DashboardShell({
       )}
 
       <aside
-        className={`fixed bottom-0 left-0 top-0 z-40 flex w-64 shrink-0 flex-col bg-[#0b101b] text-slate-300 transition-transform duration-300 lg:sticky lg:inset-auto lg:top-0 lg:h-screen lg:translate-x-0 ${
+        className={`fixed bottom-0 left-0 top-0 z-40 flex w-64 shrink-0 flex-col bg-[#10161C] text-slate-300 transition-transform duration-300 lg:sticky lg:inset-auto lg:top-0 lg:h-screen lg:translate-x-0 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -257,7 +267,7 @@ export default function DashboardShell({
 
         <div className="mx-4 shrink-0 rounded-xl border border-white/10 bg-white/5 p-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#2563eb] text-sm font-bold text-white">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white">
               {initials}
             </span>
             <div className="min-w-0">
@@ -285,7 +295,7 @@ export default function DashboardShell({
               }}
               className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                 active === item.key
-                  ? 'bg-[#2563eb] text-white'
+                  ? 'bg-blue-600 text-white'
                   : 'text-slate-400 hover:bg-white/5 hover:text-white'
               }`}
             >

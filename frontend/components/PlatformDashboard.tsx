@@ -57,8 +57,8 @@ export default function PlatformDashboard() {
           </div>
         )}
 
-        <section className="relative overflow-hidden rounded-2xl bg-[#0b101b] px-6 py-7 text-white">
-          <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-[#2563eb]/30 blur-3xl" />
+        <section className="relative overflow-hidden rounded-2xl bg-[#10161C] px-6 py-7 text-white">
+          <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-blue-600/30 blur-3xl" />
           <div className="relative flex flex-wrap items-center justify-between gap-6">
             <div className="max-w-lg">
               <p className="text-sm text-slate-400">Hola{adminName ? `, ${adminName}` : ''} 👋</p>
@@ -71,7 +71,7 @@ export default function PlatformDashboard() {
               <button
                 type="button"
                 onClick={() => router.push('/admin/organizations/new')}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600"
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600"
               >
                 <span className="material-symbols-outlined text-[18px]">add_business</span>
                 Nueva empresa
@@ -94,7 +94,7 @@ export default function PlatformDashboard() {
             value={stats?.organizations.total}
             hint={`${stats?.organizations.active ?? 0} activas`}
             icon="storefront"
-            tone="bg-blue-50 text-blue-600"
+            tone="bg-blue-50 text-blue-700"
           />
           <StatCard
             label="Verificadas"
@@ -108,7 +108,7 @@ export default function PlatformDashboard() {
             value={stats?.users.total}
             hint={`${stats?.users.active ?? 0} activos`}
             icon="group"
-            tone="bg-violet-50 text-violet-600"
+            tone="bg-slate-100 text-slate-600"
           />
           <StatCard
             label="Administradores"
@@ -130,7 +130,7 @@ export default function PlatformDashboard() {
             <button
               type="button"
               onClick={() => router.push('/admin?tab=organizations')}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:text-blue-700"
             >
               Ver todas
               <span className="material-symbols-outlined text-[16px]">chevron_right</span>

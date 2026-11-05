@@ -101,7 +101,7 @@ export default function RegisterPage() {
         <div className={`w-full max-w-sm ${feedback === 'error' && !closing ? 'auth-shake' : ''}`}>
           <div className="flex justify-center mb-space-lg">
             <Image
-              src="/logo-fiverten.png"
+              src="/logo-fiverten-dark.png"
               alt="FIVERTEN"
               width={2000}
               height={347}
@@ -122,7 +122,7 @@ export default function RegisterPage() {
             {notice && (
               <div
                 data-testid="auth-notice"
-                className="rounded-lg border border-primary/30 bg-primary-container/10 px-space-md py-space-sm font-body-sm text-body-sm text-on-primary-container"
+                className="rounded-lg border border-primary/30 bg-primary-container/10 px-space-md py-space-sm font-body-sm text-body-sm text-blue-700"
               >
                 {notice}
               </div>

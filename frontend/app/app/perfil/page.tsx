@@ -1,11 +1,17 @@
-﻿'use client';
+'use client';
 
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ChangeEvent } from 'react';
 import DashboardShell from '../../../components/DashboardShell';
 import LocationsPanel from '../../../components/organizations/LocationsPanel';
-import { ApiError, api, type OrganizationDetail, type PublicCatalogs, resolveAssetUrl } from '../../../lib/api';
+import {
+  ApiError,
+  api,
+  type OrganizationDetail,
+  type PublicCatalogs,
+  resolveAssetUrl,
+} from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
 import { roleAtLeast } from '../../../lib/roles';
 
@@ -267,7 +273,7 @@ export default function CompanyPage() {
               <button
                 type="button"
                 onClick={() => router.push('/admin?tab=organizations')}
-                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600"
+                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600"
               >
                 <span className="material-symbols-outlined text-[18px]">storefront</span>
                 Ir a Empresas
@@ -283,7 +289,7 @@ export default function CompanyPage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-base font-bold text-slate-900">Datos de la empresa</h2>
-                <p className="text-xs text-slate-500">
+                <p className="font-mono text-xs text-slate-500">
                   {org?.publicId} · /{org?.slug}
                 </p>
               </div>
@@ -319,7 +325,7 @@ export default function CompanyPage() {
                         className="object-contain p-1"
                       />
                     ) : (
-                      <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#2563eb] to-[#1e3a8a] text-2xl font-bold text-white">
+                      <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#356CFF] to-[#2343A6] text-2xl font-bold text-white">
                         {form.tradeName.trim()[0]?.toUpperCase() ?? '?'}
                       </span>
                     )}
@@ -362,8 +368,8 @@ export default function CompanyPage() {
                     )}
                   </div>
                   <p className="w-full text-xs text-slate-400">
-                    Recomendado cuadrado (por ejemplo 512×512). PNG, JPG, WEBP, GIF o AVIF, hasta
-                    5 MB. Se guarda al pulsar &quot;Guardar cambios&quot;.
+                    Recomendado cuadrado (por ejemplo 512×512). PNG, JPG, WEBP, GIF o AVIF, hasta 5
+                    MB. Se guarda al pulsar &quot;Guardar cambios&quot;.
                   </p>
                 </div>
               </div>
@@ -638,7 +644,7 @@ export default function CompanyPage() {
                   <button
                     type="submit"
                     disabled={saving}
-                    className="inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
                   >
                     <span className="material-symbols-outlined text-[18px]">save</span>
                     {saving ? 'Guardando…' : 'Guardar cambios'}
@@ -652,9 +658,7 @@ export default function CompanyPage() {
             <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
               <span
                 className={`rounded-full px-2.5 py-1 font-semibold ${
-                  org?.isPublic
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : 'bg-slate-100 text-slate-600'
+                  org?.isPublic ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
                 }`}
               >
                 {org?.isPublic ? 'Perfil público' : 'Perfil privado'}

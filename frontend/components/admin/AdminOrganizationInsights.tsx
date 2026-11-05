@@ -2,12 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import {
-  ApiError,
-  api,
-  type AdminReview,
-  type OrganizationStats,
-} from '../../lib/api';
+import { ApiError, api, type AdminReview, type OrganizationStats } from '../../lib/api';
 import { Stars } from '../reviews/Stars';
 import { Alert, Badge } from '../ui';
 
@@ -48,10 +43,7 @@ export default function AdminOrganizationInsights({ organizationId }: { organiza
             Últimas reseñas y métricas principales de la empresa.
           </p>
         </div>
-        <Link
-          href="/admin/reviews"
-          className="text-xs font-semibold text-blue-600 hover:underline"
-        >
+        <Link href="/admin/reviews" className="text-xs font-semibold text-blue-700 hover:underline">
           Ver todas en moderación
         </Link>
       </div>
@@ -65,7 +57,10 @@ export default function AdminOrganizationInsights({ organizationId }: { organiza
       <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Metric label="Puntuación" value={stats?.rating.average ?? '—'} />
         <Metric label="Reseñas" value={stats?.rating.total ?? '—'} />
-        <Metric label="Tasa de respuesta" value={rate === null || rate === undefined ? '—' : `${Math.round(rate * 100)}%`} />
+        <Metric
+          label="Tasa de respuesta"
+          value={rate === null || rate === undefined ? '—' : `${Math.round(rate * 100)}%`}
+        />
         <Metric label="Reseñas 30 días" value={stats?.periods.last30 ?? '—'} />
       </div>
 
@@ -80,8 +75,7 @@ export default function AdminOrganizationInsights({ organizationId }: { organiza
                 <Stars rating={review.rating} size={14} />
                 <Badge label={review.status} tone="bg-slate-100 text-slate-600" />
                 <span className="text-xs text-slate-500">
-                  {review.reviewerName} ·{' '}
-                  {new Date(review.createdAt).toLocaleDateString('es-ES')}
+                  {review.reviewerName} · {new Date(review.createdAt).toLocaleDateString('es-ES')}
                 </span>
               </div>
               <p className="mt-1 line-clamp-2 text-sm text-slate-700">{review.body}</p>

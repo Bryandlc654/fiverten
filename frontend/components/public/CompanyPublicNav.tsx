@@ -8,13 +8,7 @@ const TABS = [
   { key: 'certificaciones', label: 'Certificaciones', path: '/certificaciones' },
 ];
 
-export default function CompanyPublicNav({
-  slug,
-  active,
-}: {
-  slug: string;
-  active: string;
-}) {
+export default function CompanyPublicNav({ slug, active }: { slug: string; active: string }) {
   return (
     <nav className="flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 text-xs font-semibold">
       {TABS.map((tab) => (
@@ -23,7 +17,7 @@ export default function CompanyPublicNav({
           href={`/empresa/${slug}${tab.path}`}
           className={`shrink-0 rounded-lg px-3 py-2 transition ${
             active === tab.key
-              ? 'bg-[#0b101b] text-white'
+              ? 'bg-[#10161C] text-white'
               : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
           }`}
         >

@@ -97,12 +97,10 @@ export default function MethodologyPage() {
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-aqua/25 bg-aqua/10 px-4 py-2 text-xs font-semibold tracking-wide text-aqua">
               METODOLOGÍA PÚBLICA
             </div>
-            <h1 className="font-display max-w-3xl text-5xl font-extrabold leading-[1.04] tracking-[-.055em] sm:text-6xl">
+            <h1 className="font-display max-w-3xl text-5xl font-bold leading-[1.04] tracking-[-.055em] sm:text-6xl">
               Criterios y políticas
               <br />
-              <span className="bg-gradient-to-r from-aqua via-mint to-white bg-clip-text text-transparent">
-                de verificación.
-              </span>
+              <span className="text-aqua">de verificación.</span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-8 text-slate-300 sm:text-lg">
               Estas reglas definen cómo FIVERTEN revisa y mantiene la verificación de empresas. Son
@@ -112,7 +110,7 @@ export default function MethodologyPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/verificar-empresa"
-                className="home-shine inline-flex items-center justify-center gap-2 rounded-full bg-aqua px-6 py-3 text-sm font-bold text-ink transition hover:-translate-y-0.5 hover:bg-mint"
+                className="home-shine inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-blue-700"
               >
                 Solicitar verificación <span>→</span>
               </Link>
@@ -154,10 +152,10 @@ export default function MethodologyPage() {
         <section className="bg-white py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="max-w-3xl">
-              <span className="text-xs font-bold uppercase tracking-[.2em] text-teal-700">
+              <span className="text-xs font-bold uppercase tracking-[.2em] text-slate-500">
                 Qué verificamos
               </span>
-              <h2 className="font-display mt-3 text-3xl font-extrabold tracking-[-.045em] text-slate-900 sm:text-4xl">
+              <h2 className="font-display mt-3 text-3xl font-bold tracking-[-.045em] text-slate-900 sm:text-4xl">
                 Cuatro dimensiones, una decisión.
               </h2>
               <p className="mt-4 text-sm leading-7 text-slate-500">
@@ -183,7 +181,7 @@ export default function MethodologyPage() {
           </div>
         </section>
 
-        <section className="bg-[#f4f7fa] py-20 lg:py-24">
+        <section className="bg-[#F4F3EF] py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="grid gap-6 lg:grid-cols-2">
               <article className="rounded-3xl border border-emerald-200 bg-white p-7 shadow-sm">
@@ -195,7 +193,7 @@ export default function MethodologyPage() {
                     <p className="text-xs font-bold uppercase tracking-[.18em] text-emerald-700">
                       Decisión favorable
                     </p>
-                    <h2 className="font-display text-2xl font-extrabold text-slate-900">
+                    <h2 className="font-display text-2xl font-bold text-slate-900">
                       Criterios de aprobación
                     </h2>
                   </div>
@@ -219,7 +217,7 @@ export default function MethodologyPage() {
                     <p className="text-xs font-bold uppercase tracking-[.18em] text-rose-700">
                       Decisión desfavorable
                     </p>
-                    <h2 className="font-display text-2xl font-extrabold text-slate-900">
+                    <h2 className="font-display text-2xl font-bold text-slate-900">
                       Motivos de rechazo
                     </h2>
                   </div>
@@ -250,10 +248,10 @@ export default function MethodologyPage() {
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="grid gap-10 lg:grid-cols-[.85fr_1.15fr] lg:items-center">
               <div>
-                <span className="text-xs font-bold uppercase tracking-[.2em] text-teal-700">
+                <span className="text-xs font-bold uppercase tracking-[.2em] text-slate-500">
                   Tiempos y validez
                 </span>
-                <h2 className="font-display mt-3 text-3xl font-extrabold tracking-[-.045em] text-slate-900 sm:text-4xl">
+                <h2 className="font-display mt-3 text-3xl font-bold tracking-[-.045em] text-slate-900 sm:text-4xl">
                   La validez no es permanente.
                 </h2>
                 <p className="mt-4 text-sm leading-7 text-slate-500">
@@ -271,13 +269,13 @@ export default function MethodologyPage() {
           </div>
         </section>
 
-        <section id="opiniones" className="bg-[#f4f7fa] py-20 lg:py-24">
+        <section id="opiniones" className="bg-[#F4F3EF] py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="max-w-3xl">
-              <span className="text-xs font-bold uppercase tracking-[.2em] text-teal-700">
+              <span className="text-xs font-bold uppercase tracking-[.2em] text-slate-500">
                 Política de opiniones
               </span>
-              <h2 className="font-display mt-3 text-3xl font-extrabold tracking-[-.045em] text-slate-900 sm:text-4xl">
+              <h2 className="font-display mt-3 text-3xl font-bold tracking-[-.045em] text-slate-900 sm:text-4xl">
                 Las opiniones pertenecen a los clientes.
               </h2>
               <p className="mt-4 text-sm leading-7 text-slate-500">
@@ -300,8 +298,8 @@ export default function MethodologyPage() {
 
             <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50/70 p-5 text-sm leading-7 text-slate-600">
               Las reseñas de baja valoración pueden pasar por un proceso de evidencias y resolución
-              antes de publicarse. La media solo se calcula sobre opiniones que cumplen los criterios
-              publicados y muestra el tamaño de muestra.
+              antes de publicarse. La media solo se calcula sobre opiniones que cumplen los
+              criterios publicados y muestra el tamaño de muestra.
             </div>
           </div>
         </section>
@@ -313,7 +311,7 @@ export default function MethodologyPage() {
             <span className="inline-flex items-center gap-2 rounded-full border border-aqua/25 bg-aqua/10 px-4 py-2 text-xs font-bold tracking-widest text-aqua">
               CRITERIOS PÚBLICOS
             </span>
-            <h2 className="font-display mt-6 text-3xl font-extrabold tracking-[-.05em] sm:text-5xl">
+            <h2 className="font-display mt-6 text-3xl font-bold tracking-[-.05em] sm:text-5xl">
               Si lo publicamos,
               <br />
               podemos explicar por qué.
@@ -324,7 +322,7 @@ export default function MethodologyPage() {
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <Link
                 href="/trust-center"
-                className="rounded-full bg-aqua px-6 py-3 text-sm font-bold text-ink transition hover:-translate-y-0.5 hover:bg-mint"
+                className="rounded-full bg-blue-600 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-blue-700"
               >
                 Ver Trust Center
               </Link>
@@ -348,22 +346,42 @@ function CheckIcon({ name }: { name: string }) {
   if (name === 'identity') {
     return (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6l8-3Z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
-        <path d="m8.5 12 2.2 2.2 4.8-4.8" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        <path
+          d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6l8-3Z"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
+        <path
+          d="m8.5 12 2.2 2.2 4.8-4.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
       </svg>
     );
   }
   if (name === 'document') {
     return (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2Z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        <path
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2Z"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
       </svg>
     );
   }
   if (name === 'activity') {
     return (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path d="M3 12h4l2 5 4-10 2 5h6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        <path
+          d="M3 12h4l2 5 4-10 2 5h6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
       </svg>
     );
   }

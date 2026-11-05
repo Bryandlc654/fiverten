@@ -57,9 +57,7 @@ export default function PublicCertificationsPage() {
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
             Certificaciones y credenciales
           </p>
-          <h1 className="mt-1 text-2xl font-extrabold text-slate-900">
-            {data.organization.tradeName}
-          </h1>
+          <h1 className="mt-1 text-2xl font-bold text-slate-900">{data.organization.tradeName}</h1>
         </header>
         <CompanyPublicNav slug={slug} active="certificaciones" />
 
@@ -123,7 +121,7 @@ export default function PublicCertificationsPage() {
                       href={certification.credentialUrl}
                       target="_blank"
                       rel="noopener noreferrer nofollow"
-                      className="mt-1 inline-flex text-[11px] font-semibold text-blue-600 hover:underline"
+                      className="mt-1 inline-flex text-[11px] font-semibold text-blue-700 hover:underline"
                     >
                       Comprobar credencial
                     </a>

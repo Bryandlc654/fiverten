@@ -16,7 +16,7 @@ import { useAuth } from '../../../lib/auth-context';
 const PAGE_SIZE = 20;
 
 const STATUS: Record<VerificationInquiryStatus, { label: string; tone: string }> = {
-  new: { label: 'Nueva', tone: 'bg-blue-50 text-blue-600' },
+  new: { label: 'Nueva', tone: 'bg-blue-50 text-blue-700' },
   contacted: { label: 'Contactada', tone: 'bg-amber-50 text-amber-700' },
   closed: { label: 'Cerrada', tone: 'bg-slate-100 text-slate-500' },
 };
@@ -139,7 +139,9 @@ export default function AdminInquiriesPage() {
             {loading ? (
               <p className="px-4 py-4 text-sm text-slate-500">Cargando solicitudes…</p>
             ) : items.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-slate-500">No hay solicitudes con estos filtros.</p>
+              <p className="px-4 py-6 text-sm text-slate-500">
+                No hay solicitudes con estos filtros.
+              </p>
             ) : (
               <ul className="divide-y divide-slate-100">
                 {items.map((item) => (

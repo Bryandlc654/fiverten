@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import Image from 'next/image';
 import Link from 'next/link';
@@ -91,9 +91,7 @@ export default function ProfilePage() {
       await reloadSession();
       setNotice('Foto de perfil actualizada.');
     } catch (err) {
-      setError(
-        err instanceof ApiError ? err.message : 'No se pudo subir la foto de perfil',
-      );
+      setError(err instanceof ApiError ? err.message : 'No se pudo subir la foto de perfil');
     } finally {
       setUploading(false);
       event.target.value = '';
@@ -149,7 +147,7 @@ export default function ProfilePage() {
                       className="object-cover"
                     />
                   ) : (
-                    <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#2563eb] to-[#1e3a8a] text-2xl font-bold text-white">
+                    <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#356CFF] to-[#2343A6] text-2xl font-bold text-white">
                       {initials}
                     </span>
                   )}
@@ -170,10 +168,10 @@ export default function ProfilePage() {
                       }
                     />
                     {me.user.isSupportAgent && (
-                      <Badge label="Soporte" tone="bg-violet-50 text-violet-600" />
+                      <Badge label="Soporte" tone="bg-slate-100 text-slate-600" />
                     )}
                     {me.user.isSuperAdmin && (
-                      <Badge label="Administrador general" tone="bg-blue-50 text-blue-600" />
+                      <Badge label="Administrador general" tone="bg-blue-50 text-blue-700" />
                     )}
                   </div>
                 </div>
@@ -257,14 +255,14 @@ export default function ProfilePage() {
                 <div className="flex flex-wrap items-center justify-between gap-3 sm:col-span-2">
                   <Link
                     href="/app/configuracion/seguridad"
-                    className="text-xs font-semibold text-blue-600 hover:underline"
+                    className="text-xs font-semibold text-blue-700 hover:underline"
                   >
                     Cambiar contraseña o activar 2FA
                   </Link>
                   <button
                     type="submit"
                     disabled={saving || uploading}
-                    className="rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
+                    className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
                   >
                     {saving ? 'Guardando…' : 'Guardar cambios'}
                   </button>

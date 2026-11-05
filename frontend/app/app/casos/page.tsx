@@ -75,7 +75,7 @@ function CompanyCasesContent() {
                       onClick={() => select(item.id)}
                       className={`w-full rounded-xl border bg-white p-4 text-left transition hover:border-blue-300 ${
                         selectedId === item.id
-                          ? 'border-[#2563eb] ring-1 ring-[#2563eb]'
+                          ? 'border-[#356CFF] ring-1 ring-[#356CFF]'
                           : 'border-slate-200'
                       }`}
                     >

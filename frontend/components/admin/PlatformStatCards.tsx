@@ -9,7 +9,7 @@ export default function PlatformStatCards({ stats }: { stats: PlatformStats | nu
         value={stats?.organizations.total}
         hint={`${stats?.organizations.active ?? 0} activas`}
         icon="storefront"
-        tone="bg-blue-50 text-blue-600"
+        tone="bg-blue-50 text-blue-700"
       />
       <StatCard
         label="Verificadas"
@@ -23,7 +23,7 @@ export default function PlatformStatCards({ stats }: { stats: PlatformStats | nu
         value={stats?.users.total}
         hint={`${stats?.users.active ?? 0} activos`}
         icon="group"
-        tone="bg-violet-50 text-violet-600"
+        tone="bg-slate-100 text-slate-600"
       />
       <StatCard
         label="Administradores"

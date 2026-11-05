@@ -62,7 +62,7 @@ export default function TasksCard({
       </div>
       <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
         <div
-          className="h-full rounded-full bg-[#2563eb] transition-all"
+          className="h-full rounded-full bg-blue-600 transition-all"
           style={{ width: `${(completed / tasks.length) * 100}%` }}
         />
       </div>

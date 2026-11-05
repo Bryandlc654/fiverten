@@ -24,7 +24,7 @@ const COMPANY_LINKS = [
 
 export default function PublicFooter() {
   return (
-    <footer className="bg-[#06101e] py-12 text-white">
+    <footer className="bg-[#10161C] py-12 text-white">
       <div className="mx-auto max-w-7xl px-5 lg:px-8">
         <div className="grid gap-10 border-b border-white/10 pb-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>

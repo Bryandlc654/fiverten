@@ -126,14 +126,14 @@ export default function ReviewsPage() {
             value={summary?.published}
             hint="Visibles en tu perfil"
             icon="reviews"
-            tone="bg-blue-50 text-blue-600"
+            tone="bg-blue-50 text-blue-700"
           />
           <StatCard
             label="Sin responder"
             value={summary?.unanswered}
             hint="Publicadas"
             icon="chat_bubble"
-            tone="bg-violet-50 text-violet-600"
+            tone="bg-slate-100 text-slate-600"
           />
           <StatCard
             label="Negativas"

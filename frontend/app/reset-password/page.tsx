@@ -60,9 +60,9 @@ export default function ResetPasswordPage() {
             <div
               className="error"
               style={{
-                background: 'rgba(34,197,94,0.12)',
-                borderColor: 'rgba(34,197,94,0.4)',
-                color: '#86efac',
+                background: 'rgba(23,115,71,0.08)',
+                borderColor: 'rgba(23,115,71,0.3)',
+                color: '#177347',
               }}
             >
               Contraseña actualizada. Ya puedes iniciar sesión.

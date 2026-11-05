@@ -74,10 +74,7 @@ export default function LoginPage() {
       const result = await verifyMfa(mfaToken, mfaCode);
       setMfaToken(null);
       setFeedback('success');
-      window.setTimeout(
-        () => router.replace(destination(result.user?.isVerifier === true)),
-        1100,
-      );
+      window.setTimeout(() => router.replace(destination(result.user?.isVerifier === true)), 1100);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo verificar el código');
       setSubmitting(false);
@@ -95,7 +92,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           <div className="flex justify-center mb-space-lg">
             <Image
-              src="/logo-fiverten.png"
+              src="/logo-fiverten-dark.png"
               alt="FIVERTEN"
               width={2000}
               height={347}
@@ -180,7 +177,7 @@ export default function LoginPage() {
         <div className={`w-full max-w-sm ${feedback === 'error' && !closing ? 'auth-shake' : ''}`}>
           <div className="flex justify-center mb-space-lg">
             <Image
-              src="/logo-fiverten.png"
+              src="/logo-fiverten-dark.png"
               alt="FIVERTEN"
               width={2000}
               height={347}
@@ -201,7 +198,7 @@ export default function LoginPage() {
             {notice && (
               <div
                 data-testid="auth-notice"
-                className="rounded-lg border border-primary/30 bg-primary-container/10 px-space-md py-space-sm font-body-sm text-body-sm text-on-primary-container"
+                className="rounded-lg border border-primary/30 bg-primary-container/10 px-space-md py-space-sm font-body-sm text-body-sm text-blue-700"
               >
                 {notice}
               </div>

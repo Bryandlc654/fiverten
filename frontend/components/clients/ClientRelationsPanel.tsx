@@ -177,8 +177,8 @@ export default function ClientRelationsPanel() {
             onChange={(event) => setConsent(event.target.checked)}
             className="mt-0.5 h-4 w-4 rounded border-slate-300"
           />
-          El cliente ha dado su consentimiento para gestionar esta relación y recibir solicitudes
-          de reseña.
+          El cliente ha dado su consentimiento para gestionar esta relación y recibir solicitudes de
+          reseña.
         </label>
         <button
           type="submit"

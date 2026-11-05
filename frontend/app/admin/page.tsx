@@ -205,7 +205,7 @@ function AdminContent() {
                 <button
                   type="button"
                   onClick={() => router.push('/admin/organizations/new')}
-                  className="inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-blue-600"
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-blue-600"
                 >
                   <span className="material-symbols-outlined text-[18px]">add_business</span>
                   Nueva empresa

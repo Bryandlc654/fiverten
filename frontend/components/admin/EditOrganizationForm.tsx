@@ -180,7 +180,7 @@ export default function EditOrganizationForm({
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
           >
             <span className="material-symbols-outlined text-[18px]">save</span>
             {saving ? 'Guardando…' : 'Guardar cambios'}

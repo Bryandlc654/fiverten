@@ -129,7 +129,7 @@ export default function TenantReviewItem({
             <button
               type="submit"
               disabled={busy || draft.trim().length < 2}
-              className="rounded-lg bg-[#2563eb] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
+              className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
             >
               {busy ? 'Publicando…' : 'Publicar respuesta'}
             </button>

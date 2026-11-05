@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import DashboardShell from '../../../components/DashboardShell';
@@ -19,7 +19,13 @@ import {
 import { useAuth } from '../../../lib/auth-context';
 
 const PAGE_SIZE = 20;
-const SUB_STATUSES: SubscriptionStatus[] = ['trialing', 'active', 'past_due', 'cancelled', 'expired'];
+const SUB_STATUSES: SubscriptionStatus[] = [
+  'trialing',
+  'active',
+  'past_due',
+  'cancelled',
+  'expired',
+];
 const PAY_STATUSES: PaymentStatus[] = ['paid', 'pending', 'failed', 'refunded'];
 const METHOD_LABELS: Record<string, string> = {
   manual: 'Manual',
@@ -155,9 +161,17 @@ export default function AdminBillingPage() {
         {error && <Alert tone="error">{error}</Alert>}
 
         <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <Metric label="MRR" value={stats ? `${stats.mrr} €` : '—'} hint="Ingreso mensual recurrente" />
+          <Metric
+            label="MRR"
+            value={stats ? `${stats.mrr} €` : '—'}
+            hint="Ingreso mensual recurrente"
+          />
           <Metric label="Ingresos 30 días" value={stats ? `${stats.revenue.last30} €` : '—'} />
-          <Metric label="Activas" value={stats?.subscriptions.active ?? '—'} hint="Suscripciones activas" />
+          <Metric
+            label="Activas"
+            value={stats?.subscriptions.active ?? '—'}
+            hint="Suscripciones activas"
+          />
           <Metric label="En prueba" value={stats?.subscriptions.trialing ?? '—'} />
         </section>
 
@@ -221,7 +235,7 @@ export default function AdminBillingPage() {
                 <button
                   type="button"
                   onClick={() => setEditingPlan('new')}
-                  className="rounded-lg bg-[#2563eb] px-3.5 py-2 text-sm font-semibold text-white hover:bg-blue-600"
+                  className="rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-blue-600"
                 >
                   Nuevo plan
                 </button>
@@ -230,7 +244,7 @@ export default function AdminBillingPage() {
                 <button
                   type="button"
                   onClick={() => setPaymentOpen(true)}
-                  className="rounded-lg bg-[#2563eb] px-3.5 py-2 text-sm font-semibold text-white hover:bg-blue-600"
+                  className="rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-blue-600"
                 >
                   Registrar pago
                 </button>
@@ -278,7 +292,10 @@ export default function AdminBillingPage() {
           {tab === 'plans' && (
             <div className="divide-y divide-slate-100">
               {plans.map((plan) => (
-                <div key={plan.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+                <div
+                  key={plan.id}
+                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-3"
+                >
                   <div>
                     <p className="text-sm font-semibold text-slate-900">
                       {plan.name}{' '}
@@ -293,7 +310,9 @@ export default function AdminBillingPage() {
                   <div className="flex items-center gap-2">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        plan.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'
+                        plan.isActive
+                          ? 'bg-emerald-50 text-emerald-600'
+                          : 'bg-slate-100 text-slate-500'
                       }`}
                     >
                       {plan.isActive ? 'Activo' : 'Inactivo'}
@@ -319,7 +338,10 @@ export default function AdminBillingPage() {
                 <p className="px-5 py-4 text-sm text-slate-500">No hay suscripciones.</p>
               ) : (
                 subscriptions.map((sub) => (
-                  <div key={sub.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+                  <div
+                    key={sub.id}
+                    className="flex flex-wrap items-center justify-between gap-3 px-5 py-3"
+                  >
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-slate-900">
                         {sub.organization.tradeName}
@@ -333,7 +355,9 @@ export default function AdminBillingPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <select
                         value={sub.plan.id}
-                        onChange={(event) => void updateSubscription(sub, { planId: event.target.value })}
+                        onChange={(event) =>
+                          void updateSubscription(sub, { planId: event.target.value })
+                        }
                         disabled={busy}
                         aria-label="Plan"
                         className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
@@ -390,7 +414,10 @@ export default function AdminBillingPage() {
                 <p className="px-5 py-4 text-sm text-slate-500">No hay pagos registrados.</p>
               ) : (
                 payments.map((payment) => (
-                  <div key={payment.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+                  <div
+                    key={payment.id}
+                    className="flex flex-wrap items-center justify-between gap-3 px-5 py-3"
+                  >
                     <div>
                       <p className="text-sm font-semibold text-slate-900">
                         {payment.organization?.tradeName ?? 'Empresa'} · {payment.amount}{' '}
@@ -414,7 +441,9 @@ export default function AdminBillingPage() {
                             await refresh();
                           } catch (err) {
                             setError(
-                              err instanceof ApiError ? err.message : 'No se pudo actualizar el pago',
+                              err instanceof ApiError
+                                ? err.message
+                                : 'No se pudo actualizar el pago',
                             );
                           } finally {
                             setBusy(false);
@@ -637,7 +666,7 @@ function PlanModal({
           <button
             type="submit"
             disabled={busy}
-            className="rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
           >
             Guardar
           </button>
@@ -727,7 +756,11 @@ function PaymentModal({
             </select>
           </Field>
           <Field label="Método" className="block">
-            <select value={method} onChange={(event) => setMethod(event.target.value)} className={inputClass}>
+            <select
+              value={method}
+              onChange={(event) => setMethod(event.target.value)}
+              className={inputClass}
+            >
               {Object.entries(METHOD_LABELS).map(([key, label]) => (
                 <option key={key} value={key}>
                   {label}
@@ -754,7 +787,7 @@ function PaymentModal({
           <button
             type="submit"
             disabled={busy || !organizationId}
-            className="rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
           >
             Registrar
           </button>

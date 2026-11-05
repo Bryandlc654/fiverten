@@ -110,7 +110,7 @@ const STATES = [
   {
     name: 'NOT VERIFIED',
     color: '#64748b',
-    background: '#f8fafc',
+    background: '#F4F3EF',
     border: '#e2e8f0',
     description:
       'Sin revisión suficiente. Es un estado neutral: no significa automáticamente que la empresa sea fraudulenta o de mala calidad.',
@@ -139,17 +139,15 @@ export default function TrustCenterPage() {
             <div>
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-aqua/25 bg-aqua/10 px-4 py-2 text-xs font-semibold tracking-wide text-aqua">
                 <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-aqua opacity-70" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-aqua" />
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-600 opacity-70" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-600" />
                 </span>
                 TRANSPARENCIA QUE SE PUEDE COMPROBAR
               </div>
-              <h1 className="font-display max-w-3xl text-5xl font-extrabold leading-[1.04] tracking-[-.055em] sm:text-6xl">
+              <h1 className="font-display max-w-3xl text-5xl font-bold leading-[1.04] tracking-[-.055em] sm:text-6xl">
                 Trust Center
                 <br />
-                <span className="bg-gradient-to-r from-aqua via-mint to-white bg-clip-text text-transparent">
-                  y metodología.
-                </span>
+                <span className="text-aqua">y metodología.</span>
               </h1>
               <p className="mt-6 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
                 Qué verifica FIVERTEN, con qué fuentes, qué limitaciones existen y cómo se actualiza
@@ -158,7 +156,7 @@ export default function TrustCenterPage() {
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <a
                   href="#pilares"
-                  className="home-shine inline-flex items-center justify-center gap-2 rounded-full bg-aqua px-6 py-3 text-sm font-bold text-ink transition hover:-translate-y-0.5 hover:bg-mint"
+                  className="home-shine inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-blue-700"
                 >
                   Ver los cinco pilares <span>→</span>
                 </a>
@@ -207,10 +205,10 @@ export default function TrustCenterPage() {
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="grid gap-8 lg:grid-cols-[.8fr_1.2fr]">
               <div>
-                <span className="text-xs font-bold uppercase tracking-[.2em] text-teal-700">
+                <span className="text-xs font-bold uppercase tracking-[.2em] text-slate-500">
                   Para qué sirve
                 </span>
-                <h2 className="font-display mt-3 text-3xl font-extrabold tracking-[-.045em] text-slate-900 sm:text-4xl">
+                <h2 className="font-display mt-3 text-3xl font-bold tracking-[-.045em] text-slate-900 sm:text-4xl">
                   No es una página de marketing.
                 </h2>
                 <p className="mt-4 text-sm leading-7 text-slate-500">
@@ -245,13 +243,13 @@ export default function TrustCenterPage() {
           </div>
         </section>
 
-        <section id="pilares" className="bg-[#f4f7fa] py-20 lg:py-24">
+        <section id="pilares" className="bg-[#F4F3EF] py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="max-w-3xl">
-              <span className="text-xs font-bold uppercase tracking-[.2em] text-teal-700">
+              <span className="text-xs font-bold uppercase tracking-[.2em] text-slate-500">
                 Cinco pilares
               </span>
-              <h2 className="font-display mt-3 text-3xl font-extrabold tracking-[-.045em] text-slate-900 sm:text-4xl">
+              <h2 className="font-display mt-3 text-3xl font-bold tracking-[-.045em] text-slate-900 sm:text-4xl">
                 Qué verificamos y con qué límites.
               </h2>
               <p className="mt-4 text-sm leading-7 text-slate-500">
@@ -267,7 +265,7 @@ export default function TrustCenterPage() {
                   className="grid gap-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:grid-cols-[80px_1fr_1.2fr] lg:items-start"
                 >
                   <div className="flex items-center gap-3 lg:block">
-                    <span className="grid h-14 w-14 place-items-center rounded-2xl bg-ink font-display text-xl font-extrabold text-aqua shadow-lg">
+                    <span className="grid h-14 w-14 place-items-center rounded-2xl bg-ink font-display text-xl font-bold text-aqua shadow-lg">
                       {pillar.number}
                     </span>
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-400 lg:mt-3 lg:block">
@@ -277,7 +275,7 @@ export default function TrustCenterPage() {
                   <div>
                     <div className="flex items-center gap-3">
                       <PillarIcon name={pillar.icon} />
-                      <h3 className="font-display text-xl font-extrabold text-slate-900">
+                      <h3 className="font-display text-xl font-bold text-slate-900">
                         {pillar.title}
                       </h3>
                     </div>
@@ -300,10 +298,10 @@ export default function TrustCenterPage() {
         <section id="estados" className="bg-white py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="max-w-3xl">
-              <span className="text-xs font-bold uppercase tracking-[.2em] text-teal-700">
+              <span className="text-xs font-bold uppercase tracking-[.2em] text-slate-500">
                 Estados públicos
               </span>
-              <h2 className="font-display mt-3 text-3xl font-extrabold tracking-[-.045em] text-slate-900 sm:text-4xl">
+              <h2 className="font-display mt-3 text-3xl font-bold tracking-[-.045em] text-slate-900 sm:text-4xl">
                 Cada estado significa algo distinto.
               </h2>
               <p className="mt-4 text-sm leading-7 text-slate-500">
@@ -321,12 +319,15 @@ export default function TrustCenterPage() {
                 >
                   <div className="flex items-center justify-between">
                     <span
-                      className="rounded-full px-2.5 py-1 text-[10px] font-extrabold tracking-wider text-white"
+                      className="rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wider text-white"
                       style={{ background: state.color }}
                     >
                       {state.name}
                     </span>
-                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: state.color }} />
+                    <span
+                      className="h-2.5 w-2.5 rounded-full"
+                      style={{ background: state.color }}
+                    />
                   </div>
                   <p className="mt-4 text-xs leading-6 text-slate-600">{state.description}</p>
                 </article>
@@ -341,13 +342,13 @@ export default function TrustCenterPage() {
           </div>
         </section>
 
-        <section className="bg-[#f4f7fa] py-20 lg:py-24">
+        <section className="bg-[#F4F3EF] py-20 lg:py-24">
           <div className="mx-auto grid max-w-7xl gap-8 px-5 lg:grid-cols-2 lg:px-8">
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <span className="text-xs font-bold uppercase tracking-[.2em] text-teal-700">
+              <span className="text-xs font-bold uppercase tracking-[.2em] text-slate-500">
                 Fuentes y limitaciones
               </span>
-              <h2 className="font-display mt-3 text-2xl font-extrabold text-slate-900">
+              <h2 className="font-display mt-3 text-2xl font-bold text-slate-900">
                 Qué hay detrás de una verificación.
               </h2>
               <div className="mt-5 space-y-4 text-sm leading-7 text-slate-600">
@@ -363,32 +364,39 @@ export default function TrustCenterPage() {
                 </p>
                 <p>
                   <strong className="text-slate-900">Datos desactualizados.</strong> Si la evidencia
-                  deja de estar vigente, el estado pasa a EXPIRED o deja de mostrarse como verificado.
-                  No se conserva un sello activo por inercia.
+                  deja de estar vigente, el estado pasa a EXPIRED o deja de mostrarse como
+                  verificado. No se conserva un sello activo por inercia.
                 </p>
                 <p>
                   <strong className="text-slate-900">Correcciones.</strong> Cualquier conflicto se
-                  puede reportar. La moderación revisa el caso y conserva el historial de decisiones.
+                  puede reportar. La moderación revisa el caso y conserva el historial de
+                  decisiones.
                 </p>
               </div>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <span className="text-xs font-bold uppercase tracking-[.2em] text-teal-700">
+              <span className="text-xs font-bold uppercase tracking-[.2em] text-slate-500">
                 Actualización
               </span>
-              <h2 className="font-display mt-3 text-2xl font-extrabold text-slate-900">
+              <h2 className="font-display mt-3 text-2xl font-bold text-slate-900">
                 La confianza tiene fecha.
               </h2>
               <div className="mt-5 space-y-4">
                 {[
                   ['Revisión inicial', 'Identidad, documentación y primer proyecto o evidencia.'],
-                  ['Renovación', 'La empresa solicita la revisión dentro de la ventana de renovación.'],
+                  [
+                    'Renovación',
+                    'La empresa solicita la revisión dentro de la ventana de renovación.',
+                  ],
                   ['Cambios', 'Cada cambio de estado genera un evento con motivo y trazabilidad.'],
-                  ['Caducidad', 'Si la validez termina, el sello y el perfil reflejan el estado real.'],
+                  [
+                    'Caducidad',
+                    'Si la validez termina, el sello y el perfil reflejan el estado real.',
+                  ],
                 ].map(([title, text]) => (
                   <div key={title} className="flex gap-3 rounded-xl bg-slate-50 p-4">
-                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-aqua" />
+                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-600" />
                     <div>
                       <p className="text-sm font-bold text-slate-900">{title}</p>
                       <p className="mt-0.5 text-xs leading-6 text-slate-500">{text}</p>
@@ -405,7 +413,7 @@ export default function TrustCenterPage() {
             <span className="inline-flex items-center gap-2 rounded-full border border-aqua/25 bg-aqua/10 px-4 py-2 text-xs font-bold tracking-widest text-aqua">
               TRANSPARENCIA OPERATIVA
             </span>
-            <h2 className="font-display mt-6 text-3xl font-extrabold tracking-[-.05em] sm:text-5xl">
+            <h2 className="font-display mt-6 text-3xl font-bold tracking-[-.05em] sm:text-5xl">
               La confianza se demuestra
               <br />
               con evidencia y límites claros.
@@ -416,7 +424,7 @@ export default function TrustCenterPage() {
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <Link
                 href="/metodologia"
-                className="rounded-full bg-aqua px-6 py-3 text-sm font-bold text-ink transition hover:-translate-y-0.5 hover:bg-mint"
+                className="rounded-full bg-blue-600 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-blue-700"
               >
                 Ver metodología
               </Link>
@@ -454,9 +462,7 @@ function InfoBox({
   return (
     <div
       className={`rounded-2xl border p-5 ${
-        tone === 'positive'
-          ? 'border-emerald-200 bg-emerald-50/60'
-          : 'border-slate-200 bg-slate-50'
+        tone === 'positive' ? 'border-emerald-200 bg-emerald-50/60' : 'border-slate-200 bg-slate-50'
       }`}
     >
       <p className="text-sm font-bold text-slate-900">{title}</p>
@@ -466,40 +472,75 @@ function InfoBox({
 }
 
 function PillarIcon({ name }: { name: string }) {
-  const className = 'h-5 w-5 text-teal-700';
+  const className = 'h-5 w-5 text-slate-500';
   if (name === 'badge') {
     return (
       <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6l8-3Z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
-        <path d="m8.5 12 2.2 2.2 4.8-4.8" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        <path
+          d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6l8-3Z"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
+        <path
+          d="m8.5 12 2.2 2.2 4.8-4.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
       </svg>
     );
   }
   if (name === 'document') {
     return (
       <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        <path
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
       </svg>
     );
   }
   if (name === 'project') {
     return (
       <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        <path
+          d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
       </svg>
     );
   }
   if (name === 'reviews') {
     return (
       <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path d="M4 5h16v12H7l-3 3V5Z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
-        <path d="m8 10 2.5 2.5L16 8" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        <path
+          d="M4 5h16v12H7l-3 3V5Z"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
+        <path
+          d="m8 10 2.5 2.5L16 8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
       </svg>
     );
   }
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path d="M20 11a8.1 8.1 0 00-15.5-2M4 4v5h5M4 13a8.1 8.1 0 0015.5 2M20 20v-5h-5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+      <path
+        d="M20 11a8.1 8.1 0 00-15.5-2M4 4v5h5M4 13a8.1 8.1 0 0015.5 2M20 20v-5h-5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
     </svg>
   );
 }

@@ -5,7 +5,7 @@ import type { OrganizationAnalytics } from '../../lib/api';
 type Series = OrganizationAnalytics['series'];
 
 const SERIES = [
-  { key: 'visits', label: 'Visitas', color: 'bg-[#2563eb]' },
+  { key: 'visits', label: 'Visitas', color: 'bg-blue-600' },
   { key: 'clicks', label: 'Clics', color: 'bg-emerald-500' },
   { key: 'downloads', label: 'Descargas', color: 'bg-amber-500' },
 ] as const;
@@ -48,10 +48,7 @@ function groupSeries(series: Series) {
 
 export default function TrafficChart({ series }: { series: Series }) {
   const buckets = groupSeries(series);
-  const max = Math.max(
-    1,
-    ...buckets.flatMap((item) => [item.visits, item.clicks, item.downloads]),
-  );
+  const max = Math.max(1, ...buckets.flatMap((item) => [item.visits, item.clicks, item.downloads]));
   const hasData = buckets.some((item) => item.visits + item.clicks + item.downloads > 0);
 
   return (
@@ -74,7 +71,9 @@ export default function TrafficChart({ series }: { series: Series }) {
       {!hasData ? (
         <div className="mt-5 flex h-56 flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-center">
           <span className="material-symbols-outlined text-[34px] text-slate-300">monitoring</span>
-          <p className="mt-2 text-sm font-semibold text-slate-700">Todavía no hay tráfico registrado</p>
+          <p className="mt-2 text-sm font-semibold text-slate-700">
+            Todavía no hay tráfico registrado
+          </p>
           <p className="mt-1 max-w-xs text-xs text-slate-500">
             Comparte tu perfil público o tu sello para empezar a medir visitas y clics.
           </p>
@@ -84,10 +83,7 @@ export default function TrafficChart({ series }: { series: Series }) {
           <div className="mt-5 overflow-x-auto pb-1">
             <div className="flex min-w-[560px] items-end gap-1.5">
               {buckets.map((item) => (
-                <div
-                  key={item.date}
-                  className="group flex min-w-0 flex-1 flex-col items-center"
-                >
+                <div key={item.date} className="group flex min-w-0 flex-1 flex-col items-center">
                   <div className="flex h-48 w-full items-end justify-center gap-[2px]">
                     {SERIES.map((line) => {
                       const value = item[line.key];

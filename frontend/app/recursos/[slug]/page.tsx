@@ -31,13 +31,13 @@ export default async function ResourcePage({ params }: PageProps) {
     <PublicShell>
       <article className="mx-auto max-w-3xl space-y-8">
         <header>
-          <Link href="/recursos" className="text-xs font-semibold text-blue-600 hover:underline">
+          <Link href="/recursos" className="text-xs font-semibold text-blue-700 hover:underline">
             ← Volver a recursos
           </Link>
-          <p className="mt-4 text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+          <p className="mt-4 text-xs font-bold uppercase tracking-[0.2em] text-blue-700">
             {resource.tag}
           </p>
-          <h1 className="mt-2 text-3xl font-extrabold text-slate-900">{resource.title}</h1>
+          <h1 className="mt-2 text-3xl font-bold text-slate-900">{resource.title}</h1>
           <p className="mt-3 text-sm leading-relaxed text-slate-600">{resource.summary}</p>
           <p className="mt-2 text-xs text-slate-400">
             Actualizado el{' '}
@@ -65,7 +65,7 @@ export default async function ResourcePage({ params }: PageProps) {
                 <ul className="mt-3 space-y-2 text-sm text-slate-600">
                   {section.bullets.map((bullet) => (
                     <li key={bullet} className="flex gap-2">
-                      <span className="material-symbols-outlined text-[17px] text-blue-600">
+                      <span className="material-symbols-outlined text-[17px] text-blue-700">
                         check
                       </span>
                       {bullet}
@@ -85,7 +85,7 @@ export default async function ResourcePage({ params }: PageProps) {
           <div className="mt-4 flex flex-wrap gap-2">
             <Link
               href="/verificar-empresa"
-              className="rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white"
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
             >
               Solicitar verificación
             </Link>

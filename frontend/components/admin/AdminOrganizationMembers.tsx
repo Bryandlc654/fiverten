@@ -1,12 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import {
-  ApiError,
-  api,
-  type Invitation,
-  type Member,
-} from '../../lib/api';
+import { ApiError, api, type Invitation, type Member } from '../../lib/api';
 import { Alert, Field, inputClass } from '../ui';
 
 const ROLES = ['admin', 'editor', 'viewer'] as const;
@@ -166,7 +161,10 @@ export default function AdminOrganizationMembers({
         </div>
       )}
 
-      <form onSubmit={onInvite} className="mt-4 grid grid-cols-1 gap-3 border-t border-slate-100 pt-4 sm:grid-cols-[1fr_auto_auto]">
+      <form
+        onSubmit={onInvite}
+        className="mt-4 grid grid-cols-1 gap-3 border-t border-slate-100 pt-4 sm:grid-cols-[1fr_auto_auto]"
+      >
         <Field label="Invitar por correo" className="block">
           <input
             type="email"
@@ -192,7 +190,7 @@ export default function AdminOrganizationMembers({
         <button
           type="submit"
           disabled={inviting || !inviteEmail.trim()}
-          className="self-end rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
+          className="self-end rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
         >
           {inviting ? 'Enviando…' : 'Invitar'}
         </button>

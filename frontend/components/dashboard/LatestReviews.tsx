@@ -23,7 +23,7 @@ export default function LatestReviews() {
         <h3 className="text-base font-bold text-slate-900">Últimas opiniones</h3>
         <Link
           href="/app/opiniones"
-          className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:text-blue-700"
         >
           Ver todas
           <span className="material-symbols-outlined text-[16px]">chevron_right</span>
@@ -34,7 +34,7 @@ export default function LatestReviews() {
       ) : reviews.length === 0 ? (
         <p className="mt-4 text-sm text-slate-500">
           Aún no tienes reseñas publicadas. Comparte tu enlace desde{' '}
-          <Link href="/app/opiniones" className="font-semibold text-blue-600 hover:underline">
+          <Link href="/app/opiniones" className="font-semibold text-blue-700 hover:underline">
             Opiniones
           </Link>
           .

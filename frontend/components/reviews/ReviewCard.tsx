@@ -81,7 +81,7 @@ export default function ReviewCard({
       )}
 
       {response && (
-        <div className="mt-4 rounded-lg border-l-4 border-[#2563eb] bg-slate-50 px-4 py-3">
+        <div className="mt-4 rounded-lg border-l-4 border-[#356CFF] bg-slate-50 px-4 py-3">
           <p className="text-xs font-semibold text-slate-900">
             Respuesta de {companyName}
             <span className="ml-2 font-normal text-slate-400">

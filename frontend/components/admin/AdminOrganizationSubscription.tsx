@@ -26,7 +26,11 @@ function toDateInput(value: string | null | undefined): string {
   return new Date(value).toISOString().slice(0, 10);
 }
 
-export default function AdminOrganizationSubscription({ organizationId }: { organizationId: string }) {
+export default function AdminOrganizationSubscription({
+  organizationId,
+}: {
+  organizationId: string;
+}) {
   const [subscription, setSubscription] = useState<AdminSubscription | null>(null);
   const [plans, setPlans] = useState<AdminPlan[]>([]);
   const [payments, setPayments] = useState<AdminPayment[]>([]);
@@ -101,7 +105,11 @@ export default function AdminOrganizationSubscription({ organizationId }: { orga
 
   async function cancel(immediate: boolean) {
     if (!subscription) return;
-    if (!window.confirm(immediate ? '¿Cancelar la suscripción ahora?' : '¿Cancelar al final del periodo?')) {
+    if (
+      !window.confirm(
+        immediate ? '¿Cancelar la suscripción ahora?' : '¿Cancelar al final del periodo?',
+      )
+    ) {
       return;
     }
     setBusy(true);
@@ -181,7 +189,10 @@ export default function AdminOrganizationSubscription({ organizationId }: { orga
         <p className="mt-4 text-sm text-slate-500">Cargando suscripción…</p>
       ) : (
         <>
-          <form onSubmit={save} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <form
+            onSubmit={save}
+            className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          >
             <Field label="Plan" className="block">
               <select
                 value={planId}
@@ -230,9 +241,13 @@ export default function AdminOrganizationSubscription({ organizationId }: { orga
               <button
                 type="submit"
                 disabled={busy || !planId}
-                className="rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
               >
-                {busy ? 'Guardando…' : subscription ? 'Actualizar suscripción' : 'Crear suscripción'}
+                {busy
+                  ? 'Guardando…'
+                  : subscription
+                    ? 'Actualizar suscripción'
+                    : 'Crear suscripción'}
               </button>
               {subscription && (
                 <>
@@ -285,7 +300,11 @@ export default function AdminOrganizationSubscription({ organizationId }: { orga
                 </select>
               </Field>
               <Field label="Método" className="block">
-                <select value={method} onChange={(event) => setMethod(event.target.value)} className={inputClass}>
+                <select
+                  value={method}
+                  onChange={(event) => setMethod(event.target.value)}
+                  className={inputClass}
+                >
                   {Object.entries(METHOD_LABELS).map(([key, label]) => (
                     <option key={key} value={key}>
                       {label}
@@ -314,7 +333,10 @@ export default function AdminOrganizationSubscription({ organizationId }: { orga
             ) : (
               <ul className="mt-3 divide-y divide-slate-100">
                 {payments.map((payment) => (
-                  <li key={payment.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
+                  <li
+                    key={payment.id}
+                    className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm"
+                  >
                     <div>
                       <p className="font-semibold text-slate-900">
                         {payment.amount} {payment.currency}

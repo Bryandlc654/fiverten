@@ -37,16 +37,13 @@ export default function ShareReviewLink({ slug, isPublic }: { slug: string; isPu
           <Link
             href={`/empresa/${slug}`}
             target="_blank"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:underline"
           >
             Ver mi perfil público
             <span className="material-symbols-outlined text-[16px]">open_in_new</span>
           </Link>
         ) : (
-          <Link
-            href="/app/perfil"
-            className="text-xs font-semibold text-amber-600 hover:underline"
-          >
+          <Link href="/app/perfil" className="text-xs font-semibold text-amber-600 hover:underline">
             Tu perfil aún no es público · Activarlo
           </Link>
         )}

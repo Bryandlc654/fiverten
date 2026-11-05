@@ -145,7 +145,7 @@ export default function NotificationBell() {
               type="button"
               onClick={() => void markAll()}
               disabled={unread === 0}
-              className="text-xs font-semibold text-blue-600 hover:text-blue-700 disabled:text-slate-300"
+              className="text-xs font-semibold text-blue-700 hover:text-blue-700 disabled:text-slate-300"
             >
               Marcar todas como leídas
             </button>
@@ -206,7 +206,7 @@ export default function NotificationBell() {
                       >
                         <span
                           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                            negative ? 'bg-red-100 text-red-600' : 'bg-blue-50 text-blue-600'
+                            negative ? 'bg-red-100 text-red-600' : 'bg-blue-50 text-blue-700'
                           }`}
                         >
                           <span className="material-symbols-outlined text-[18px]">
@@ -248,7 +248,7 @@ export default function NotificationBell() {
               <button
                 type="button"
                 onClick={() => load(page + 1)}
-                className="w-full border-t border-slate-100 px-4 py-3 text-xs font-semibold text-blue-600 hover:bg-slate-50"
+                className="w-full border-t border-slate-100 px-4 py-3 text-xs font-semibold text-blue-700 hover:bg-slate-50"
               >
                 Cargar más
               </button>

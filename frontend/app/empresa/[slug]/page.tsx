@@ -127,7 +127,8 @@ export default function PublicProfilePage() {
   }
 
   const categories = new Set(verification?.categories ?? []);
-  const status = VERIFICATION_STATUS[verification?.status ?? 'not_verified'] ?? VERIFICATION_STATUS.not_verified;
+  const status =
+    VERIFICATION_STATUS[verification?.status ?? 'not_verified'] ?? VERIFICATION_STATUS.not_verified;
   const projects = verification?.projects ?? [];
   const certifications = verification?.certifications ?? [];
   const activeYears = yearsSince(profile.createdAt);
@@ -181,8 +182,7 @@ export default function PublicProfilePage() {
           },
         ]
       : []),
-    ...(verification?.reviewedAt &&
-    verification.reviewedAt !== verification.verifiedAt
+    ...(verification?.reviewedAt && verification.reviewedAt !== verification.verifiedAt
       ? [
           {
             date: verification.reviewedAt,
@@ -201,7 +201,7 @@ export default function PublicProfilePage() {
     .slice(0, 4);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f8fafc] font-sans text-slate-900 antialiased">
+    <div className="flex min-h-screen flex-col bg-[#F4F3EF] font-sans text-slate-900 antialiased">
       <AnalyticsTracker slug={slug} />
       <HomeHeader />
 
@@ -274,7 +274,7 @@ export default function PublicProfilePage() {
                     <span className="flex items-center gap-1.5">
                       <DocumentIcon className="h-3.5 w-3.5 text-slate-400" />
                       ID de verificación{' '}
-                      <strong className="font-medium text-slate-200">
+                      <strong className="font-mono font-medium text-slate-200">
                         {verification.organization.publicId}
                       </strong>
                     </span>
@@ -282,7 +282,7 @@ export default function PublicProfilePage() {
                   <span className="flex items-center gap-1.5">
                     <CalendarIcon className="h-3.5 w-3.5 text-slate-400" />
                     Última verificación{' '}
-                    <strong className="font-medium text-slate-200">
+                    <strong className="font-mono font-medium text-slate-200">
                       {formatVerificationDate(verification?.verifiedAt ?? null)}
                     </strong>
                   </span>
@@ -333,7 +333,7 @@ export default function PublicProfilePage() {
                 href={`#${id}`}
                 className={`shrink-0 border-b-2 py-3.5 transition-colors ${
                   index === 0
-                    ? 'border-blue-600 font-semibold text-blue-600'
+                    ? 'border-blue-600 font-semibold text-blue-700'
                     : 'border-transparent hover:text-slate-900'
                 }`}
               >
@@ -347,7 +347,10 @@ export default function PublicProfilePage() {
       <main className="mx-auto w-full max-w-7xl flex-grow px-4 py-6 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
-            <article id="resumen" className="rounded-lg border border-slate-200/80 bg-white p-6 shadow-sm">
+            <article
+              id="resumen"
+              className="rounded-lg border border-slate-200/80 bg-white p-6 shadow-sm"
+            >
               <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-2">
                 <div className="flex h-full flex-col justify-between">
                   <div>
@@ -355,7 +358,8 @@ export default function PublicProfilePage() {
                       {firstSentence(profile.description)}
                     </h2>
                     <p className="mb-6 text-xs leading-relaxed text-slate-600">
-                      {profile.description || 'Empresa con perfil público y verificación en FIVERTEN.'}
+                      {profile.description ||
+                        'Empresa con perfil público y verificación en FIVERTEN.'}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -484,7 +488,10 @@ export default function PublicProfilePage() {
               </div>
             </article>
 
-            <article id="proyectos" className="rounded-lg border border-slate-200/80 bg-white p-6 shadow-sm">
+            <article
+              id="proyectos"
+              className="rounded-lg border border-slate-200/80 bg-white p-6 shadow-sm"
+            >
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <FolderIcon className="h-4 w-4 text-slate-700" />
@@ -492,7 +499,7 @@ export default function PublicProfilePage() {
                 </div>
                 <Link
                   href={`/empresa/${slug}/proyectos`}
-                  className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                  className="flex items-center gap-1 text-xs font-semibold text-blue-700 hover:text-blue-700"
                 >
                   Ver todos los proyectos <span>→</span>
                 </Link>
@@ -510,7 +517,9 @@ export default function PublicProfilePage() {
                     >
                       <div className="relative h-28 overflow-hidden bg-slate-100">
                         <Image
-                          src={resolveAssetUrl(profile.coverUrl) ?? profile.coverUrl ?? HERO_FALLBACK}
+                          src={
+                            resolveAssetUrl(profile.coverUrl) ?? profile.coverUrl ?? HERO_FALLBACK
+                          }
                           alt={project.name}
                           fill
                           sizes="(max-width: 768px) 100vw, 250px"
@@ -551,7 +560,7 @@ export default function PublicProfilePage() {
                             href={project.url}
                             target="_blank"
                             rel="noopener noreferrer nofollow"
-                            className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-blue-600 hover:underline"
+                            className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-blue-700 hover:underline"
                           >
                             Ver proyecto <ExternalIcon className="h-3 w-3" />
                           </a>
@@ -563,12 +572,15 @@ export default function PublicProfilePage() {
               )}
             </article>
 
-            <article id="documentacion" className="rounded-lg border border-slate-200/80 bg-white p-6 shadow-sm">
+            <article
+              id="documentacion"
+              className="rounded-lg border border-slate-200/80 bg-white p-6 shadow-sm"
+            >
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-base font-bold text-slate-900">Documentación comprobada</h3>
                 <Link
                   href={`/empresa/${slug}/documentacion`}
-                  className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+                  className="text-xs font-semibold text-blue-700 hover:text-blue-700"
                 >
                   Ver documentación →
                 </Link>
@@ -592,7 +604,10 @@ export default function PublicProfilePage() {
               )}
             </article>
 
-            <article id="opiniones" className="rounded-lg border border-slate-200/80 bg-white p-6 shadow-sm">
+            <article
+              id="opiniones"
+              className="rounded-lg border border-slate-200/80 bg-white p-6 shadow-sm"
+            >
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-base font-bold text-slate-900">
                   Opiniones verificadas
@@ -602,7 +617,7 @@ export default function PublicProfilePage() {
                 </h3>
                 <Link
                   href={`/empresa/${slug}/opiniones`}
-                  className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+                  className="text-xs font-semibold text-blue-700 hover:text-blue-700"
                 >
                   Ver todas →
                 </Link>
@@ -632,12 +647,15 @@ export default function PublicProfilePage() {
               )}
             </article>
 
-            <article id="certificaciones" className="rounded-lg border border-slate-200/80 bg-white p-6 shadow-sm">
+            <article
+              id="certificaciones"
+              className="rounded-lg border border-slate-200/80 bg-white p-6 shadow-sm"
+            >
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-base font-bold text-slate-900">Certificaciones</h3>
                 <Link
                   href={`/empresa/${slug}/certificaciones`}
-                  className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+                  className="text-xs font-semibold text-blue-700 hover:text-blue-700"
                 >
                   Ver certificaciones →
                 </Link>
@@ -649,7 +667,10 @@ export default function PublicProfilePage() {
               ) : (
                 <ul className="divide-y divide-slate-100">
                   {certifications.map((certification) => (
-                    <li key={certification.id} className="flex items-start justify-between gap-3 py-3">
+                    <li
+                      key={certification.id}
+                      className="flex items-start justify-between gap-3 py-3"
+                    >
                       <div>
                         <p className="text-sm font-semibold text-slate-900">{certification.name}</p>
                         <p className="text-xs text-slate-500">{certification.issuer}</p>
@@ -720,7 +741,12 @@ export default function PublicProfilePage() {
                         )}
                       </p>
                       <p className="mt-0.5 text-[10px] leading-snug text-slate-500">
-                        {[location.addressLine, location.city, location.postalCode, location.country]
+                        {[
+                          location.addressLine,
+                          location.city,
+                          location.postalCode,
+                          location.country,
+                        ]
                           .filter(Boolean)
                           .join(' · ') || 'Sin dirección pública'}
                       </p>
@@ -734,10 +760,12 @@ export default function PublicProfilePage() {
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-900">Estado de verificación</h3>
                 <div className="seal-badge flex h-10 w-10 flex-col items-center justify-center rounded-full border border-slate-300 p-1 text-center">
-                  <span className="text-[6px] font-extrabold uppercase leading-none tracking-widest text-slate-600">
+                  <span className="text-[6px] font-bold uppercase leading-none tracking-widest text-slate-600">
                     FIVERTEN
                   </span>
-                  <span className="my-0.5 text-[10px] font-black leading-none text-slate-800">V</span>
+                  <span className="my-0.5 text-[10px] font-black leading-none text-slate-800">
+                    V
+                  </span>
                   <span className="text-[5px] font-bold uppercase leading-none tracking-widest text-slate-500">
                     VERIFIED
                   </span>
@@ -783,16 +811,23 @@ export default function PublicProfilePage() {
               ) : (
                 <div className="space-y-4 text-xs">
                   {timeline.map((event, index) => (
-                    <div key={`${event.date}-${event.title}-${index}`} className="flex items-start space-x-3">
+                    <div
+                      key={`${event.date}-${event.title}-${index}`}
+                      className="flex items-start space-x-3"
+                    >
                       <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-600" />
                       <div className="flex-grow">
                         <div className="flex items-baseline space-x-2">
                           <span className="text-[10px] font-bold text-slate-400">
                             {formatVerificationDate(event.date)}
                           </span>
-                          <span className="text-[11px] font-bold text-slate-800">{event.title}</span>
+                          <span className="text-[11px] font-bold text-slate-800">
+                            {event.title}
+                          </span>
                         </div>
-                        <p className="mt-0.5 text-[10px] leading-snug text-slate-500">{event.text}</p>
+                        <p className="mt-0.5 text-[10px] leading-snug text-slate-500">
+                          {event.text}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -867,7 +902,7 @@ function StatusRow({
       </div>
       <Link
         href={href}
-        className="whitespace-nowrap text-[10px] font-semibold text-blue-600 hover:text-blue-700"
+        className="whitespace-nowrap text-[10px] font-semibold text-blue-700 hover:text-blue-700"
       >
         Ver detalles →
       </Link>
@@ -921,7 +956,12 @@ function LocationIcon({ className = 'h-3.5 w-3.5' }: { className?: string }) {
         strokeLinejoin="round"
         strokeWidth="2"
       />
-      <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <path
+        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
     </svg>
   );
 }
@@ -1041,7 +1081,12 @@ function PlayIcon({ className = 'h-2.5 w-2.5' }: { className?: string }) {
 function ClockIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <path
+        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
     </svg>
   );
 }

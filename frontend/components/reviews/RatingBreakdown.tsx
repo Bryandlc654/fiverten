@@ -56,7 +56,7 @@ export default function RatingBreakdown({
                 </span>
                 <span className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
                   <span
-                    className="block h-full rounded-full bg-[#2563eb]"
+                    className="block h-full rounded-full bg-blue-600"
                     style={{ width: `${percent}%` }}
                   />
                 </span>

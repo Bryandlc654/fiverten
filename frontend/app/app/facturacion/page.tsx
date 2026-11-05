@@ -14,7 +14,7 @@ import { useAuth } from '../../../lib/auth-context';
 import { roleAtLeast } from '../../../lib/roles';
 
 const STATUS_LABELS: Record<string, { label: string; tone: string }> = {
-  trialing: { label: 'En prueba', tone: 'bg-blue-50 text-blue-600' },
+  trialing: { label: 'En prueba', tone: 'bg-blue-50 text-blue-700' },
   active: { label: 'Activa', tone: 'bg-emerald-50 text-emerald-600' },
   past_due: { label: 'Impagada', tone: 'bg-amber-50 text-amber-700' },
   cancelled: { label: 'Cancelada', tone: 'bg-slate-100 text-slate-500' },
@@ -71,10 +71,10 @@ export default function MembershipPage() {
   }
 
   const status = data?.subscription
-    ? STATUS_LABELS[data.subscription.status] ?? {
+    ? (STATUS_LABELS[data.subscription.status] ?? {
         label: data.subscription.status,
         tone: 'bg-slate-100 text-slate-600',
-      }
+      })
     : null;
 
   return (
@@ -199,7 +199,7 @@ export default function MembershipPage() {
                             <Badge label="Plan actual" tone="bg-blue-100 text-blue-700" />
                           )}
                         </div>
-                        <p className="mt-1 text-2xl font-extrabold text-slate-900">
+                        <p className="mt-1 text-2xl font-bold text-slate-900">
                           {plan.priceMonthly > 0 ? `${plan.priceMonthly} €` : 'Personalizado'}
                           {plan.priceMonthly > 0 && (
                             <span className="text-xs font-medium text-slate-500">/mes</span>
@@ -215,9 +215,7 @@ export default function MembershipPage() {
                               : 'Reseñas ilimitadas'}
                           </li>
                           <li>
-                            {plan.userLimit
-                              ? `${plan.userLimit} usuarios`
-                              : 'Usuarios ilimitados'}
+                            {plan.userLimit ? `${plan.userLimit} usuarios` : 'Usuarios ilimitados'}
                           </li>
                         </ul>
                         <button
@@ -227,7 +225,7 @@ export default function MembershipPage() {
                           className={`mt-4 w-full rounded-lg px-3 py-2 text-xs font-semibold transition disabled:opacity-60 ${
                             current
                               ? 'border border-blue-200 bg-white text-blue-700'
-                              : 'bg-[#2563eb] text-white hover:bg-blue-600'
+                              : 'bg-blue-600 text-white hover:bg-blue-600'
                           }`}
                         >
                           {current
@@ -242,8 +240,8 @@ export default function MembershipPage() {
                 </div>
               )}
               <p className="mt-3 text-[11px] text-slate-400">
-                Si el nuevo plan no cubre tu uso actual, el cambio se bloqueará hasta que
-                reduzcas usuarios o reseñas.
+                Si el nuevo plan no cubre tu uso actual, el cambio se bloqueará hasta que reduzcas
+                usuarios o reseñas.
               </p>
             </section>
 
@@ -254,7 +252,10 @@ export default function MembershipPage() {
               ) : (
                 <ul className="mt-3 divide-y divide-slate-100">
                   {payments.map((payment) => (
-                    <li key={payment.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
+                    <li
+                      key={payment.id}
+                      className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm"
+                    >
                       <div>
                         <p className="font-semibold text-slate-900">
                           {payment.amount} {payment.currency}

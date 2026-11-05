@@ -17,8 +17,7 @@ export const RESOURCES: ResourceArticle[] = [
   {
     slug: 'primeras-resenas',
     title: 'Guía para conseguir tus primeras reseñas',
-    summary:
-      'Cómo pedir opiniones sin presionar, qué enlaces usar y cómo medir la conversión.',
+    summary: 'Cómo pedir opiniones sin presionar, qué enlaces usar y cómo medir la conversión.',
     tag: 'Guía',
     updatedAt: '2026-01-15',
     sections: [
@@ -52,8 +51,7 @@ export const RESOURCES: ResourceArticle[] = [
   {
     slug: 'responder-resena-negativa',
     title: 'Cómo responder a una reseña negativa',
-    summary:
-      'Buenas prácticas para responder en público y abrir una resolución cuando proceda.',
+    summary: 'Buenas prácticas para responder en público y abrir una resolución cuando proceda.',
     tag: 'Guía',
     updatedAt: '2026-01-15',
     sections: [
@@ -85,8 +83,7 @@ export const RESOURCES: ResourceArticle[] = [
   {
     slug: 'que-significa-el-sello',
     title: 'Qué significa el sello FIVERTEN',
-    summary:
-      'Categorías verificadas, validez, caducidad y cómo se muestra el sello en tu web.',
+    summary: 'Categorías verificadas, validez, caducidad y cómo se muestra el sello en tu web.',
     tag: 'Confianza',
     updatedAt: '2026-01-15',
     sections: [
@@ -115,8 +112,7 @@ export const RESOURCES: ResourceArticle[] = [
   {
     slug: 'widgets-y-qr',
     title: 'Widgets y QR para tu web',
-    summary:
-      'Inserta tu puntuación, opiniones recientes o un QR para pedir reseñas en tu negocio.',
+    summary: 'Inserta tu puntuación, opiniones recientes o un QR para pedir reseñas en tu negocio.',
     tag: 'Producto',
     updatedAt: '2026-01-15',
     sections: [
@@ -144,8 +140,7 @@ export const RESOURCES: ResourceArticle[] = [
   {
     slug: 'politica-de-moderacion',
     title: 'Política de moderación',
-    summary:
-      'Motivos de reporte, señales antifraude y cómo se revisan las opiniones reportadas.',
+    summary: 'Motivos de reporte, señales antifraude y cómo se revisan las opiniones reportadas.',
     tag: 'Política',
     updatedAt: '2026-01-15',
     sections: [

@@ -31,9 +31,9 @@ export default function WelcomeBanner({
   ];
 
   return (
-    <section className="relative overflow-hidden rounded-2xl bg-[#0b101b] px-6 py-7 text-white">
-      <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-[#2563eb]/30 blur-3xl" />
-      <div className="absolute -bottom-28 left-1/3 h-56 w-56 rounded-full bg-[#52D6D0]/10 blur-3xl" />
+    <section className="relative overflow-hidden rounded-2xl bg-[#10161C] px-6 py-7 text-white">
+      <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-blue-600/30 blur-3xl" />
+      <div className="absolute -bottom-28 left-1/3 h-56 w-56 rounded-full bg-blue-600/10 blur-3xl" />
       <div className="relative flex flex-wrap items-center justify-between gap-6">
         <div className="max-w-xl">
           <p className="text-sm text-slate-400">Hola{firstName ? `, ${firstName}` : ''}</p>
@@ -45,7 +45,7 @@ export default function WelcomeBanner({
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
               href="/app/perfil"
-              className="inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600"
             >
               <span className="material-symbols-outlined text-[18px]">edit</span>
               Completar perfil

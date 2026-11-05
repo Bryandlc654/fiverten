@@ -113,8 +113,16 @@ export default function ProjectsPage() {
 
   if (loading || !data) {
     return (
-      <DashboardShell active="proyectos" title="Proyectos" subtitle="Proyectos y evidencias verificables">
-        {error ? <Alert tone="error">{error}</Alert> : <p className="text-sm text-slate-500">Cargando…</p>}
+      <DashboardShell
+        active="proyectos"
+        title="Proyectos"
+        subtitle="Proyectos y evidencias verificables"
+      >
+        {error ? (
+          <Alert tone="error">{error}</Alert>
+        ) : (
+          <p className="text-sm text-slate-500">Cargando…</p>
+        )}
       </DashboardShell>
     );
   }
@@ -146,13 +154,13 @@ export default function ProjectsPage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-3 text-sm font-semibold">
-              <Link href="/app/clientes" className="text-blue-600 hover:underline">
+              <Link href="/app/clientes" className="text-blue-700 hover:underline">
                 Invitar cliente
               </Link>
-              <Link href="/app/sello" className="text-blue-600 hover:underline">
+              <Link href="/app/sello" className="text-blue-700 hover:underline">
                 Solicitar verificación
               </Link>
-              <Link href="/app/documentos" className="text-blue-600 hover:underline">
+              <Link href="/app/documentos" className="text-blue-700 hover:underline">
                 Documentos
               </Link>
             </div>
@@ -350,7 +358,9 @@ export default function ProjectsPage() {
                               : 'bg-amber-50 text-amber-700'
                           }`}
                         >
-                          {project.verifiedAt ? 'Verificación completada' : 'Pendiente de verificar'}
+                          {project.verifiedAt
+                            ? 'Verificación completada'
+                            : 'Pendiente de verificar'}
                         </span>
                       </div>
                       {project.location && (
@@ -382,7 +392,7 @@ export default function ProjectsPage() {
                           href={project.url}
                           target="_blank"
                           rel="noopener noreferrer nofollow"
-                          className="mt-1 inline-flex text-xs font-semibold text-blue-600 hover:underline"
+                          className="mt-1 inline-flex text-xs font-semibold text-blue-700 hover:underline"
                         >
                           Ver proyecto
                         </a>
@@ -407,7 +417,10 @@ export default function ProjectsPage() {
                   {project.documents.length > 0 && (
                     <ul className="mt-2 space-y-1 border-t border-slate-100 pt-2">
                       {project.documents.map((document) => (
-                        <li key={document.id} className="flex items-center justify-between gap-2 text-xs text-slate-500">
+                        <li
+                          key={document.id}
+                          className="flex items-center justify-between gap-2 text-xs text-slate-500"
+                        >
                           <span className="truncate">{document.filename}</span>
                           <span>{(document.size / 1024).toFixed(0)} KB</span>
                         </li>
@@ -419,7 +432,7 @@ export default function ProjectsPage() {
             </ul>
           )}
           <div className="mt-4 border-t border-slate-100 pt-4">
-            <Link href="/app/sello" className="text-sm font-semibold text-blue-600 hover:underline">
+            <Link href="/app/sello" className="text-sm font-semibold text-blue-700 hover:underline">
               Enviar solicitud y gestionar el sello →
             </Link>
           </div>

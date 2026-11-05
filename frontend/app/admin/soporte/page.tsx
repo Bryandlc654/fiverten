@@ -19,7 +19,7 @@ import { useAuth } from '../../../lib/auth-context';
 const PAGE_SIZE = 20;
 
 const STATUS: Record<string, { label: string; tone: string }> = {
-  open: { label: 'Abierto', tone: 'bg-blue-50 text-blue-600' },
+  open: { label: 'Abierto', tone: 'bg-blue-50 text-blue-700' },
   pending: { label: 'En espera', tone: 'bg-amber-50 text-amber-700' },
   resolved: { label: 'Resuelto', tone: 'bg-emerald-50 text-emerald-600' },
   closed: { label: 'Cerrado', tone: 'bg-slate-100 text-slate-500' },
@@ -27,7 +27,7 @@ const STATUS: Record<string, { label: string; tone: string }> = {
 
 const PRIORITY: Record<string, { label: string; tone: string }> = {
   low: { label: 'Baja', tone: 'bg-slate-100 text-slate-500' },
-  normal: { label: 'Normal', tone: 'bg-blue-50 text-blue-600' },
+  normal: { label: 'Normal', tone: 'bg-blue-50 text-blue-700' },
   high: { label: 'Alta', tone: 'bg-amber-50 text-amber-700' },
   urgent: { label: 'Urgente', tone: 'bg-red-50 text-red-600' },
 };
@@ -89,17 +89,14 @@ export default function AdminSupportPage() {
     }
   }, [page, status, priority, assigned, search, isLoading, isSuperAdmin, isSupportAgent]);
 
-  const openTicket = useCallback(
-    async (id: string) => {
-      setError(null);
-      try {
-        setSelected(await api.supportTicket(id));
-      } catch (err) {
-        setError(err instanceof ApiError ? err.message : 'No se pudo abrir el ticket');
-      }
-    },
-    [],
-  );
+  const openTicket = useCallback(async (id: string) => {
+    setError(null);
+    try {
+      setSelected(await api.supportTicket(id));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo abrir el ticket');
+    }
+  }, []);
 
   useEffect(() => {
     void load();
@@ -307,7 +304,7 @@ export default function AdminSupportPage() {
                         type="button"
                         onClick={() => void assignMe()}
                         disabled={busy}
-                        className="rounded-lg border border-blue-200 px-2.5 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 disabled:opacity-60"
+                        className="rounded-lg border border-blue-200 px-2.5 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-60"
                       >
                         Asignármelo
                       </button>
@@ -364,7 +361,11 @@ export default function AdminSupportPage() {
                     required
                     value={reply}
                     onChange={(event) => setReply(event.target.value)}
-                    placeholder={internal ? 'Nota interna (solo equipo de soporte)…' : 'Respuesta para la empresa…'}
+                    placeholder={
+                      internal
+                        ? 'Nota interna (solo equipo de soporte)…'
+                        : 'Respuesta para la empresa…'
+                    }
                     className={inputClass}
                   />
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -379,7 +380,7 @@ export default function AdminSupportPage() {
                     <button
                       type="submit"
                       disabled={busy || reply.trim().length < 1}
-                      className="rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
                     >
                       {busy ? 'Enviando…' : internal ? 'Guardar nota' : 'Responder'}
                     </button>
@@ -420,11 +421,7 @@ function SupportBubble({ message }: { message: SupportMessage }) {
     >
       <p className="mb-1 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
         <span className="font-semibold">
-          {message.isInternal
-            ? 'Nota interna'
-            : fromSupport
-              ? 'Soporte FIVERTEN'
-              : 'Empresa'}
+          {message.isInternal ? 'Nota interna' : fromSupport ? 'Soporte FIVERTEN' : 'Empresa'}
         </span>
         <span>{formatDate(message.createdAt)}</span>
       </p>

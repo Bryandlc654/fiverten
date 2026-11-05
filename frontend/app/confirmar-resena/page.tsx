@@ -69,7 +69,7 @@ export default function ConfirmReviewPage() {
             {state.organization.isPublic && (
               <Link
                 href={`/empresa/${state.organization.slug}`}
-                className="mt-5 inline-flex rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600"
+                className="mt-5 inline-flex rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600"
               >
                 Ver mi reseña
               </Link>

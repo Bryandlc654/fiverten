@@ -2,12 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Alert, Field, inputClass } from '../ui';
-import {
-  ApiError,
-  api,
-  type PrivacyRequest,
-  type PrivacyRequestType,
-} from '../../lib/api';
+import { ApiError, api, type PrivacyRequest, type PrivacyRequestType } from '../../lib/api';
 
 const TYPES: { value: PrivacyRequestType; label: string }[] = [
   { value: 'access', label: 'Acceso a mis datos' },
@@ -104,7 +99,10 @@ export default function PrivacyPanel() {
       {error && <Alert tone="error">{error}</Alert>}
       {notice && <Alert tone="success">{notice}</Alert>}
 
-      <form onSubmit={create} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-[240px_1fr_auto] sm:items-end">
+      <form
+        onSubmit={create}
+        className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-[240px_1fr_auto] sm:items-end"
+      >
         <Field label="Tipo de solicitud" className="block">
           <select
             value={type}
@@ -141,7 +139,10 @@ export default function PrivacyPanel() {
           <li className="py-2 text-xs text-slate-500">No hay solicitudes registradas.</li>
         ) : (
           items.map((item) => (
-            <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+            <li
+              key={item.id}
+              className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"
+            >
               <div>
                 <p className="font-semibold text-slate-900">
                   {TYPES.find((entry) => entry.value === item.type)?.label ?? item.type}

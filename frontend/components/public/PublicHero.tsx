@@ -1,4 +1,4 @@
-﻿import Image from 'next/image';
+import Image from 'next/image';
 import Link from 'next/link';
 import { resolveAssetUrl, type PublicProfile } from '../../lib/api';
 import { formatRating, Stars } from '../reviews/Stars';
@@ -27,10 +27,10 @@ export default function PublicHero({ profile }: { profile: PublicProfile }) {
         ) : (
           <div
             aria-hidden
-            className="absolute inset-0 bg-gradient-to-br from-[#0b101b] via-[#13213f] to-[#2563eb]"
+            className="absolute inset-0 bg-gradient-to-br from-[#10161C] via-[#182129] to-[#356CFF]"
           >
-            <div className="absolute -right-10 -top-16 h-56 w-56 rounded-full bg-[#2563eb]/40 blur-3xl" />
-            <div className="absolute -bottom-20 left-1/4 h-52 w-52 rounded-full bg-sky-400/20 blur-3xl" />
+            <div className="absolute -right-10 -top-16 h-56 w-56 rounded-full bg-blue-600/40 blur-3xl" />
+            <div className="absolute -bottom-20 left-1/4 h-52 w-52 rounded-full bg-blue-300/20 blur-3xl" />
             <div
               className="absolute inset-0 opacity-[0.07]"
               style={{
@@ -75,7 +75,7 @@ export default function PublicHero({ profile }: { profile: PublicProfile }) {
                   className="rounded-xl object-contain p-1"
                 />
               ) : (
-                <span className="flex h-full w-full items-center justify-center rounded-xl bg-gradient-to-br from-[#2563eb] to-[#1e3a8a] text-4xl font-bold text-white sm:text-5xl">
+                <span className="flex h-full w-full items-center justify-center rounded-xl bg-gradient-to-br from-[#356CFF] to-[#2343A6] text-4xl font-bold text-white sm:text-5xl">
                   {initial}
                 </span>
               )}
@@ -84,7 +84,7 @@ export default function PublicHero({ profile }: { profile: PublicProfile }) {
             {/* En escritorio el texto arranca justo debajo de la portada (el logo la solapa 3,5 rem). */}
             <div className="min-w-0 sm:pt-[4.25rem]">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+                <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                   {profile.tradeName}
                 </h1>
                 {profile.verified && (
@@ -116,7 +116,7 @@ export default function PublicHero({ profile }: { profile: PublicProfile }) {
 
           <Link
             href={`/review/${profile.slug}`}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#2563eb] px-5 py-3 text-sm font-semibold text-white shadow-md shadow-blue-600/25 transition hover:bg-blue-600 hover:shadow-lg lg:mt-[4.25rem] lg:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-blue-600/25 transition hover:bg-blue-600 hover:shadow-lg lg:mt-[4.25rem] lg:w-auto"
           >
             <span className="material-symbols-outlined text-[20px]">rate_review</span>
             Escribir una reseña

@@ -38,21 +38,15 @@ export default function VerificationFacts() {
     <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
       <div className="rounded-2xl border border-slate-200 bg-white p-5">
         <p className="text-xs text-slate-500">Plazo de revisión</p>
-        <p className="mt-1 text-lg font-extrabold text-slate-900">
-          {info.reviewDays} días hábiles
-        </p>
+        <p className="mt-1 text-lg font-bold text-slate-900">{info.reviewDays} días hábiles</p>
       </div>
       <div className="rounded-2xl border border-slate-200 bg-white p-5">
         <p className="text-xs text-slate-500">Validez del sello</p>
-        <p className="mt-1 text-lg font-extrabold text-slate-900">
-          {info.expiryDays} días
-        </p>
+        <p className="mt-1 text-lg font-bold text-slate-900">{info.expiryDays} días</p>
       </div>
       <div className="rounded-2xl border border-slate-200 bg-white p-5">
         <p className="text-xs text-slate-500">Renovación</p>
-        <p className="mt-1 text-lg font-extrabold text-slate-900">
-          Desde {info.renewalDays} días antes
-        </p>
+        <p className="mt-1 text-lg font-bold text-slate-900">Desde {info.renewalDays} días antes</p>
       </div>
     </section>
   );

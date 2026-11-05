@@ -151,7 +151,7 @@ export default function WriteReviewPage() {
     return (
       <PublicShell>
         <div className="mx-auto max-w-lg rounded-xl border border-slate-200 bg-white p-8 text-center">
-          <span className="material-symbols-outlined text-[44px] text-[#2563eb]">
+          <span className="material-symbols-outlined text-[44px] text-[#356CFF]">
             mark_email_unread
           </span>
           <h1 className="mt-2 text-xl font-bold">Revisa tu correo</h1>
@@ -180,7 +180,7 @@ export default function WriteReviewPage() {
               className="h-14 w-14 rounded-xl border border-slate-200 object-cover"
             />
           ) : (
-            <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#2563eb] text-xl font-bold text-white">
+            <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-blue-600 text-xl font-bold text-white">
               {company.tradeName[0]?.toUpperCase()}
             </span>
           )}
@@ -192,7 +192,7 @@ export default function WriteReviewPage() {
             {company.isPublic && (
               <Link
                 href={`/empresa/${company.slug}`}
-                className="text-xs text-blue-600 hover:underline"
+                className="text-xs text-blue-700 hover:underline"
               >
                 Ver el perfil y otras opiniones
               </Link>
@@ -214,7 +214,9 @@ export default function WriteReviewPage() {
                 verified
               </span>
               <div>
-                <p className="font-semibold">Solicitud personalizada de {request.organization.tradeName}</p>
+                <p className="font-semibold">
+                  Solicitud personalizada de {request.organization.tradeName}
+                </p>
                 <p className="text-xs text-emerald-700">
                   Tu nombre y correo ya están rellenados. Solo falta tu valoración y comentario.
                 </p>
@@ -342,7 +344,7 @@ export default function WriteReviewPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#2563eb] px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
           >
             <span className="material-symbols-outlined text-[18px]">send</span>
             {submitting ? 'Enviando…' : 'Enviar reseña'}

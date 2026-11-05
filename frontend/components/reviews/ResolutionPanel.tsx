@@ -13,7 +13,7 @@ import { Alert, Badge, LoadingRow, inputClass } from '../ui';
 type ResolutionSummary = TenantReview['resolution'];
 
 export const RESOLUTION_STATUS_LABELS: Record<ResolutionStatus, { label: string; tone: string }> = {
-  open: { label: 'Esperando al cliente', tone: 'bg-blue-50 text-blue-600' },
+  open: { label: 'Esperando al cliente', tone: 'bg-blue-50 text-blue-700' },
   in_progress: { label: 'En curso', tone: 'bg-amber-50 text-amber-600' },
   accepted: { label: 'Resuelta', tone: 'bg-emerald-50 text-emerald-600' },
   rejected: { label: 'Solución rechazada', tone: 'bg-red-50 text-red-600' },
@@ -202,7 +202,7 @@ export default function ResolutionPanel({
             <button
               type="submit"
               disabled={busy || draft.trim().length < minLength}
-              className="rounded-lg bg-[#2563eb] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
+              className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
             >
               {busy ? 'Enviando…' : isActive ? 'Enviar al cliente' : 'Abrir y avisar al cliente'}
             </button>

@@ -137,7 +137,7 @@ export default function HomeHeader() {
                     <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-aqua/10 text-aqua">
                       {item.icon}
                     </span>
-                    <span className="mt-4 font-display text-lg font-extrabold text-white">
+                    <span className="mt-4 font-display text-lg font-bold text-white">
                       {item.label}
                     </span>
                     <span className="mt-2 flex-1 text-xs leading-6 text-slate-400">
@@ -166,7 +166,7 @@ export default function HomeHeader() {
                     <span className="text-[10px] font-bold uppercase tracking-[.18em] text-aqua">
                       Cómo funciona
                     </span>
-                    <span className="mt-1 font-display text-lg font-extrabold leading-tight text-white">
+                    <span className="mt-1 font-display text-lg font-bold leading-tight text-white">
                       De la solicitud al sello, paso a paso.
                     </span>
                     <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-aqua">
@@ -182,7 +182,7 @@ export default function HomeHeader() {
         <div className="hidden items-center gap-3 lg:flex">
           <Link
             href="/empresas"
-            className="rounded-full bg-aqua px-5 py-2.5 text-sm font-bold text-ink transition hover:-translate-y-0.5 hover:bg-mint"
+            className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-blue-700"
           >
             Explorar directorio <span aria-hidden="true">↗</span>
           </Link>
@@ -243,7 +243,7 @@ export default function HomeHeader() {
         ))}
         <Link
           href="/verificar-empresa"
-          className="rounded-full bg-aqua px-5 py-3 text-center font-bold text-ink"
+          className="rounded-full bg-blue-600 px-5 py-3 text-center font-bold text-white"
           onClick={() => setMenuOpen(false)}
         >
           Verificar empresa

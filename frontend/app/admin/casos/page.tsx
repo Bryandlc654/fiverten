@@ -118,7 +118,7 @@ function AdminCasesContent() {
                         onClick={() => select(item.id)}
                         className={`w-full rounded-xl border bg-white p-4 text-left transition hover:border-blue-300 ${
                           selectedId === item.id
-                            ? 'border-[#2563eb] ring-1 ring-[#2563eb]'
+                            ? 'border-[#356CFF] ring-1 ring-[#356CFF]'
                             : 'border-slate-200'
                         }`}
                       >
@@ -184,7 +184,7 @@ const MODES: Record<
     label: 'Pedir evidencias al cliente',
     hint: 'El cliente recibirá un correo con un enlace para leer tu mensaje y subir sus pruebas.',
     button: 'Enviar petición',
-    tone: 'bg-[#2563eb] hover:bg-blue-600',
+    tone: 'bg-blue-600 hover:bg-blue-600',
     min: 10,
     placeholder: 'Para publicar tu reseña necesitamos que aportes pruebas de lo que describes…',
   },
@@ -192,7 +192,7 @@ const MODES: Record<
     label: 'Escribir a las partes',
     hint: 'Lo recibe el cliente y, si ya ha sido notificada, la empresa.',
     button: 'Enviar mensaje',
-    tone: 'bg-[#2563eb] hover:bg-blue-600',
+    tone: 'bg-blue-600 hover:bg-blue-600',
     min: 10,
     placeholder: 'Mensaje',
   },
@@ -217,7 +217,7 @@ const MODES: Record<
     label: 'Publicar la reseña',
     hint: 'Sin acuerdo entre las partes. La reseña se publica y el caso se cierra.',
     button: 'Publicar reseña',
-    tone: 'bg-[#2563eb] hover:bg-blue-600',
+    tone: 'bg-blue-600 hover:bg-blue-600',
     min: 0,
     placeholder: 'Nota opcional',
   },
@@ -325,7 +325,7 @@ function AdminCaseDetail({ id, onChange }: { id: string; onChange: () => void })
               href={`/empresa/${data.organization.slug}`}
               target="_blank"
               rel="noreferrer"
-              className="text-sm font-semibold text-slate-900 hover:text-[#2563eb]"
+              className="text-sm font-semibold text-slate-900 hover:text-[#356CFF]"
             >
               {data.organization.tradeName}
             </a>
@@ -387,7 +387,7 @@ function AdminCaseDetail({ id, onChange }: { id: string; onChange: () => void })
                   onClick={() => choose(item)}
                   className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
                     mode === item
-                      ? 'border-[#2563eb] bg-blue-50 text-[#2563eb]'
+                      ? 'border-[#356CFF] bg-blue-50 text-[#356CFF]'
                       : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >

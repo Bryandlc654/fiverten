@@ -79,17 +79,15 @@ export default function HowItWorksPage() {
           <div>
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-aqua/25 bg-aqua/10 px-4 py-2 text-xs font-semibold tracking-wide text-aqua">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-aqua opacity-70" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-aqua" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-600 opacity-70" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-600" />
               </span>
               PROCESO DE VERIFICACIÓN
             </div>
-            <h1 className="font-display max-w-3xl text-5xl font-extrabold leading-[1.04] tracking-[-.055em] sm:text-6xl">
+            <h1 className="font-display max-w-3xl text-5xl font-bold leading-[1.04] tracking-[-.055em] sm:text-6xl">
               Cómo funciona
               <br />
-              <span className="bg-gradient-to-r from-aqua via-mint to-white bg-clip-text text-transparent">
-                FIVERTEN.
-              </span>
+              <span className="text-aqua">FIVERTEN.</span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-8 text-slate-300 sm:text-lg">
               La verificación es humana y documental. Ninguna empresa puede autoverificarse: el
@@ -99,7 +97,7 @@ export default function HowItWorksPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/verificar-empresa"
-                className="home-shine inline-flex items-center justify-center gap-2 rounded-full bg-aqua px-6 py-3 text-sm font-bold text-ink transition hover:-translate-y-0.5 hover:bg-mint"
+                className="home-shine inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-blue-700"
               >
                 Solicitar verificación <span>→</span>
               </Link>
@@ -157,10 +155,10 @@ export default function HowItWorksPage() {
         <section className="bg-white py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="max-w-3xl">
-              <span className="text-xs font-bold uppercase tracking-[.2em] text-teal-700">
+              <span className="text-xs font-bold uppercase tracking-[.2em] text-slate-500">
                 Paso a paso
               </span>
-              <h2 className="font-display mt-3 text-3xl font-extrabold tracking-[-.045em] text-slate-900 sm:text-4xl">
+              <h2 className="font-display mt-3 text-3xl font-bold tracking-[-.045em] text-slate-900 sm:text-4xl">
                 De la solicitud al sello.
               </h2>
               <p className="mt-4 text-sm leading-7 text-slate-500">
@@ -177,8 +175,8 @@ export default function HowItWorksPage() {
                 >
                   <div className="flex items-center justify-between">
                     <span
-                      className={`grid h-11 w-11 place-items-center rounded-xl text-sm font-extrabold ${
-                        index === 4 ? 'bg-aqua text-ink shadow-glow' : 'bg-ink text-aqua'
+                      className={`grid h-11 w-11 place-items-center rounded-xl text-sm font-bold ${
+                        index === 4 ? 'bg-blue-600 text-white shadow-glow' : 'bg-ink text-aqua'
                       }`}
                     >
                       {step.number}
@@ -195,7 +193,7 @@ export default function HowItWorksPage() {
 
             <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 sm:flex sm:items-center sm:justify-between">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[.18em] text-teal-700">
+                <p className="text-xs font-bold uppercase tracking-[.18em] text-slate-500">
                   Qué se revisa
                 </p>
                 <p className="mt-1 text-sm text-slate-600">
@@ -205,7 +203,7 @@ export default function HowItWorksPage() {
               </div>
               <Link
                 href="/metodologia"
-                className="mt-3 inline-flex text-xs font-semibold text-blue-600 hover:underline sm:mt-0"
+                className="mt-3 inline-flex text-xs font-semibold text-blue-700 hover:underline sm:mt-0"
               >
                 Ver criterios completos →
               </Link>
@@ -213,14 +211,14 @@ export default function HowItWorksPage() {
           </div>
         </section>
 
-        <section className="bg-[#f4f7fa] py-20 lg:py-24">
+        <section className="bg-[#F4F3EF] py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="grid gap-10 lg:grid-cols-[.85fr_1.15fr] lg:items-center">
               <div>
-                <span className="text-xs font-bold uppercase tracking-[.2em] text-teal-700">
+                <span className="text-xs font-bold uppercase tracking-[.2em] text-slate-500">
                   Tiempos y validez
                 </span>
-                <h2 className="font-display mt-3 text-3xl font-extrabold tracking-[-.045em] text-slate-900 sm:text-4xl">
+                <h2 className="font-display mt-3 text-3xl font-bold tracking-[-.045em] text-slate-900 sm:text-4xl">
                   La confianza tiene fecha.
                 </h2>
                 <p className="mt-4 text-sm leading-7 text-slate-500">
@@ -256,7 +254,7 @@ export default function HowItWorksPage() {
                 <span className="text-xs font-bold uppercase tracking-[.2em] text-aqua">
                   Al obtener el sello
                 </span>
-                <h2 className="font-display mt-3 text-3xl font-extrabold tracking-[-.045em] sm:text-4xl">
+                <h2 className="font-display mt-3 text-3xl font-bold tracking-[-.045em] sm:text-4xl">
                   Tu reputación,
                   <br />
                   <span className="text-aqua">siempre al día.</span>
@@ -267,7 +265,7 @@ export default function HowItWorksPage() {
                 </p>
                 <Link
                   href="/verificar-empresa"
-                  className="mt-7 inline-flex rounded-full bg-aqua px-6 py-3 text-sm font-bold text-ink transition hover:-translate-y-0.5 hover:bg-mint"
+                  className="mt-7 inline-flex rounded-full bg-blue-600 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-blue-700"
                 >
                   Solicitar verificación
                 </Link>
@@ -318,10 +316,10 @@ export default function HowItWorksPage() {
 
         <section className="bg-white py-20 lg:py-24">
           <div className="mx-auto max-w-4xl px-5 text-center">
-            <span className="text-xs font-bold uppercase tracking-[.2em] text-teal-700">
+            <span className="text-xs font-bold uppercase tracking-[.2em] text-slate-500">
               Siguiente paso
             </span>
-            <h2 className="font-display mt-3 text-3xl font-extrabold tracking-[-.045em] text-slate-900 sm:text-4xl">
+            <h2 className="font-display mt-3 text-3xl font-bold tracking-[-.045em] text-slate-900 sm:text-4xl">
               ¿Quieres verificar tu empresa?
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-slate-500">
@@ -355,34 +353,59 @@ function StepIcon({ name }: { name: string }) {
   if (name === 'store') {
     return (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path d="M4 9h16l-1-5H5L4 9Zm0 0v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9M9 21v-6h6v6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
+        <path
+          d="M4 9h16l-1-5H5L4 9Zm0 0v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9M9 21v-6h6v6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.7"
+        />
       </svg>
     );
   }
   if (name === 'request') {
     return (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path d="M9 12h6m-6 4h4m4 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l5 5v11a2 2 0 0 1-2 2Z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
+        <path
+          d="M9 12h6m-6 4h4m4 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l5 5v11a2 2 0 0 1-2 2Z"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.7"
+        />
       </svg>
     );
   }
   if (name === 'document') {
     return (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2Z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
+        <path
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2Z"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.7"
+        />
       </svg>
     );
   }
   if (name === 'folder') {
     return (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path d="M19 11H5m14 0a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2m14 0V9a2 2 0 0 0-2-2M5 11V9a2 2 0 0 1 2-2m0 0V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2M7 7h10" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
+        <path
+          d="M19 11H5m14 0a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2m14 0V9a2 2 0 0 0-2-2M5 11V9a2 2 0 0 1 2-2m0 0V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2M7 7h10"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.7"
+        />
       </svg>
     );
   }
   return (
     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path d="M12 2 14.5 4.5l3.5-.2 1.2 3.3 3 1.9-1.1 3.3 1.1 3.3-3 1.9-1.2 3.3-3.5-.2L12 23l-2.5-2.5-3.5.2-1.2-3.3-3-1.9 1.1-3.3-1.1-3.3 3-1.9L6 3.7l3.5.2L12 2Z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
+      <path
+        d="M12 2 14.5 4.5l3.5-.2 1.2 3.3 3 1.9-1.1 3.3 1.1 3.3-3 1.9-1.2 3.3-3.5-.2L12 23l-2.5-2.5-3.5.2-1.2-3.3-3-1.9 1.1-3.3-1.1-3.3 3-1.9L6 3.7l3.5.2L12 2Z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.7"
+      />
     </svg>
   );
 }
@@ -391,14 +414,24 @@ function SealIcon({ name }: { name: string }) {
   if (name === 'download') {
     return (
       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        <path
+          d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
       </svg>
     );
   }
   if (name === 'code') {
     return (
       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path d="m8 8-4 4 4 4m8-8 4 4-4 4M14 4l-4 16" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        <path
+          d="m8 8-4 4 4 4m8-8 4 4-4 4M14 4l-4 16"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
       </svg>
     );
   }
@@ -406,13 +439,23 @@ function SealIcon({ name }: { name: string }) {
     return (
       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <rect x="3" y="3" width="18" height="18" rx="2" />
-        <path d="M9 3v18M13 8h4M13 12h4M13 16h2" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
+        <path
+          d="M9 3v18M13 8h4M13 12h4M13 16h2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.7"
+        />
       </svg>
     );
   }
   return (
     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5M4 13a8.1 8.1 0 0 0 15.5 2M20 20v-5h-5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
+      <path
+        d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5M4 13a8.1 8.1 0 0 0 15.5 2M20 20v-5h-5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.7"
+      />
     </svg>
   );
 }

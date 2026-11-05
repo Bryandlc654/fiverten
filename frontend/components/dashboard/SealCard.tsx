@@ -27,8 +27,7 @@ export default function SealCard({
   const widgetUrl = sealId ? `${origin}/api/widget/${sealId}.js` : '';
   const sealEmbed = `<a href="${publicUrl}" target="_blank" rel="noopener"><img src="${sealSvgUrl}" alt="Sello FIVERTEN" width="300" height="104"></a>`;
   const widgetEmbed = `<script src="${widgetUrl}" async></script>`;
-  const embed =
-    activeTab === 'seal' ? sealEmbed : activeTab === 'widget' ? widgetEmbed : publicUrl;
+  const embed = activeTab === 'seal' ? sealEmbed : activeTab === 'widget' ? widgetEmbed : publicUrl;
 
   useEffect(() => {
     if (activeTab !== 'qr') return;
@@ -36,7 +35,7 @@ export default function SealCard({
     QRCode.toDataURL(publicUrl, {
       width: 512,
       margin: 1,
-      color: { dark: '#0b101b', light: '#ffffff' },
+      color: { dark: '#10161C', light: '#ffffff' },
       errorCorrectionLevel: 'M',
     })
       .then((url) => {
@@ -117,14 +116,12 @@ export default function SealCard({
               <p className="text-sm text-slate-500">Generando QR…</p>
             )}
           </div>
-          <p className="mt-2 text-center text-xs text-slate-500">
-            Escanea para dejar una reseña
-          </p>
+          <p className="mt-2 text-center text-xs text-slate-500">Escanea para dejar una reseña</p>
           {qrDataUrl && (
             <a
               href={qrDataUrl}
               download={`fiverten-qr-${publicId ?? 'empresa'}.png`}
-              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#2563eb] px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-600"
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-600"
             >
               <span className="material-symbols-outlined text-[16px]">download</span>
               Descargar QR
@@ -148,7 +145,7 @@ export default function SealCard({
               onClick={trackDownload}
               aria-disabled={!sealPngUrl}
               className={`inline-flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-semibold text-white transition ${
-                sealPngUrl ? 'bg-[#2563eb] hover:bg-blue-600' : 'pointer-events-none bg-slate-300'
+                sealPngUrl ? 'bg-blue-600 hover:bg-blue-600' : 'pointer-events-none bg-slate-300'
               }`}
             >
               <span className="material-symbols-outlined text-[16px]">download</span>
@@ -170,10 +167,8 @@ export default function SealCard({
         </div>
       ) : (
         <div className="mt-4 flex items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 py-6">
-          <div className="flex items-center gap-2 rounded-lg bg-[#0b101b] px-3 py-2 text-white">
-            <span className="material-symbols-outlined text-[20px] text-emerald-400">
-              verified
-            </span>
+          <div className="flex items-center gap-2 rounded-lg bg-[#10161C] px-3 py-2 text-white">
+            <span className="material-symbols-outlined text-[20px] text-emerald-400">verified</span>
             <div className="leading-none">
               <p className="text-[11px] font-bold">FIVERTEN</p>
               <p className="text-[9px] text-slate-400">Empresa verificada</p>

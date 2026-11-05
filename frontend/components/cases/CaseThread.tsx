@@ -70,7 +70,7 @@ export function CaseThread({ messages, self, names, download }: CaseThreadProps)
                 item.senderType === self
                   ? 'ml-8 border border-blue-100'
                   : item.senderType === 'admin'
-                    ? 'mr-8 border border-violet-100'
+                    ? 'mr-8 border border-slate-200'
                     : 'mr-8 border border-slate-200'
               }`}
             >
@@ -89,7 +89,7 @@ export function CaseThread({ messages, self, names, download }: CaseThreadProps)
                         type="button"
                         disabled={downloading === file.id}
                         onClick={() => void open(file)}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-700 transition hover:border-blue-300 hover:text-[#2563eb] disabled:opacity-60"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-700 transition hover:border-blue-300 hover:text-[#356CFF] disabled:opacity-60"
                       >
                         <span className="material-symbols-outlined text-[16px]">
                           {file.mimeType === 'application/pdf' ? 'picture_as_pdf' : 'image'}
@@ -205,7 +205,7 @@ export function CaseComposer({ placeholder, submitLabel, onSend }: CaseComposerP
         <button
           type="submit"
           disabled={busy || empty}
-          className="rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-60"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-60"
         >
           {busy ? 'Enviando…' : submitLabel}
         </button>

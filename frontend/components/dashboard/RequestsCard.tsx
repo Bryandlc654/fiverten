@@ -38,7 +38,7 @@ export default function RequestsCard({ stats }: { stats: OrganizationStats | nul
         rateLabel="conversión"
         items={[
           { label: 'Enviadas', value: reviewRequests.sent, tone: 'text-slate-700' },
-          { label: 'Abiertas', value: reviewRequests.opened, tone: 'text-blue-600' },
+          { label: 'Abiertas', value: reviewRequests.opened, tone: 'text-blue-700' },
           { label: 'Completadas', value: reviewRequests.completed, tone: 'text-emerald-600' },
         ]}
       />
@@ -97,7 +97,7 @@ function Section({
   return (
     <div className="mt-4 border-t border-slate-100 pt-4">
       <div className="flex items-center justify-between gap-2">
-        <Link href={href} className="text-sm font-semibold text-slate-800 hover:text-blue-600">
+        <Link href={href} className="text-sm font-semibold text-slate-800 hover:text-blue-700">
           {title}
         </Link>
         <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">

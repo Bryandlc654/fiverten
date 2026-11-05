@@ -5,11 +5,7 @@ import { NEUTRAL_TONE } from '../../lib/status-tones';
 import { Badge, LoadingRow } from '../ui';
 
 export type UserToggle =
-  | 'isActive'
-  | 'isVerified'
-  | 'isSuperAdmin'
-  | 'isSupportAgent'
-  | 'isVerifier';
+  'isActive' | 'isVerified' | 'isSuperAdmin' | 'isSupportAgent' | 'isVerifier';
 
 export default function UsersTable({
   users,
@@ -65,10 +61,10 @@ export default function UsersTable({
                     />
                     <Badge
                       label={user.isVerified ? 'Verificado' : 'Sin verificar'}
-                      tone={user.isVerified ? 'bg-blue-50 text-blue-600' : NEUTRAL_TONE}
+                      tone={user.isVerified ? 'bg-blue-50 text-blue-700' : NEUTRAL_TONE}
                     />
                     {user.isSupportAgent && (
-                      <Badge label="Soporte" tone="bg-violet-50 text-violet-600" />
+                      <Badge label="Soporte" tone="bg-slate-100 text-slate-600" />
                     )}
                     {user.isVerifier && (
                       <Badge label="Verificador" tone="bg-cyan-50 text-cyan-700" />
@@ -97,7 +93,7 @@ export default function UsersTable({
                       type="button"
                       disabled={busy}
                       onClick={() => onToggle(user, 'isSupportAgent')}
-                      className="rounded-lg border border-violet-200 px-3 py-1.5 text-xs font-semibold text-violet-600 transition hover:bg-violet-50 disabled:opacity-60"
+                      className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
                     >
                       {user.isSupportAgent ? 'Quitar soporte' : 'Hacer soporte'}
                     </button>

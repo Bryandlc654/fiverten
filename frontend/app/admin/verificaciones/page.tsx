@@ -17,7 +17,7 @@ const PAGE_SIZE = 20;
 
 const STATUS: Record<string, { label: string; tone: string }> = {
   draft: { label: 'Borrador', tone: 'bg-slate-100 text-slate-500' },
-  submitted: { label: 'Enviada', tone: 'bg-blue-50 text-blue-600' },
+  submitted: { label: 'Enviada', tone: 'bg-blue-50 text-blue-700' },
   in_review: { label: 'En revisión', tone: 'bg-amber-50 text-amber-700' },
   approved: { label: 'Aprobada', tone: 'bg-emerald-50 text-emerald-600' },
   rejected: { label: 'Rechazada', tone: 'bg-red-50 text-red-600' },
@@ -175,7 +175,9 @@ export default function AdminVerificationsPage() {
             {loading ? (
               <p className="px-4 py-4 text-sm text-slate-500">Cargando solicitudes…</p>
             ) : items.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-slate-500">No hay solicitudes con estos filtros.</p>
+              <p className="px-4 py-6 text-sm text-slate-500">
+                No hay solicitudes con estos filtros.
+              </p>
             ) : (
               <ul className="divide-y divide-slate-100">
                 {items.map((item) => (
@@ -206,7 +208,12 @@ export default function AdminVerificationsPage() {
               </ul>
             )}
             {total > PAGE_SIZE && (
-              <Pagination summary={`${total} solicitudes`} page={page} pages={pages} onPage={setPage} />
+              <Pagination
+                summary={`${total} solicitudes`}
+                page={page}
+                pages={pages}
+                onPage={setPage}
+              />
             )}
           </section>
 
@@ -237,15 +244,18 @@ export default function AdminVerificationsPage() {
                   ) : (
                     <ul className="mt-2 divide-y divide-slate-100">
                       {selected.documents.map((document) => (
-                        <li key={document.id} className="flex items-center justify-between gap-2 py-2 text-sm">
+                        <li
+                          key={document.id}
+                          className="flex items-center justify-between gap-2 py-2 text-sm"
+                        >
                           <div className="min-w-0">
-                            <p className="truncate font-medium text-slate-900">{document.filename}</p>
+                            <p className="truncate font-medium text-slate-900">
+                              {document.filename}
+                            </p>
                             <p className="text-xs text-slate-500">
                               {CATEGORIES[document.category] ?? document.category} · v
                               {document.version ?? 1} · {(document.size / 1024).toFixed(0)} KB
-                              {document.evidence
-                                ? ` · evidencia ${document.evidence.status}`
-                                : ''}
+                              {document.evidence ? ` · evidencia ${document.evidence.status}` : ''}
                             </p>
                             {(document.issuer || document.documentNumber) && (
                               <p className="mt-0.5 text-[11px] text-slate-400">
@@ -285,7 +295,7 @@ export default function AdminVerificationsPage() {
                               href={project.url}
                               target="_blank"
                               rel="noopener noreferrer nofollow"
-                              className="text-xs text-blue-600 hover:underline"
+                              className="text-xs text-blue-700 hover:underline"
                             >
                               {project.url}
                             </a>
@@ -298,8 +308,7 @@ export default function AdminVerificationsPage() {
                                   className="flex items-center justify-between gap-2 text-xs"
                                 >
                                   <span className="truncate text-slate-600">
-                                    {document.filename} ·{' '}
-                                    {(document.size / 1024).toFixed(0)} KB
+                                    {document.filename} · {(document.size / 1024).toFixed(0)} KB
                                   </span>
                                   <button
                                     type="button"
@@ -331,9 +340,13 @@ export default function AdminVerificationsPage() {
                   ) : (
                     <ul className="mt-2 space-y-2">
                       {selected.events.map((event) => (
-                        <li key={event.id} className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                        <li
+                          key={event.id}
+                          className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600"
+                        >
                           <p className="font-semibold text-slate-800">
-                            {event.action} · {event.previousStatus ?? '—'} → {event.newStatus ?? '—'}
+                            {event.action} · {event.previousStatus ?? '—'} →{' '}
+                            {event.newStatus ?? '—'}
                           </p>
                           <p className="mt-0.5">
                             {formatDate(event.createdAt)} · {event.actorType} · {event.dataOrigin}

@@ -113,8 +113,16 @@ export default function DocumentsPage() {
 
   if (loading || !data) {
     return (
-      <DashboardShell active="documentos" title="Documentos" subtitle="Documentación de verificación">
-        {error ? <Alert tone="error">{error}</Alert> : <p className="text-sm text-slate-500">Cargando…</p>}
+      <DashboardShell
+        active="documentos"
+        title="Documentos"
+        subtitle="Documentación de verificación"
+      >
+        {error ? (
+          <Alert tone="error">{error}</Alert>
+        ) : (
+          <p className="text-sm text-slate-500">Cargando…</p>
+        )}
       </DashboardShell>
     );
   }
@@ -152,7 +160,9 @@ export default function DocumentsPage() {
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                 Estado de la verificación
               </p>
-              <h2 className="mt-1 text-xl font-bold text-slate-900">{data.organization.tradeName}</h2>
+              <h2 className="mt-1 text-xl font-bold text-slate-900">
+                {data.organization.tradeName}
+              </h2>
               <p className="mt-1 text-sm text-slate-600">{status.help}</p>
             </div>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
@@ -185,10 +195,10 @@ export default function DocumentsPage() {
             </p>
           )}
           <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4 text-sm">
-            <Link href="/app/proyectos" className="font-semibold text-blue-600 hover:underline">
+            <Link href="/app/proyectos" className="font-semibold text-blue-700 hover:underline">
               Gestionar proyectos y evidencias →
             </Link>
-            <Link href="/app/sello" className="font-semibold text-blue-600 hover:underline">
+            <Link href="/app/sello" className="font-semibold text-blue-700 hover:underline">
               Enviar solicitud y ver sello →
             </Link>
           </div>
@@ -205,7 +215,9 @@ export default function DocumentsPage() {
               <Field label="Tipo de documento" className="block">
                 <select
                   value={category}
-                  onChange={(event) => setCategory(event.target.value as VerificationDocumentCategory)}
+                  onChange={(event) =>
+                    setCategory(event.target.value as VerificationDocumentCategory)
+                  }
                   className={inputClass}
                 >
                   {Object.entries(CATEGORIES).map(([key, label]) => (
@@ -276,7 +288,10 @@ export default function DocumentsPage() {
           ) : (
             <ul className="mt-3 divide-y divide-slate-100">
               {documents.map((document) => (
-                <li key={document.id} className="flex items-center justify-between gap-2 py-2 text-sm">
+                <li
+                  key={document.id}
+                  className="flex items-center justify-between gap-2 py-2 text-sm"
+                >
                   <div className="min-w-0">
                     <p className="truncate font-medium text-slate-900">{document.filename}</p>
                     <p className="text-xs text-slate-500">
