@@ -42,6 +42,9 @@ export class PublicReviewsController {
     @Query('sector') sector?: string,
     @Query('country') country?: string,
     @Query('verified') verified?: string,
+    @Query('hasProjects') hasProjects?: string,
+    @Query('hasOpinions') hasOpinions?: string,
+    @Query('sort') sort?: 'relevance' | 'recent' | 'rating',
   ) {
     return this.reviews.listOrganizations({
       page,
@@ -50,6 +53,9 @@ export class PublicReviewsController {
       sector,
       country,
       verified: verified === 'true',
+      hasProjects: hasProjects === 'true',
+      hasOpinions: hasOpinions === 'true',
+      sort,
     });
   }
 

@@ -19,9 +19,10 @@ test.describe('Web pública', () => {
     await seedCertification(organization.slug);
 
     await page.goto(`/empresas?search=${encodeURIComponent('Página Pública E2E')}`);
-    await expect(page.getByRole('heading', { name: 'Directorio de empresas' })).toBeVisible();
-    const card = page.getByRole('link', { name: /Página Pública E2E/ }).first();
+    await expect(page.getByRole('heading', { name: 'Empresas verificadas' })).toBeVisible();
+    const card = page.getByRole('article').filter({ hasText: 'Página Pública E2E' }).first();
     await expect(card).toBeVisible();
+    await expect(card.getByRole('link', { name: /Ver perfil/ })).toBeVisible();
 
     await page.goto(`/empresa/${organization.slug}/documentacion`);
     await expect(page.getByRole('heading', { name: 'Categorías comprobadas' })).toBeVisible();

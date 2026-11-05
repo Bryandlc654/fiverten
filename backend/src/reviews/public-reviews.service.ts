@@ -196,15 +196,21 @@ export class PublicReviewsService {
     sector?: string;
     country?: string;
     verified?: boolean;
+    hasProjects?: boolean;
+    hasOpinions?: boolean;
+    sort?: 'relevance' | 'recent' | 'rating';
   }) {
     const page = Math.max(1, query.page);
     const pageSize = Math.min(48, Math.max(1, query.pageSize));
     const search = query.search?.trim();
-    const where: Prisma.OrganizationWhereInput = {
+    const basePublic: Prisma.OrganizationWhereInput = {
       deletedAt: null,
       isActive: true,
       status: 'active',
       isPublic: true,
+    };
+    const where: Prisma.OrganizationWhereInput = {
+      ...basePublic,
       ...(search
         ? {
             OR: [
@@ -216,11 +222,23 @@ export class PublicReviewsService {
       ...(query.sector ? { sector: { slug: query.sector } } : {}),
       ...(query.country ? { country: { iso2: query.country.toUpperCase() } } : {}),
     };
+    const and: Prisma.OrganizationWhereInput[] = [];
     if (query.verified) {
-      where.AND = [
+      and.push(
         { verificationStatus: 'verified' },
         { OR: [{ verificationExpiresAt: null }, { verificationExpiresAt: { gt: new Date() } }] },
-      ];
+      );
+    }
+    if (query.hasProjects) {
+      and.push({
+        verificationRequests: { some: { status: 'approved', projects: { some: {} } } },
+      });
+    }
+    if (query.hasOpinions) {
+      and.push({ reviews: { some: PUBLISHED } });
+    }
+    if (and.length > 0) {
+      where.AND = and;
     }
 
     return this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
@@ -231,8 +249,22 @@ export class PublicReviewsService {
           include: {
             sector: { select: { slug: true, name: true } },
             country: { select: { iso2: true, name: true } },
+            verificationRequests: {
+              where: { status: 'approved' },
+              orderBy: { reviewedAt: 'desc' },
+              take: 1,
+              select: {
+                reviewedAt: true,
+                _count: { select: { documents: true, projects: true } },
+              },
+            },
           },
-          orderBy: { tradeName: 'asc' },
+          orderBy:
+            query.sort === 'recent'
+              ? { createdAt: 'desc' }
+              : query.sort === 'rating'
+                ? { reviews: { _count: 'desc' } }
+                : { tradeName: 'asc' },
           skip: (page - 1) * pageSize,
           take: pageSize,
         }),
@@ -258,20 +290,114 @@ export class PublicReviewsService {
         ]),
       );
 
+      const verifiedCondition: Prisma.OrganizationWhereInput = {
+        ...basePublic,
+        verificationStatus: 'verified',
+        OR: [{ verificationExpiresAt: null }, { verificationExpiresAt: { gt: new Date() } }],
+      };
+      const [sectorGroups, countryGroups, totalPublic, verifiedCount, withProjects, withOpinions, verifiedProjects] =
+        await Promise.all([
+          tx.organization.groupBy({
+            by: ['sectorId'],
+            where: basePublic,
+            _count: { _all: true },
+          }),
+          tx.organization.groupBy({
+            by: ['countryId'],
+            where: basePublic,
+            _count: { _all: true },
+          }),
+          tx.organization.count({ where: basePublic }),
+          tx.organization.count({ where: verifiedCondition }),
+          tx.organization.count({
+            where: {
+              ...basePublic,
+              verificationRequests: { some: { status: 'approved', projects: { some: {} } } },
+            },
+          }),
+          tx.organization.count({ where: { ...basePublic, reviews: { some: PUBLISHED } } }),
+          tx.verificationProject.count({
+            where: {
+              request: { status: 'approved' },
+              organization: basePublic,
+            },
+          }),
+        ]);
+
+      const sectorIds = sectorGroups.map((row) => row.sectorId).filter((id): id is string => !!id);
+      const countryIds = countryGroups
+        .map((row) => row.countryId)
+        .filter((id): id is string => !!id);
+      const [sectors, countries] = await Promise.all([
+        sectorIds.length
+          ? tx.sector.findMany({
+              where: { id: { in: sectorIds } },
+              select: { id: true, slug: true, name: true },
+            })
+          : ([] as { id: string; slug: string; name: string }[]),
+        countryIds.length
+          ? tx.country.findMany({
+              where: { id: { in: countryIds } },
+              select: { id: true, iso2: true, name: true },
+            })
+          : ([] as { id: string; iso2: string; name: string }[]),
+      ]);
+      const sectorById = new Map(sectors.map((sector) => [sector.id, sector]));
+      const countryById = new Map(countries.map((country) => [country.id, country]));
+
       return {
-        items: rows.map((row) => ({
-          slug: row.slug,
-          tradeName: row.tradeName,
-          description: row.description,
-          logoUrl: row.logoUrl,
-          sector: row.sector,
-          country: row.country,
-          verified: effectiveVerificationStatus(row) === 'verified',
-          rating: ratings.get(row.id) ?? { average: null, total: 0 },
-        })),
+        items: rows.map((row) => {
+          const latest = row.verificationRequests[0];
+          return {
+            slug: row.slug,
+            tradeName: row.tradeName,
+            description: row.description,
+            logoUrl: row.logoUrl,
+            coverUrl: row.coverUrl,
+            publicId: row.publicId,
+            sector: row.sector,
+            country: row.country,
+            verified: effectiveVerificationStatus(row) === 'verified',
+            verifiedAt: row.verifiedAt,
+            lastVerifiedAt: latest?.reviewedAt ?? null,
+            projectsCount: latest?._count.projects ?? 0,
+            documentsCount: latest?._count.documents ?? 0,
+            rating: ratings.get(row.id) ?? { average: null, total: 0 },
+          };
+        }),
         total,
         page,
         pageSize,
+        facets: {
+          sectors: sectorGroups
+            .map((row) => {
+              const sector = row.sectorId ? sectorById.get(row.sectorId) : null;
+              return sector
+                ? { slug: sector.slug, name: sector.name, count: row._count._all }
+                : null;
+            })
+            .filter((item): item is { slug: string; name: string; count: number } => item !== null)
+            .sort((a, b) => b.count - a.count),
+          countries: countryGroups
+            .map((row) => {
+              const country = row.countryId ? countryById.get(row.countryId) : null;
+              return country
+                ? { iso2: country.iso2, name: country.name, count: row._count._all }
+                : null;
+            })
+            .filter((item): item is { iso2: string; name: string; count: number } => item !== null)
+            .sort((a, b) => b.count - a.count),
+          verifiedCount,
+          withProjects,
+          withOpinions,
+          metrics: {
+            verifiedCompanies: verifiedCount,
+            verifiedProjects,
+            identityVerifiedPercent:
+              totalPublic > 0 ? Math.round((verifiedCount / totalPublic) * 100) : 0,
+            countries: countryGroups.length,
+          },
+        },
       };
     });
   }

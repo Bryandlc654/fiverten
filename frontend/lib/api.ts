@@ -137,10 +137,36 @@ export interface PublicOrganizationSummary {
   tradeName: string;
   description: string | null;
   logoUrl: string | null;
+  coverUrl: string | null;
+  publicId: string;
   sector: { slug: string; name: string } | null;
   country: { iso2: string; name: string } | null;
   verified: boolean;
+  verifiedAt: string | null;
+  lastVerifiedAt: string | null;
+  projectsCount: number;
+  documentsCount: number;
   rating: { average: number | null; total: number };
+}
+
+export interface PublicDirectory {
+  items: PublicOrganizationSummary[];
+  total: number;
+  page: number;
+  pageSize: number;
+  facets: {
+    sectors: { slug: string; name: string; count: number }[];
+    countries: { iso2: string; name: string; count: number }[];
+    verifiedCount: number;
+    withProjects: number;
+    withOpinions: number;
+    metrics: {
+      verifiedCompanies: number;
+      verifiedProjects: number;
+      identityVerifiedPercent: number;
+      countries: number;
+    };
+  };
 }
 
 export interface PublicVerificationProject {
@@ -1632,12 +1658,13 @@ export const api = {
     sector?: string;
     country?: string;
     verified?: boolean;
+    hasProjects?: boolean;
+    hasOpinions?: boolean;
+    sort?: 'relevance' | 'recent' | 'rating';
     page?: number;
     pageSize?: number;
-  } = {}): Promise<Paginated<PublicOrganizationSummary>> {
-    return request<Paginated<PublicOrganizationSummary>>(
-      `/public/organizations${buildQuery(params)}`,
-    );
+  } = {}): Promise<PublicDirectory> {
+    return request<PublicDirectory>(`/public/organizations${buildQuery(params)}`);
   },
   publicVerification(slug: string): Promise<PublicVerification> {
     return request<PublicVerification>(

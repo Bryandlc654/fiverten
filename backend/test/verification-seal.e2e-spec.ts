@@ -200,6 +200,19 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
     // Nunca se exponen nombres de documentos privados.
     expect(JSON.stringify(publicData.body)).not.toContain('identity.pdf');
 
+    const directory = await http()
+      .get('/api/public/organizations?verified=true')
+      .expect(200);
+    expect(directory.body.facets.metrics.verifiedCompanies).toBeGreaterThanOrEqual(1);
+    expect(directory.body.items[0]).toMatchObject({
+      slug,
+      verified: true,
+      publicId,
+      projectsCount: 1,
+      documentsCount: 4,
+      rating: { total: 0 },
+    });
+
     const svg = await http().get(`/api/seal/${publicId}.svg`).expect(200);
     expect(svg.headers['content-type']).toContain('image/svg+xml');
     expect(svgText(svg)).toContain('Empresa verificada');

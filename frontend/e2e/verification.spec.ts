@@ -16,7 +16,7 @@ test.describe('Sello y verificación', () => {
     await loginInBrowser(page, organization);
 
     await page.goto('/app/sello');
-    await expect(page.getByRole('heading', { name: 'Sello y verificación' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Sello y embeds' })).toBeVisible();
     await expect(page.getByText('Sin verificar').first()).toBeVisible();
 
     for (const category of ['identity', 'tax', 'address']) {
