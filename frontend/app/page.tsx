@@ -143,8 +143,6 @@ export default function HomePage() {
             <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-ink/30" />
           </div>
           <div className="home-grid-bg absolute inset-0 -z-10 opacity-40" />
-          <div className="home-orb absolute -right-32 top-16 -z-10 h-[470px] w-[470px] rounded-full bg-aqua/15 blur-3xl" />
-          <div className="home-orb home-orb-delay absolute -left-40 bottom-0 -z-10 h-[360px] w-[360px] rounded-full bg-blue-500/15 blur-3xl" />
           <div className="mx-auto grid max-w-7xl items-center gap-14 px-5 lg:grid-cols-[1.04fr_.96fr] lg:px-8">
             <div className="relative z-10">
               <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-aqua/25 bg-aqua/10 px-4 py-2 text-xs font-semibold tracking-wide text-aqua">
