@@ -1,5 +1,6 @@
 'use client';
 
+import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { caseBadge } from '../../../components/cases/case-labels';
 import { CaseComposer, CaseThread } from '../../../components/cases/CaseThread';
@@ -49,8 +50,9 @@ function guidance(data: ClientCase): { tone: 'info' | 'success'; text: string } 
  * Enlace del correo para el caso de evidencias de una reseña de baja valoración.
  * No requiere cuenta: el token de la URL identifica el caso.
  */
-export default function CasePage({ params }: { params: { token: string } }) {
-  const { token } = params;
+export default function CasePage() {
+  const params = useParams<{ token: string }>();
+  const token = params?.token ?? '';
   const [data, setData] = useState<ClientCase | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

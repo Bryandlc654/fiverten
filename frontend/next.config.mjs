@@ -5,6 +5,7 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+  outputFileTracingRoot: process.cwd(),
   images: {
     // Logos y portadas se suben a Cloudflare R2 con dominios configurables, así
     // que el optimizador acepta cualquier host HTTPS (y local en desarrollo).

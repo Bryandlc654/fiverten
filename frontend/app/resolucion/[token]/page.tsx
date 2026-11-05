@@ -1,5 +1,6 @@
 'use client';
 
+import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import PublicShell from '../../../components/public/PublicShell';
 import { Stars, StarPicker } from '../../../components/reviews/Stars';
@@ -22,8 +23,9 @@ function messageOf(err: unknown, fallback: string): string {
  * Enlace del correo para resolver una reseña de baja valoración. No requiere
  * cuenta: el token de la URL identifica la incidencia.
  */
-export default function ResolutionPage({ params }: { params: { token: string } }) {
-  const { token } = params;
+export default function ResolutionPage() {
+  const params = useParams<{ token: string }>();
+  const token = params?.token ?? '';
   const [data, setData] = useState<ClientResolution | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

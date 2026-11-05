@@ -2,11 +2,12 @@ import type { Metadata } from 'next';
 
 interface LayoutProps {
   children: React.ReactNode;
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-  const name = params.slug.replace(/-/g, ' ');
+export async function generateMetadata({ params }: LayoutProps): Promise<Metadata> {
+  const { slug } = await params;
+  const name = slug.replace(/-/g, ' ');
   return {
     title: `${name} | FIVERTEN`,
     description:

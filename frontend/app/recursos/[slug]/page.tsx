@@ -5,15 +5,16 @@ import PublicShell from '../../../components/public/PublicShell';
 import { RESOURCES, resourceBySlug } from '../../../lib/resources';
 
 interface PageProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 export function generateStaticParams() {
   return RESOURCES.map((resource) => ({ slug: resource.slug }));
 }
 
-export function generateMetadata({ params }: PageProps): Metadata {
-  const resource = resourceBySlug(params.slug);
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const resource = resourceBySlug(slug);
   if (!resource) return { title: 'Recurso no encontrado | FIVERTEN' };
   return {
     title: `${resource.title} | FIVERTEN`,
@@ -21,8 +22,9 @@ export function generateMetadata({ params }: PageProps): Metadata {
   };
 }
 
-export default function ResourcePage({ params }: PageProps) {
-  const resource = resourceBySlug(params.slug);
+export default async function ResourcePage({ params }: PageProps) {
+  const { slug } = await params;
+  const resource = resourceBySlug(slug);
   if (!resource) notFound();
 
   return (
