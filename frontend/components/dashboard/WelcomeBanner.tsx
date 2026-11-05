@@ -5,33 +5,58 @@ export default function WelcomeBanner({
   isVerified,
   publicId,
   slug,
+  profileCompletion,
+  pendingDocuments,
+  visits,
+  reviews,
 }: {
   firstName: string | null;
   isVerified: boolean;
   publicId: string | undefined;
   slug: string | undefined;
+  profileCompletion: number;
+  pendingDocuments: number;
+  visits: number;
+  reviews: number;
 }) {
+  const metrics = [
+    { label: 'Perfil completo', value: `${profileCompletion}%`, icon: 'donut_large' },
+    {
+      label: 'Documentos pendientes',
+      value: String(pendingDocuments),
+      icon: 'description',
+    },
+    { label: 'Visitas · 30 días', value: String(visits), icon: 'visibility' },
+    { label: 'Opiniones', value: String(reviews), icon: 'reviews' },
+  ];
+
   return (
     <section className="relative overflow-hidden rounded-2xl bg-[#0b101b] px-6 py-7 text-white">
       <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-[#2563eb]/30 blur-3xl" />
+      <div className="absolute -bottom-28 left-1/3 h-56 w-56 rounded-full bg-[#52D6D0]/10 blur-3xl" />
       <div className="relative flex flex-wrap items-center justify-between gap-6">
-        <div className="max-w-lg">
-          <p className="text-sm text-slate-400">Hola{firstName ? `, ${firstName}` : ''} 👋</p>
-          <h2 className="mt-1 text-2xl font-bold">
-            Tu reputación verificada, lista para compartir
-          </h2>
+        <div className="max-w-xl">
+          <p className="text-sm text-slate-400">Hola{firstName ? `, ${firstName}` : ''}</p>
+          <h2 className="mt-1 text-2xl font-bold">Tu reputación ahora es verificable</h2>
           <p className="mt-2 text-sm text-slate-400">
-            Muestra tu sello FIVERTEN en tu web y convierte más visitantes en clientes que confían
-            en ti.
+            Completa tu perfil, consigue opiniones reales y muestra el sello FIVERTEN para convertir
+            más visitas en clientes que confían en ti.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
-            <button
-              type="button"
+            <Link
+              href="/app/perfil"
               className="inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-600"
             >
+              <span className="material-symbols-outlined text-[18px]">edit</span>
+              Completar perfil
+            </Link>
+            <Link
+              href="/app/sello"
+              className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/5"
+            >
               <span className="material-symbols-outlined text-[18px]">verified</span>
-              Obtener mi sello
-            </button>
+              Gestionar sello
+            </Link>
             {slug && (
               <Link
                 href={`/empresa/${slug}`}
@@ -60,6 +85,20 @@ export default function WelcomeBanner({
             <p className="text-xs text-slate-400">{publicId ?? '—'}</p>
           </div>
         </div>
+      </div>
+
+      <div className="relative mt-6 grid grid-cols-2 gap-2 border-t border-white/10 pt-4 lg:grid-cols-4">
+        {metrics.map((metric) => (
+          <div key={metric.label} className="flex items-center gap-2.5 rounded-lg px-1 py-1.5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/5 text-slate-300">
+              <span className="material-symbols-outlined text-[18px]">{metric.icon}</span>
+            </span>
+            <div className="min-w-0">
+              <p className="text-base font-bold leading-tight text-white">{metric.value}</p>
+              <p className="truncate text-[11px] text-slate-400">{metric.label}</p>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );

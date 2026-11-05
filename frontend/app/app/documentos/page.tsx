@@ -27,6 +27,24 @@ const STATUS: Record<string, { label: string; help: string }> = {
   expired: { label: 'Caducada', help: 'La verificación caducó o se revocó.' },
 };
 
+const REQUEST_STATUS: Record<string, string> = {
+  draft: 'Borrador',
+  submitted: 'Enviada',
+  in_review: 'En revisión',
+  approved: 'Aprobada',
+  rejected: 'Rechazada',
+  revoked: 'Revocada',
+};
+
+function formatDate(value: string | null | undefined): string {
+  if (!value) return '—';
+  return new Date(value).toLocaleDateString('es-ES', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
 export default function DocumentsPage() {
   const [data, setData] = useState<VerificationStatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -94,6 +112,15 @@ export default function DocumentsPage() {
   const missing = required.filter(
     (key) => !documents.some((document) => document.category === key),
   );
+  const versionById = new Map<string, number>();
+  const versionCounters = new Map<string, number>();
+  for (const document of [...documents].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  )) {
+    const next = (versionCounters.get(document.category) ?? 0) + 1;
+    versionCounters.set(document.category, next);
+    versionById.set(document.id, next);
+  }
 
   return (
     <DashboardShell
@@ -118,6 +145,26 @@ export default function DocumentsPage() {
               {status.label}
             </span>
           </div>
+          <dl className="mt-4 grid grid-cols-1 gap-2 border-t border-slate-100 pt-4 text-sm sm:grid-cols-3">
+            <div>
+              <dt className="text-slate-500">Solicitud</dt>
+              <dd className="font-medium text-slate-900">
+                {request ? (REQUEST_STATUS[request.status] ?? request.status) : 'Sin enviar'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Revisión</dt>
+              <dd className="font-medium text-slate-900">
+                {request?.reviewedAt ? formatDate(request.reviewedAt) : 'Pendiente'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Vigencia</dt>
+              <dd className="font-medium text-slate-900">
+                {data.expiresAt ? formatDate(data.expiresAt) : 'Sin verificar'}
+              </dd>
+            </div>
+          </dl>
           {request?.decisionReason && (
             <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
               <strong>Motivo:</strong> {request.decisionReason}
@@ -137,7 +184,8 @@ export default function DocumentsPage() {
           <section className="rounded-xl border border-slate-200 bg-white p-5">
             <h2 className="text-base font-bold text-slate-900">Añadir documento</h2>
             <p className="mt-1 text-xs text-slate-500">
-              Los documentos son privados: solo los revisa el equipo de FIVERTEN.
+              Los documentos son privados: solo los revisa el equipo de FIVERTEN. Cada nueva subida
+              del mismo tipo se guarda como una versión nueva.
             </p>
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[220px_1fr]">
               <Field label="Tipo de documento" className="block">
@@ -187,7 +235,8 @@ export default function DocumentsPage() {
                   <div className="min-w-0">
                     <p className="truncate font-medium text-slate-900">{document.filename}</p>
                     <p className="text-xs text-slate-500">
-                      {CATEGORIES[document.category] ?? document.category} ·{' '}
+                      {CATEGORIES[document.category] ?? document.category} · v
+                      {versionById.get(document.id) ?? 1} · {formatDate(document.createdAt)} ·{' '}
                       {(document.size / 1024).toFixed(0)} KB
                     </p>
                   </div>

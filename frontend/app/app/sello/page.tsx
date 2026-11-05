@@ -202,6 +202,17 @@ export default function VerificationPage() {
     }
   }
 
+  function trackSealDownload() {
+    if (!data) return;
+    void api
+      .trackPublicAnalytics({
+        slug: data.organization.slug,
+        type: 'seal_download',
+        path: window.location.pathname,
+      })
+      .catch(() => undefined);
+  }
+
   if (loading || !data) {
     return (
       <DashboardShell
@@ -305,6 +316,7 @@ export default function VerificationPage() {
                 <a
                   href={sealPng}
                   download={`fiverten-sello-${data.organization.publicId}.png`}
+                  onClick={trackSealDownload}
                   className="inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600"
                 >
                   <span className="material-symbols-outlined text-[18px]">download</span>
@@ -313,6 +325,7 @@ export default function VerificationPage() {
                 <a
                   href={sealSvg}
                   download={`fiverten-sello-${data.organization.publicId}.svg`}
+                  onClick={trackSealDownload}
                   className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
                 >
                   <span className="material-symbols-outlined text-[18px]">download</span>

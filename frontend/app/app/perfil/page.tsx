@@ -86,6 +86,14 @@ async function prepareCoverImage(file: File): Promise<File> {
 const INPUT_CLASS =
   'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500';
 
+const VERIFICATION_LABELS: Record<string, { label: string; tone: string }> = {
+  not_verified: { label: 'Sin verificar', tone: 'bg-slate-100 text-slate-600' },
+  pending: { label: 'Verificación en revisión', tone: 'bg-amber-50 text-amber-700' },
+  verified: { label: 'Empresa verificada', tone: 'bg-emerald-50 text-emerald-700' },
+  rejected: { label: 'Verificación rechazada', tone: 'bg-red-50 text-red-700' },
+  expired: { label: 'Verificación caducada', tone: 'bg-slate-100 text-slate-500' },
+};
+
 export default function CompanyPage() {
   const router = useRouter();
   const { role, isSuperAdmin } = useAuth();
@@ -577,7 +585,10 @@ export default function CompanyPage() {
                 </span>
               </label>
 
-              <fieldset className="space-y-3 border-t border-slate-100 pt-4 sm:col-span-2">
+              <fieldset
+                id="privacidad"
+                className="space-y-3 border-t border-slate-100 pt-4 sm:col-span-2"
+              >
                 <legend className="mb-2 flex items-center gap-2 pt-4 text-sm font-bold text-slate-900">
                   <span className="material-symbols-outlined text-[18px] text-slate-500">
                     notifications
@@ -635,9 +646,26 @@ export default function CompanyPage() {
               )}
             </form>
 
-            <p className="mt-4 text-xs text-slate-400">
-              Estado: {org?.status} · Verificación: {org?.verificationStatus}
-            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
+              <span
+                className={`rounded-full px-2.5 py-1 font-semibold ${
+                  org?.isPublic
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                {org?.isPublic ? 'Perfil público' : 'Perfil privado'}
+              </span>
+              <span
+                className={`rounded-full px-2.5 py-1 font-semibold ${
+                  VERIFICATION_LABELS[org?.verificationStatus ?? 'not_verified']?.tone ??
+                  'bg-slate-100 text-slate-600'
+                }`}
+              >
+                {VERIFICATION_LABELS[org?.verificationStatus ?? 'not_verified']?.label ??
+                  org?.verificationStatus}
+              </span>
+            </div>
           </section>
         ) : null}
       </div>

@@ -654,6 +654,43 @@ export interface OrganizationStats {
   };
 }
 
+/** Tráfico del perfil público y conversión de solicitudes de reseña. */
+export interface AnalyticsCounters {
+  visits: number;
+  clicks: number;
+  downloads: number;
+  interactions: number;
+  conversions: number;
+  sent: number;
+  /** 0-1, o null si no se enviaron solicitudes en el periodo. */
+  conversionRate: number | null;
+}
+
+export interface OrganizationAnalytics {
+  period: { days: number; from: string; to: string };
+  totals: AnalyticsCounters;
+  previous: AnalyticsCounters;
+  series: {
+    date: string;
+    visits: number;
+    clicks: number;
+    downloads: number;
+    conversions: number;
+  }[];
+  sources: {
+    source: string;
+    visits: number;
+    clicks: number;
+    downloads: number;
+  }[];
+}
+
+export type PublicAnalyticsEvent =
+  | 'profile_view'
+  | 'contact_click'
+  | 'website_click'
+  | 'seal_download';
+
 export type NotificationType = 'new_review' | 'negative_review';
 
 export interface AppNotification {
@@ -1585,6 +1622,21 @@ export const api = {
   // Estadísticas y notificaciones (empresa)
   getOrganizationStats(months = 12): Promise<OrganizationStats> {
     return request<OrganizationStats>(`/organizations/me/stats?months=${months}`);
+  },
+  getOrganizationAnalytics(days = 30): Promise<OrganizationAnalytics> {
+    return request<OrganizationAnalytics>(`/organizations/me/analytics?days=${days}`);
+  },
+  trackPublicAnalytics(payload: {
+    slug: string;
+    type: PublicAnalyticsEvent;
+    source?: string;
+    path?: string;
+    referrer?: string;
+  }): Promise<{ tracked: boolean }> {
+    return request<{ tracked: boolean }>('/public/analytics/events', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
   },
   listNotifications(
     params: { page?: number; pageSize?: number; unread?: boolean } = {},

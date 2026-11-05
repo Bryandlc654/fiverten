@@ -6,6 +6,12 @@ import DashboardShell from '../../../components/DashboardShell';
 import { Alert, Field, inputClass } from '../../../components/ui';
 import { ApiError, api, type VerificationStatusResponse } from '../../../lib/api';
 
+const CLIENT_STATUS: Record<string, string> = {
+  identified: 'Cliente identificado',
+  invited: 'Cliente invitado',
+  verified: 'Cliente verificado',
+};
+
 export default function ProjectsPage() {
   const [data, setData] = useState<VerificationStatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -128,9 +134,17 @@ export default function ProjectsPage() {
                 Añade proyectos reales y adjunta imágenes o PDF que demuestren tu actividad.
               </p>
             </div>
-            <Link href="/app/documentos" className="text-sm font-semibold text-blue-600 hover:underline">
-              Documentos →
-            </Link>
+            <div className="flex flex-wrap gap-3 text-sm font-semibold">
+              <Link href="/app/clientes" className="text-blue-600 hover:underline">
+                Invitar cliente
+              </Link>
+              <Link href="/app/sello" className="text-blue-600 hover:underline">
+                Solicitar verificación
+              </Link>
+              <Link href="/app/documentos" className="text-blue-600 hover:underline">
+                Documentos
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -272,6 +286,25 @@ export default function ProjectsPage() {
                           .filter(Boolean)
                           .join(' · ') || 'Sin clasificar'}
                       </p>
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                          {CLIENT_STATUS[project.clientStatus] ?? project.clientStatus}
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                            project.verifiedAt
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : 'bg-amber-50 text-amber-700'
+                          }`}
+                        >
+                          {project.verifiedAt ? 'Verificación completada' : 'Pendiente de verificar'}
+                        </span>
+                      </div>
+                      {project.verificationScope && (
+                        <p className="mt-1 text-[11px] text-slate-500">
+                          Alcance: {project.verificationScope}
+                        </p>
+                      )}
                       {project.description && (
                         <p className="mt-0.5 text-xs text-slate-500">{project.description}</p>
                       )}

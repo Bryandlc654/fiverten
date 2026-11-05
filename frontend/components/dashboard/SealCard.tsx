@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
+import { api } from '../../lib/api';
 
 type SealTab = 'seal' | 'widget' | 'qr';
 
@@ -57,6 +58,18 @@ export default function SealCard({
     } catch {
       setCopied(false);
     }
+  }
+
+  function trackDownload() {
+    const match = /\/empresa\/([^/?#]+)/.exec(publicUrl);
+    if (!match) return;
+    void api
+      .trackPublicAnalytics({
+        slug: decodeURIComponent(match[1]),
+        type: 'seal_download',
+        path: window.location.pathname,
+      })
+      .catch(() => undefined);
   }
 
   return (
@@ -129,6 +142,7 @@ export default function SealCard({
             <a
               href={sealPngUrl || '#'}
               download={`fiverten-sello-${publicId ?? 'empresa'}.png`}
+              onClick={trackDownload}
               aria-disabled={!sealPngUrl}
               className={`inline-flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-semibold text-white transition ${
                 sealPngUrl ? 'bg-[#2563eb] hover:bg-blue-600' : 'pointer-events-none bg-slate-300'
@@ -140,6 +154,7 @@ export default function SealCard({
             <a
               href={sealSvgUrl || '#'}
               download={`fiverten-sello-${publicId ?? 'empresa'}.svg`}
+              onClick={trackDownload}
               aria-disabled={!sealSvgUrl}
               className={`inline-flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-semibold text-white transition ${
                 sealSvgUrl ? 'bg-slate-900 hover:bg-slate-700' : 'pointer-events-none bg-slate-300'

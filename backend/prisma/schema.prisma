@@ -79,6 +79,7 @@ model Organization {
   verificationProjects  VerificationProject[]
   verificationEvents    VerificationEvent[]
   certifications        Certification[]
+  analyticsEvents       AnalyticsEvent[]
 
   @@index([slug])
   @@index([status, isActive, deletedAt])
@@ -924,8 +925,30 @@ model MediaFile {
   @@map("media_files")
 }
 
+// Eventos de trǭfico del perfil pǧblico. Solo se guardan datos agregables:
+// nunca IP, email ni identificadores personales del visitante.
+model AnalyticsEvent {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  // profile_view | contact_click | website_click | seal_download
+  type           String   @db.VarChar(30)
+  // direct | fiverten | google | bing | social | referral | qr | widget | campaign
+  source         String   @default("direct") @db.VarChar(40)
+  path           String?  @db.VarChar(300)
+  referrer       String?  @db.VarChar(500)
+  metadata       Json     @default("{}") @db.JsonB
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, type, createdAt])
+  @@index([organizationId, source, createdAt])
+  @@map("analytics_events")
+}
+
 // ============================================================================
-// Verificación de empresa y sello dinámico
+// Verificaci��n de empresa y sello dinǭmico
 // ============================================================================
 
 model VerificationRequest {

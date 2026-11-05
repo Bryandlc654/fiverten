@@ -131,7 +131,7 @@ export default function UsersPage() {
         {notice && <Alert tone="success">{notice}</Alert>}
         {error && <Alert tone="error">{error}</Alert>}
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Link
             href="/app/perfil"
             className="rounded-xl border border-slate-200 bg-white p-4 transition hover:border-blue-300"
@@ -139,6 +139,15 @@ export default function UsersPage() {
             <p className="text-sm font-bold text-slate-900">Perfil de empresa</p>
             <p className="mt-1 text-xs text-slate-500">
               Datos públicos, logo, portada y visibilidad del perfil.
+            </p>
+          </Link>
+          <Link
+            href="/app/perfil#privacidad"
+            className="rounded-xl border border-slate-200 bg-white p-4 transition hover:border-blue-300"
+          >
+            <p className="text-sm font-bold text-slate-900">Privacidad y avisos</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Contacto, reseñas ocultas y notificaciones por correo.
             </p>
           </Link>
           <Link
@@ -165,16 +174,24 @@ export default function UsersPage() {
           </div>
         )}
 
-        <MembersTable
-          members={members}
-          loading={loading}
-          busyId={busyId}
-          canManage={canManage}
-          canRemove={canRemove}
-          onChangeRole={changeRole}
-          onToggleActive={toggleActive}
-          onRemove={removeMember}
-        />
+        <div id="equipo" className="space-y-3">
+          <div>
+            <h2 className="text-base font-bold text-slate-900">Equipo y permisos</h2>
+            <p className="text-xs text-slate-500">
+              Administra quién puede editar el perfil, responder opiniones o gestionar el sello.
+            </p>
+          </div>
+          <MembersTable
+            members={members}
+            loading={loading}
+            busyId={busyId}
+            canManage={canManage}
+            canRemove={canRemove}
+            onChangeRole={changeRole}
+            onToggleActive={toggleActive}
+            onRemove={removeMember}
+          />
+        </div>
 
         {canManage && (
           <PendingInvitations

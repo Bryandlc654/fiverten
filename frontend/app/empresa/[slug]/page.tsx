@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import AnalyticsTracker from '../../../components/public/AnalyticsTracker';
 import HomeHeader from '../../../components/public/HomeHeader';
 import PublicFooter from '../../../components/public/PublicFooter';
 import ReviewCard from '../../../components/reviews/ReviewCard';
@@ -201,6 +202,7 @@ export default function PublicProfilePage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f8fafc] font-sans text-slate-900 antialiased">
+      <AnalyticsTracker slug={slug} />
       <HomeHeader />
 
       <section className="relative overflow-hidden bg-slate-900 pt-16 text-white">
@@ -297,6 +299,7 @@ export default function PublicProfilePage() {
             <div className="flex items-center space-x-3 self-start lg:self-center">
               <a
                 href={contactHref}
+                data-fv-event="contact_click"
                 className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700"
               >
                 <MailIcon className="h-3.5 w-3.5" />
@@ -358,6 +361,7 @@ export default function PublicProfilePage() {
                   <div className="flex flex-wrap items-center gap-3 pt-2">
                     <a
                       href={contactHref}
+                      data-fv-event="contact_click"
                       className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700"
                     >
                       <MailIcon className="h-3.5 w-3.5" />
@@ -372,6 +376,7 @@ export default function PublicProfilePage() {
                         }
                         target="_blank"
                         rel="noopener noreferrer nofollow"
+                        data-fv-event="website_click"
                         className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 transition hover:border-slate-400"
                       >
                         <ExternalIcon className="h-3.5 w-3.5 text-slate-500" />
@@ -385,6 +390,7 @@ export default function PublicProfilePage() {
                   href={profile.website || '#proyectos'}
                   target={profile.website ? '_blank' : undefined}
                   rel={profile.website ? 'noopener noreferrer nofollow' : undefined}
+                  data-fv-event={profile.website ? 'website_click' : undefined}
                   className="group relative aspect-video overflow-hidden rounded-lg border border-slate-200 bg-slate-900 shadow-inner"
                 >
                   <Image

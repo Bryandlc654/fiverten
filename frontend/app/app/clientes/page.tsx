@@ -86,6 +86,14 @@ export default function CampaignsPage() {
         {error && <Alert tone="error">{error}</Alert>}
         {notice && <Alert tone="success">{notice}</Alert>}
 
+        <div className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/70 px-4 py-3 text-sm text-blue-800">
+          <span className="material-symbols-outlined text-[20px] text-blue-600">lock</span>
+          <p>
+            Los nombres y correos de tus clientes son privados: solo los ve tu empresa. FIVERTEN no
+            los publica en el perfil ni los comparte con otras empresas.
+          </p>
+        </div>
+
         <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Metric label="Enviadas" value={totals.sent} />
           <Metric label="Abiertas" value={totals.opened} />

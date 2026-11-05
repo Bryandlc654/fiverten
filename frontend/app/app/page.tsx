@@ -13,9 +13,36 @@ import SealCard from '../../components/dashboard/SealCard';
 import StatsGrid from '../../components/dashboard/StatsGrid';
 import TasksCard from '../../components/dashboard/TasksCard';
 import WelcomeBanner from '../../components/dashboard/WelcomeBanner';
-import { ApiError, api, type OrganizationDetail, type OrganizationStats } from '../../lib/api';
+import {
+  ApiError,
+  api,
+  type OrganizationAnalytics,
+  type OrganizationDetail,
+  type OrganizationStats,
+  type VerificationStatusResponse,
+} from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
 import { roleLabel } from '../../lib/roles';
+
+const PROFILE_FIELDS = [
+  'tradeName',
+  'legalName',
+  'taxId',
+  'description',
+  'logoUrl',
+  'coverUrl',
+  'website',
+  'email',
+  'phone',
+  'sectorId',
+  'countryId',
+] as const;
+
+function completionOf(org: OrganizationDetail | null): number {
+  if (!org) return 0;
+  const done = PROFILE_FIELDS.filter((field) => Boolean(org[field])).length;
+  return Math.round((done / PROFILE_FIELDS.length) * 100);
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -32,6 +59,8 @@ export default function DashboardPage() {
   const [sendingVerification, setSendingVerification] = useState(false);
   const [stats, setStats] = useState<OrganizationStats | null>(null);
   const [orgDetail, setOrgDetail] = useState<OrganizationDetail | null>(null);
+  const [verification, setVerification] = useState<VerificationStatusResponse | null>(null);
+  const [analytics, setAnalytics] = useState<OrganizationAnalytics | null>(null);
   const [statsError, setStatsError] = useState(false);
   const [origin, setOrigin] = useState('https://fiverten.com');
 
@@ -59,6 +88,14 @@ export default function DashboardPage() {
     api
       .getMyOrganization()
       .then(setOrgDetail)
+      .catch(() => undefined);
+    api
+      .myVerification()
+      .then(setVerification)
+      .catch(() => undefined);
+    api
+      .getOrganizationAnalytics(30)
+      .then(setAnalytics)
       .catch(() => undefined);
   }, [isLoading, isAuthenticated, isSuperAdmin, hasOrganization]);
 
@@ -107,6 +144,12 @@ export default function DashboardPage() {
   const publicUrl = organization?.slug
     ? `${origin}/empresa/${organization.slug}`
     : `${origin}/mi-empresa`;
+  const documents = verification?.request?.documents ?? [];
+  const requiredDocuments = verification?.requirements.requiredDocuments ?? [];
+  const pendingDocuments = requiredDocuments.filter(
+    (category) => !documents.some((document) => document.category === category),
+  ).length;
+  const profileCompletion = completionOf(orgDetail);
 
   return (
     <DashboardShell
@@ -143,6 +186,10 @@ export default function DashboardPage() {
             isVerified={isVerified}
             publicId={organization?.publicId}
             slug={organization?.slug}
+            profileCompletion={profileCompletion}
+            pendingDocuments={pendingDocuments}
+            visits={analytics?.totals.visits ?? 0}
+            reviews={stats?.rating.total ?? 0}
           />
 
           {statsError && (
@@ -154,19 +201,23 @@ export default function DashboardPage() {
           <StatsGrid stats={stats} />
 
           <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
-            <PerformanceChart monthly={stats?.monthly ?? null} />
-            <RatingDistribution stats={stats} />
+            <div className="min-w-0 xl:col-span-2">
+              <PerformanceChart monthly={stats?.monthly ?? null} />
+            </div>
+            <SealCard publicUrl={publicUrl} publicId={organization?.publicId} />
+          </section>
+
+          <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
+            <TasksCard org={orgDetail} stats={stats} />
+            <div className="min-w-0 xl:col-span-2">
+              <LatestReviews />
+            </div>
           </section>
 
           <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
             <RequestsCard stats={stats} />
-            <LatestReviews />
-          </section>
-
-          <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
-            <TasksCard org={orgDetail} stats={stats} />
+            <RatingDistribution stats={stats} />
             <RecentActivity />
-            <SealCard publicUrl={publicUrl} publicId={organization?.publicId} />
           </section>
       </div>
     </DashboardShell>

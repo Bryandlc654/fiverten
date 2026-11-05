@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AdminModule } from './admin/admin.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { AuthModule } from './auth/auth.module';
 import { BillingModule } from './billing/billing.module';
 import { ConfigurationModule } from './configuration/configuration.module';
@@ -35,6 +36,7 @@ import { WidgetModule } from './widget/widget.module';
     SettingsModule,
     MailModule,
     AuthModule,
+    AnalyticsModule,
     OrganizationsModule,
     AdminModule,
     MediaModule,
