@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import HomeHeader from '../../components/public/HomeHeader';
 import Pagination from '../../components/ui/Pagination';
 import {
   ApiError,
@@ -119,36 +120,9 @@ export default function CompaniesDirectoryPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans text-slate-800 antialiased">
-      <header className="sticky top-0 z-50 border-b border-slate-800 bg-[#0b0f17] text-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-2.5" aria-label="FIVERTEN inicio">
-            <Image
-              src="/logo-fiverten.png"
-              alt="FIVERTEN"
-              width={2000}
-              height={347}
-              className="h-8 w-auto"
-              priority
-            />
-          </Link>
-          <div className="flex items-center gap-4 text-xs font-semibold text-slate-300">
-            <Link href="/empresas" className="text-white">
-              Directorio
-            </Link>
-            <Link href="/como-funciona" className="hover:text-white">
-              Cómo funciona
-            </Link>
-            <Link
-              href="/verificar-empresa"
-              className="rounded-md bg-[#1d63ed] px-3 py-2 text-white transition hover:bg-blue-600"
-            >
-              Verificar empresa
-            </Link>
-          </div>
-        </div>
-      </header>
+      <HomeHeader />
 
-      <section className="relative overflow-hidden bg-[#0d121c] pb-16 pt-12 text-white">
+      <section className="relative overflow-hidden bg-[#0d121c] pb-16 pt-28 text-white lg:pt-36">
         <div className="absolute inset-0 z-0 opacity-25">
           <Image
             src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1800&q=85"

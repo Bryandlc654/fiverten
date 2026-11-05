@@ -20,6 +20,8 @@ test.describe('Web pública', () => {
 
     await page.goto(`/empresas?search=${encodeURIComponent('Página Pública E2E')}`);
     await expect(page.getByRole('heading', { name: 'Empresas verificadas' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Cómo funciona' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Directorio', exact: true })).toHaveCount(0);
     const card = page.getByRole('article').filter({ hasText: 'Página Pública E2E' }).first();
     await expect(card).toBeVisible();
     await expect(card.getByRole('link', { name: /Ver perfil/ })).toBeVisible();
