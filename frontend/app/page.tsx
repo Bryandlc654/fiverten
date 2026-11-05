@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import HomeHeader from '../components/public/HomeHeader';
+import PublicFooter from '../components/public/PublicFooter';
 import { useEffect, useState, type FormEvent } from 'react';
 
 const FAQS = [
@@ -778,54 +779,7 @@ export default function HomePage() {
         </section>
       </main>
 
-      <footer className="bg-[#06101e] py-12 text-white">
-        <div className="mx-auto max-w-7xl px-5 lg:px-8">
-          <div className="grid gap-10 border-b border-white/10 pb-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
-            <div>
-              <Link href="/" className="flex items-center gap-2.5">
-                <Image
-                  src="/logo-fiverten.png"
-                  alt="FIVERTEN"
-                  width={2000}
-                  height={347}
-                  className="h-8 w-auto"
-                />
-              </Link>
-              <p className="mt-5 max-w-xs text-sm leading-6 text-slate-400">
-                Reputación verificable para decisiones más confiables. Empresas verificadas y reseñas
-                con contexto.
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-bold">Explorar</p>
-              <ul className="mt-5 space-y-3 text-sm text-slate-400">
-                <li><a className="hover:text-aqua" href="#directorio">Directorio</a></li>
-                <li><a className="hover:text-aqua" href="#como-funciona">Cómo funciona</a></li>
-                <li><a className="hover:text-aqua" href="#soluciones">Sello dinámico</a></li>
-              </ul>
-            </div>
-            <div>
-              <p className="text-sm font-bold">Transparencia</p>
-              <ul className="mt-5 space-y-3 text-sm text-slate-400">
-                <li><a className="hover:text-aqua" href="#trust-center">Trust Center</a></li>
-                <li><a className="hover:text-aqua" href="#metodologia">Metodología</a></li>
-                <li><a className="hover:text-aqua" href="#opiniones">Política de opiniones</a></li>
-              </ul>
-            </div>
-            <div>
-              <p className="text-sm font-bold">Para empresas</p>
-              <ul className="mt-5 space-y-3 text-sm text-slate-400">
-                <li><Link className="hover:text-aqua" href="/verificar-empresa">Verificar empresa</Link></li>
-                <li><Link className="hover:text-aqua" href="/trust-center">Centro de confianza</Link></li>
-              </ul>
-            </div>
-          </div>
-          <div className="flex flex-col justify-between gap-3 pt-7 text-xs text-slate-500 sm:flex-row">
-            <p>© {new Date().getFullYear()} FIVERTEN. Todos los derechos reservados.</p>
-            <p>La confianza se demuestra con hechos.</p>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

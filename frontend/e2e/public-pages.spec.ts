@@ -20,14 +20,14 @@ test.describe('Web pública', () => {
 
     await page.goto(`/empresas?search=${encodeURIComponent('Página Pública E2E')}`);
     await expect(page.getByRole('heading', { name: 'Empresas verificadas' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Cómo funciona' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Cómo funciona' }).first()).toBeVisible();
     await expect(page.getByRole('link', { name: 'Directorio', exact: true })).toHaveCount(0);
     const card = page.getByRole('article').filter({ hasText: 'Página Pública E2E' }).first();
     await expect(card).toBeVisible();
     await expect(card.getByRole('link', { name: /Ver perfil/ })).toBeVisible();
 
     await page.goto(`/empresa/${organization.slug}`);
-    await expect(page.getByRole('link', { name: 'Cómo funciona' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Cómo funciona' }).first()).toBeVisible();
     await expect(page.getByRole('link', { name: 'Directorio', exact: true })).toHaveCount(0);
 
     await page.goto(`/empresa/${organization.slug}/documentacion`);
@@ -52,6 +52,26 @@ test.describe('Web pública', () => {
     await expect(page.getByText('Certificaciones externas')).toBeVisible();
     await expect(page.getByText('ISO 9001')).toBeVisible();
     await expect(page.getByText('AENOR')).toBeVisible();
+  });
+
+  test('el footer común aparece en las páginas públicas', async ({ page, request }) => {
+    test.skip(!canSeed(), 'Define E2E_DATABASE_URL para sembrar la empresa');
+
+    const organization = await seedOrganization(request, 'Footer E2E SL');
+    await makeProfilePublic(request, organization);
+    const routes = [
+      '/',
+      '/empresas',
+      '/trust-center',
+      '/como-funciona',
+      '/verificar-empresa',
+      `/empresa/${organization.slug}`,
+      `/empresa/${organization.slug}/opiniones`,
+    ];
+    for (const route of routes) {
+      await page.goto(route);
+      await expect(page.getByText(/Todos los derechos reservados/)).toBeVisible();
+    }
   });
 
   test('páginas institucionales y de captación', async ({ page }) => {

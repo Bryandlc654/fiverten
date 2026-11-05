@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import HomeHeader from '../../../../components/public/HomeHeader';
+import PublicFooter from '../../../../components/public/PublicFooter';
 import ReportReviewModal from '../../../../components/reviews/ReportReviewModal';
 import Pagination from '../../../../components/ui/Pagination';
 import {
@@ -413,6 +414,8 @@ export default function PublicReviewsPage() {
           </aside>
         </div>
       </main>
+
+      <PublicFooter />
 
       {reportingId && (
         <ReportReviewModal

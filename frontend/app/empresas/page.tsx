@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import HomeHeader from '../../components/public/HomeHeader';
+import PublicFooter from '../../components/public/PublicFooter';
 import Pagination from '../../components/ui/Pagination';
 import {
   ApiError,
@@ -485,6 +486,8 @@ export default function CompaniesDirectoryPage() {
           </section>
         </div>
       </main>
+
+      <PublicFooter />
     </div>
   );
 }

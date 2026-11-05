@@ -81,7 +81,7 @@ export default function MethodologyPage() {
           ))}
         </div>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-6">
+        <section id="opiniones" className="rounded-2xl border border-slate-200 bg-white p-6">
           <h2 className="text-lg font-bold text-slate-900">Política de opiniones</h2>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">
             Las opiniones pertenecen a los clientes. Las empresas pueden responder públicamente,

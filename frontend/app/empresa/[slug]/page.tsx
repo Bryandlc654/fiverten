@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import HomeHeader from '../../../components/public/HomeHeader';
+import PublicFooter from '../../../components/public/PublicFooter';
 import ReviewCard from '../../../components/reviews/ReviewCard';
 import {
   VERIFICATION_CATEGORIES,
@@ -768,12 +769,7 @@ export default function PublicProfilePage() {
         </div>
       </main>
 
-      <footer className="mt-auto border-t border-slate-200/60 py-5 text-center">
-        <p className="text-xs font-normal italic text-slate-500 sm:text-sm">
-          Perfil público gestionado por FIVERTEN. La información mostrada se basa en la verificación
-          disponible en la plataforma.
-        </p>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState, type FormEvent } from 'react';
 import HomeHeader from '../../components/public/HomeHeader';
+import PublicFooter from '../../components/public/PublicFooter';
 import { Alert, Field, inputClass } from '../../components/ui';
 import {
   ApiError,
@@ -481,10 +482,7 @@ export default function VerifyCompanyPage() {
         </section>
       </main>
 
-      <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-400">
-        FIVERTEN · La solicitud de verificación no activa el sello hasta que FIVERTEN completa la
-        revisión.
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

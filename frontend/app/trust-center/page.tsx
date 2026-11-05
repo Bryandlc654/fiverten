@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import HomeHeader from '../../components/public/HomeHeader';
+import PublicFooter from '../../components/public/PublicFooter';
 
 export const metadata: Metadata = {
   title: 'Trust Center y metodología | FIVERTEN',
@@ -436,10 +437,7 @@ export default function TrustCenterPage() {
         </section>
       </main>
 
-      <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-400">
-        FIVERTEN · Trust Center y metodología pública · La información mostrada depende del alcance y
-        la fecha de cada revisión.
-      </footer>
+      <PublicFooter />
     </div>
   );
 }
