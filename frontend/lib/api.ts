@@ -1043,9 +1043,13 @@ export type VerificationInquiryStatus = 'new' | 'contacted' | 'closed';
 export interface VerificationInquiry {
   id: string;
   companyName: string;
+  taxId: string | null;
+  sector: string | null;
   contactName: string;
   email: string;
   phone: string | null;
+  website: string | null;
+  country: string | null;
   message: string | null;
   status: VerificationInquiryStatus;
   notes: string | null;
@@ -1715,9 +1719,13 @@ export const api = {
   },
   submitVerificationInquiry(payload: {
     companyName: string;
+    taxId?: string;
+    sector?: string;
     contactName: string;
     email: string;
     phone?: string;
+    website?: string;
+    country?: string;
     message?: string;
     consent: boolean;
   }): Promise<{ received: boolean }> {

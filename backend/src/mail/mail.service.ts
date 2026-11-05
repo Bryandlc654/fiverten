@@ -179,6 +179,26 @@ export class MailService implements OnModuleInit {
     });
   }
 
+  /** Confirmación al contacto que envió el formulario de captación. */
+  async sendVerificationInquiryConfirmation(
+    to: string,
+    companyName: string,
+    contactName: string,
+  ): Promise<void> {
+    await this.send({
+      code: 'verification_inquiry',
+      category: 'transactional',
+      kind: 'confirmación de solicitud de verificación',
+      vars: { organization: companyName, name: contactName },
+      to,
+      subject: `Hemos recibido la solicitud de ${companyName} - ${BRAND}`,
+      title: 'Solicitud recibida',
+      intro: `Gracias, ${contactName}. Hemos recibido la solicitud de verificación de ${companyName}. El equipo de FIVERTEN la revisará y se pondrá en contacto contigo. Esta solicitud no implica que la empresa ya esté verificada; el estado VERIFIED solo se activa tras la revisión.`,
+      action: 'Volver a FIVERTEN',
+      link: `${this.frontendUrl}/verificar-empresa`,
+    });
+  }
+
   /** Aviso al equipo de soporte de un ticket nuevo. */
   async sendSupportTicketCreated(
     to: string,

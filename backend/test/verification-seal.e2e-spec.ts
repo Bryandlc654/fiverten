@@ -373,8 +373,12 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
       .post('/api/public/verification-inquiry')
       .send({
         companyName: 'Contacto SL',
+        taxId: 'B12345678',
+        sector: 'Servicios profesionales',
         contactName: 'Ana',
         email: 'ana@contacto.test',
+        website: 'https://contacto.test',
+        country: 'España',
         consent: true,
       })
       .expect(200);
@@ -387,6 +391,10 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
     expect(list.body.total).toBe(1);
     expect(list.body.items[0]).toMatchObject({
       companyName: 'Contacto SL',
+      taxId: 'B12345678',
+      sector: 'Servicios profesionales',
+      website: 'https://contacto.test',
+      country: 'España',
       email: 'ana@contacto.test',
     });
 

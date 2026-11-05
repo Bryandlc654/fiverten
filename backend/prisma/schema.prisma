@@ -1062,9 +1062,13 @@ model VerificationEvent {
 model VerificationInquiry {
   id          String    @id @default(uuid()) @db.Uuid
   companyName String    @map("company_name") @db.VarChar(200)
+  taxId       String?   @map("tax_id") @db.VarChar(50)
+  sector      String?   @db.VarChar(120)
   contactName String    @map("contact_name") @db.VarChar(120)
   email       String    @db.VarChar(255)
   phone       String?   @db.VarChar(50)
+  website     String?   @db.VarChar(255)
+  country     String?   @db.VarChar(120)
   message     String?   @db.Text
   status      String    @default("new") @db.VarChar(20)
   notes       String?   @db.Text

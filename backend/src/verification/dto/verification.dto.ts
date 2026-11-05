@@ -157,6 +157,16 @@ export class VerificationInquiryDto {
   @MaxLength(200)
   companyName!: string;
 
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  taxId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  sector?: string;
+
   @IsString()
   @MinLength(2)
   @MaxLength(120)
@@ -170,6 +180,16 @@ export class VerificationInquiryDto {
   @IsString()
   @MaxLength(50)
   phone?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  website?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  country?: string;
 
   @IsOptional()
   @IsString()

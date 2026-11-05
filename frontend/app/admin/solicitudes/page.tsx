@@ -193,6 +193,11 @@ export default function AdminInquiriesPage() {
                       {selected.contactName} · {selected.email}
                       {selected.phone ? ` · ${selected.phone}` : ''}
                     </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {[selected.taxId, selected.sector, selected.country, selected.website]
+                        .filter(Boolean)
+                        .join(' · ') || 'Sin datos adicionales'}
+                    </p>
                     <p className="mt-1 text-xs text-slate-400">
                       Recibida el {formatDate(selected.createdAt)}
                     </p>

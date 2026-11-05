@@ -105,21 +105,33 @@ export class VerificationService {
       tx.verificationInquiry.create({
         data: {
           companyName: dto.companyName.trim(),
+          taxId: dto.taxId?.trim() || null,
+          sector: dto.sector?.trim() || null,
           contactName: dto.contactName.trim(),
           email: dto.email.trim().toLowerCase(),
           phone: dto.phone?.trim() || null,
+          website: dto.website?.trim() || null,
+          country: dto.country?.trim() || null,
           message: dto.message?.trim() || null,
         },
       }),
     );
+    const email = dto.email.trim().toLowerCase();
     this.mail
       .sendVerificationInquiry(
         support,
         dto.companyName.trim(),
         dto.contactName.trim(),
-        dto.email.trim().toLowerCase(),
+        email,
         dto.phone?.trim(),
         dto.message?.trim(),
+      )
+      .catch(() => undefined);
+    this.mail
+      .sendVerificationInquiryConfirmation(
+        email,
+        dto.companyName.trim(),
+        dto.contactName.trim(),
       )
       .catch(() => undefined);
     return { received: true };
