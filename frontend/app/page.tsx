@@ -233,15 +233,59 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="relative -mx-5 h-[360px] overflow-hidden sm:h-[460px] lg:mx-0 lg:h-[560px] lg:-mr-16 lg:rounded-l-[3rem] xl:h-[620px] xl:-mr-32 2xl:-mr-56">
-              <Image
-                src="https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1600&q=90"
-                alt="Espacio de trabajo de una empresa verificada"
-                fill
-                priority
-                sizes="(max-width: 1024px) 100vw, 55vw"
-                className="object-cover object-left"
+            <div className="relative mx-auto w-full max-w-2xl lg:max-w-none lg:pl-4">
+              <div
+                aria-hidden
+                className="absolute -inset-8 -z-10 rounded-[3rem] bg-blue-600/25 blur-3xl"
               />
+
+              <div className="overflow-hidden rounded-2xl border border-white/15 bg-white shadow-[0_40px_120px_rgba(0,0,0,.55)]">
+                <div className="flex items-center gap-1.5 border-b border-slate-200 bg-slate-100 px-4 py-2.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+                  <span className="mx-auto flex min-w-0 items-center gap-1.5 rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">
+                    <svg
+                      className="h-3 w-3 shrink-0 text-emerald-600"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <rect x="4" y="10" width="16" height="10" rx="2" />
+                      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                    </svg>
+                    <span className="truncate font-mono text-[10px] text-slate-500">
+                      fiverten.com/empresa/clinica-dental-sonrisa
+                    </span>
+                  </span>
+                  <span className="hidden w-8 sm:block" />
+                </div>
+                <Image
+                  src="/hero-perfil-fiverten.png"
+                  alt="Perfil público verificado de una empresa en FIVERTEN"
+                  width={1917}
+                  height={858}
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="h-auto w-full"
+                />
+              </div>
+
+              <Image
+                src="/sello-fiverten-verificado.png"
+                alt="Sello FIVERTEN de empresa verificada"
+                width={512}
+                height={512}
+                className="absolute -bottom-8 -left-3 h-20 w-20 drop-shadow-[0_18px_35px_rgba(0,0,0,.45)] sm:h-24 sm:w-24 lg:-left-9 lg:h-28 lg:w-28"
+              />
+
+              <div className="absolute -right-2 top-1/2 hidden -translate-y-1/2 rounded-xl border border-emerald-400/25 bg-ink/90 px-4 py-3 shadow-xl backdrop-blur md:block lg:-right-6">
+                <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-emerald-300">
+                  Estado del sello
+                </p>
+                <p className="mt-0.5 text-sm font-bold text-white">Verificación vigente</p>
+              </div>
             </div>
           </div>
         </section>
@@ -462,22 +506,14 @@ export default function HomePage() {
                   </span>
                 </div>
                 <div className="flex flex-col items-center py-10 text-center">
-                  <div className="home-badge-ring relative grid h-36 w-36 place-items-center rounded-full border border-aqua/50 bg-gradient-to-br from-aqua/20 to-transparent shadow-glow">
-                    <div className="grid h-28 w-28 place-items-center rounded-full border border-aqua/30 bg-ink">
-                      <svg
-                        className="h-14 w-14 text-aqua"
-                        viewBox="0 0 48 48"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                      >
-                        <path
-                          d="M24 3 30 9l8-.4 2.7 7.5 6.8 4.4-2.5 7.5 2.5 7.5-6.8 4.4L38 47l-8-.4L24 53l-6-6.4-8 .4-2.7-7.5L.5 35.1 3 27.6.5 20.1l6.8-4.4L10 8.2l8 .4L24 3Z"
-                          transform="translate(0 -4)"
-                        />
-                        <path d="m14 24 6 6 14-14" />
-                      </svg>
-                    </div>
+                  <div className="home-badge-ring relative h-40 w-40">
+                    <Image
+                      src="/sello-fiverten-verificado.png"
+                      alt="Sello FIVERTEN de empresa verificada"
+                      width={512}
+                      height={512}
+                      className="h-full w-full drop-shadow-[0_24px_45px_rgba(0,0,0,.5)]"
+                    />
                   </div>
                   <p className="mt-7 text-xs font-bold uppercase tracking-[.2em] text-aqua">
                     FIVERTEN VERIFIED

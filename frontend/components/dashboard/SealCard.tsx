@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { api } from '../../lib/api';
@@ -76,8 +77,19 @@ export default function SealCard({
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5">
-      <h3 className="text-base font-bold text-slate-900">Sello verificado</h3>
-      <p className="text-xs text-slate-500">Descárgalo o insértalo en tu web</p>
+      <div className="flex items-start gap-3">
+        <Image
+          src="/sello-fiverten-verificado.png"
+          alt=""
+          width={512}
+          height={512}
+          className="h-10 w-10 shrink-0"
+        />
+        <div>
+          <h3 className="text-base font-bold text-slate-900">Sello verificado</h3>
+          <p className="text-xs text-slate-500">Descárgalo o insértalo en tu web</p>
+        </div>
+      </div>
 
       <div className="mt-4 flex gap-1 rounded-lg bg-slate-100 p-1 text-xs font-medium">
         {[

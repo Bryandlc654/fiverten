@@ -88,13 +88,14 @@ export default function PublicHero({ profile }: { profile: PublicProfile }) {
                   {profile.tradeName}
                 </h1>
                 {profile.verified && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
-                    <span
-                      className="material-symbols-outlined text-[16px]"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
-                    >
-                      verified
-                    </span>
+                  <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 py-1 pl-1 pr-3 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                    <Image
+                      src="/sello-fiverten-verificado.png"
+                      alt=""
+                      width={512}
+                      height={512}
+                      className="h-7 w-7"
+                    />
                     Empresa verificada
                   </span>
                 )}
