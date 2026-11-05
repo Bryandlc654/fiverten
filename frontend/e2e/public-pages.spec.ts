@@ -24,6 +24,10 @@ test.describe('Web pública', () => {
     await expect(card).toBeVisible();
     await expect(card.getByRole('link', { name: /Ver perfil/ })).toBeVisible();
 
+    await page.goto(`/empresa/${organization.slug}`);
+    await expect(page.getByRole('link', { name: 'Cómo funciona' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Directorio', exact: true })).toHaveCount(0);
+
     await page.goto(`/empresa/${organization.slug}/documentacion`);
     await expect(page.getByRole('heading', { name: 'Categorías comprobadas' })).toBeVisible();
     await expect(page.getByText('Identidad del representante')).toBeVisible();
