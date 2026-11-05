@@ -113,6 +113,9 @@ export default function HomeHeader() {
                 {link.label}
               </Link>
             ))}
+            <Link href="/verificar-empresa" className="home-nav-link text-sm">
+              Verificar empresa
+            </Link>
           </nav>
 
           <div
@@ -178,16 +181,16 @@ export default function HomeHeader() {
         </div>
         <div className="hidden items-center gap-3 lg:flex">
           <Link
-            href="/verificar-empresa"
-            className="text-sm font-semibold text-white/80 transition hover:text-white"
-          >
-            Verificar empresa
-          </Link>
-          <Link
             href="/empresas"
             className="rounded-full bg-aqua px-5 py-2.5 text-sm font-bold text-ink transition hover:-translate-y-0.5 hover:bg-mint"
           >
             Explorar directorio <span aria-hidden="true">↗</span>
+          </Link>
+          <Link
+            href="/login"
+            className="text-sm font-semibold text-white/80 transition hover:text-white"
+          >
+            Iniciar sesión
           </Link>
         </div>
         <button
@@ -244,6 +247,13 @@ export default function HomeHeader() {
           onClick={() => setMenuOpen(false)}
         >
           Verificar empresa
+        </Link>
+        <Link
+          href="/login"
+          className="rounded-full border border-white/20 px-5 py-3 text-center font-semibold text-white"
+          onClick={() => setMenuOpen(false)}
+        >
+          Iniciar sesión
         </Link>
       </nav>
     </header>
