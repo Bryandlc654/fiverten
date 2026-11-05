@@ -154,6 +154,14 @@ CREATE POLICY rls_reviews ON reviews
     USING (organization_id = app_current_org() OR app_is_platform_admin())
     WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
 
+ALTER TABLE review_revisions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_review_revisions ON review_revisions;
+
+CREATE POLICY rls_review_revisions ON review_revisions
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
 DROP POLICY IF EXISTS rls_reviews_public ON reviews;
 
 CREATE POLICY rls_reviews_public ON reviews FOR SELECT
@@ -270,6 +278,86 @@ DROP POLICY IF EXISTS rls_verification_projects ON verification_projects;
 CREATE POLICY rls_verification_projects ON verification_projects
     USING (organization_id = app_current_org() OR app_is_platform_admin())
     WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
+ALTER TABLE verification_events ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_verification_events ON verification_events;
+
+CREATE POLICY rls_verification_events ON verification_events
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
+ALTER TABLE certifications ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_certifications ON certifications;
+
+CREATE POLICY rls_certifications ON certifications
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
+ALTER TABLE analytics_events ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_analytics_events ON analytics_events;
+
+CREATE POLICY rls_analytics_events ON analytics_events
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
+ALTER TABLE organization_locations ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_organization_locations ON organization_locations;
+
+CREATE POLICY rls_organization_locations ON organization_locations
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
+ALTER TABLE evidence ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_evidence ON evidence;
+
+CREATE POLICY rls_evidence ON evidence
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
+ALTER TABLE client_relations ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_client_relations ON client_relations;
+
+CREATE POLICY rls_client_relations ON client_relations
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
+ALTER TABLE public_badges ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_public_badges ON public_badges;
+
+CREATE POLICY rls_public_badges ON public_badges
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
+ALTER TABLE consent_records ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_consent_records ON consent_records;
+
+CREATE POLICY rls_consent_records ON consent_records
+    USING (organization_id = app_current_org() OR app_is_platform_admin())
+    WITH CHECK (organization_id = app_current_org() OR app_is_platform_admin());
+
+ALTER TABLE privacy_requests ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_privacy_requests ON privacy_requests;
+
+CREATE POLICY rls_privacy_requests ON privacy_requests
+    USING (user_id = app_current_user() OR app_is_platform_admin())
+    WITH CHECK (user_id = app_current_user() OR app_is_platform_admin());
+
+ALTER TABLE verification_inquiries ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS rls_verification_inquiries ON verification_inquiries;
+
+CREATE POLICY rls_verification_inquiries ON verification_inquiries
+    USING (app_is_platform_admin())
+    WITH CHECK (app_is_platform_admin());
 
 ALTER TABLE media_files ENABLE ROW LEVEL SECURITY;
 
@@ -453,3 +541,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE O
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO fiverten_app;
 
 REVOKE DELETE ON auth_attempts FROM fiverten_app;
+
+REVOKE UPDATE, DELETE ON verification_events FROM fiverten_app;
+
+REVOKE UPDATE, DELETE ON moderation_actions FROM fiverten_app;

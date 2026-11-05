@@ -290,6 +290,8 @@ export class ModerationService {
       await tx.verificationEvent.create({
         data: {
           organizationId: review.organizationId,
+          entityType: 'review',
+          entityId: reviewId,
           actorId,
           actorType: actor?.isSuperAdmin ? 'fiverten_admin' : 'fiverten_verifier',
           action: 'review_verification',

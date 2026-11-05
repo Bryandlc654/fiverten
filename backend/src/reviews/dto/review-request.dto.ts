@@ -4,7 +4,9 @@ import {
   ArrayMinSize,
   IsArray,
   IsEmail,
+  IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   MinLength,
   ValidateNested,
@@ -20,6 +22,10 @@ export class CreateReviewRequestDto {
   @IsEmail({}, { message: 'El correo del cliente no es válido' })
   @MaxLength(255)
   email!: string;
+
+  @IsOptional()
+  @IsUUID()
+  clientRelationId?: string;
 }
 
 /** Consulta pública del enlace personalizado (?rt=token). */

@@ -42,6 +42,18 @@ export interface User {
   mfaEnabled?: boolean;
 }
 
+export interface OrganizationLocation {
+  id: string;
+  label: string;
+  addressLine: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  country: string | null;
+  isPrimary: boolean;
+  isPublic: boolean;
+}
+
 export interface OrganizationDetail {
   id: string;
   publicId: string;
@@ -71,6 +83,7 @@ export interface OrganizationDetail {
   countryId: string | null;
   createdAt: string;
   verifiedAt: string | null;
+  locations?: OrganizationLocation[];
 }
 
 export interface Member {
@@ -128,6 +141,7 @@ export interface PublicProfile {
   phone: string | null;
   sector: { slug: string; name: string } | null;
   country: { iso2: string; name: string } | null;
+  locations?: OrganizationLocation[];
   verified: boolean;
   createdAt: string;
   /** La empresa no muestra las reseñas de 1 y 2 estrellas (siguen en la media). */
@@ -177,8 +191,12 @@ export interface PublicVerificationProject {
   name: string;
   projectType: string | null;
   city: string | null;
+  location: string | null;
   year: number | null;
+  startDate: string | null;
+  endDate: string | null;
   status: string;
+  publicVisibility: string;
   clientStatus: string;
   description: string | null;
   url: string | null;
@@ -216,7 +234,10 @@ export interface PublicVerification {
     logoUrl: string | null;
     sector: { slug: string; name: string } | null;
     country: { iso2: string; name: string } | null;
+    locations?: OrganizationLocation[];
   };
+  scope?: string | null;
+  methodologyVersion?: string | null;
   status: VerificationStatus;
   verifiedAt: string | null;
   expiresAt: string | null;
@@ -316,6 +337,7 @@ export interface ReviewRequestLookup {
 export interface CreateReviewRequestPayload {
   name: string;
   email: string;
+  clientRelationId?: string;
 }
 
 export interface CampaignStats {
@@ -691,6 +713,44 @@ export type PublicAnalyticsEvent =
   | 'website_click'
   | 'seal_download';
 
+export type ClientRelationStatus = 'invited' | 'active' | 'completed' | 'revoked';
+export type ClientVerificationLevel = 'identified' | 'confirmed' | 'verified';
+
+export interface ClientRelation {
+  id: string;
+  projectId: string;
+  projectName: string;
+  contactName: string;
+  contactEmail: string;
+  status: ClientRelationStatus;
+  consent: boolean;
+  consentAt: string | null;
+  verificationLevel: ClientVerificationLevel;
+  reviews: number;
+  reviewRequests: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PrivacyRequestType = 'access' | 'rectification' | 'erasure' | 'objection';
+export type PrivacyRequestStatus = 'pending' | 'in_progress' | 'completed' | 'rejected';
+
+export interface PrivacyRequest {
+  id: string;
+  userId: string;
+  organizationId: string | null;
+  email: string;
+  type: PrivacyRequestType;
+  status: PrivacyRequestStatus;
+  details: string | null;
+  response: string | null;
+  handledBy: string | null;
+  handledAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user?: { id: string; email: string; firstName: string | null; lastName: string | null };
+}
+
 export type NotificationType = 'new_review' | 'negative_review';
 
 export interface AppNotification {
@@ -965,14 +1025,31 @@ export type VerificationDocumentCategory =
 
 export interface VerificationDocument {
   id: string;
+  evidenceId: string;
   category: VerificationDocumentCategory;
   evidenceType?: string | null;
   projectId: string | null;
+  issuer?: string | null;
+  documentNumber?: string | null;
+  version?: number;
+  issueDate?: string | null;
+  expiryDate?: string | null;
   filename: string;
   mimeType: string;
   size: number;
   dataOrigin?: string;
   createdAt: string;
+  evidence?: {
+    id: string;
+    type: string;
+    fileRef: string;
+    sourceRef: string | null;
+    visibility: string;
+    status: string;
+    hash: string | null;
+    issueDate: string | null;
+    expiryDate: string | null;
+  };
 }
 
 export interface VerificationProject {
@@ -980,14 +1057,20 @@ export interface VerificationProject {
   name: string;
   projectType: string | null;
   city: string | null;
+  location: string | null;
   year: number | null;
+  startDate: string | null;
+  endDate: string | null;
   status: string;
+  publicVisibility: string;
   clientStatus: string;
   description: string | null;
   url: string | null;
   dataOrigin?: string;
   verificationScope: string | null;
   methodology: string | null;
+  evidenceTypes: string[];
+  verificationReviewerId?: string | null;
   verifiedAt: string | null;
   createdAt: string;
   documents: VerificationDocument[];
@@ -995,6 +1078,8 @@ export interface VerificationProject {
 
 export interface VerificationEvent {
   id: string;
+  entityType?: string;
+  entityId?: string | null;
   actorId: string | null;
   actorType: string;
   action: string;
@@ -1011,8 +1096,11 @@ export interface VerificationEvent {
 export interface VerificationRequest {
   id: string;
   status: 'draft' | 'submitted' | 'in_review' | 'approved' | 'rejected' | 'revoked';
+  scope?: string | null;
+  methodologyVersion?: string | null;
   submittedAt: string | null;
   reviewedAt: string | null;
+  reviewedBy?: string | null;
   decisionReason: string | null;
   expiresAt: string | null;
   createdAt: string;
@@ -1030,6 +1118,14 @@ export interface VerificationRequest {
   events: VerificationEvent[];
 }
 
+export interface PublicBadge {
+  id: string;
+  state: 'active' | 'revoked' | 'expired';
+  embedToken: string;
+  currentUrl: string;
+  revokedAt: string | null;
+}
+
 export interface VerificationStatusResponse {
   organization: {
     id: string;
@@ -1040,6 +1136,7 @@ export interface VerificationStatusResponse {
     verifiedAt: string | null;
     verificationExpiresAt: string | null;
   };
+  badge: PublicBadge | null;
   status: VerificationStatus;
   verifiedAt: string | null;
   expiresAt: string | null;
@@ -1192,6 +1289,8 @@ export interface RegisterPayload {
   username?: string;
   taxId?: string;
   phone?: string;
+  /** Honeypot anti-bot: debe ir vacío. */
+  website?: string;
 }
 
 export interface LoginPayload {
@@ -1530,6 +1629,37 @@ export const api = {
   listSessions(): Promise<{ sessions: SessionInfo[] }> {
     return request<{ sessions: SessionInfo[] }>('/auth/sessions');
   },
+  createPrivacyRequest(payload: {
+    type: PrivacyRequestType;
+    details?: string;
+  }): Promise<PrivacyRequest> {
+    return request<PrivacyRequest>('/privacy/requests', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  listPrivacyRequests(): Promise<{ items: PrivacyRequest[] }> {
+    return request<{ items: PrivacyRequest[] }>('/privacy/requests');
+  },
+  exportPrivacyData(): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>('/privacy/export');
+  },
+  adminListPrivacyRequests(
+    params: { status?: string; page?: number; pageSize?: number } = {},
+  ): Promise<Paginated<PrivacyRequest>> {
+    return request<Paginated<PrivacyRequest>>(
+      `/admin/privacy/requests${buildQuery(params)}`,
+    );
+  },
+  adminCompletePrivacyRequest(
+    id: string,
+    payload: { status: 'completed' | 'rejected'; response?: string },
+  ): Promise<PrivacyRequest> {
+    return request<PrivacyRequest>(`/admin/privacy/requests/${id}/complete`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
   revokeSession(id: string): Promise<{ success: boolean }> {
     return request<{ success: boolean }>(`/auth/sessions/${id}`, { method: 'DELETE' });
   },
@@ -1545,6 +1675,38 @@ export const api = {
     return request<OrganizationDetail>('/organizations/me', {
       method: 'PATCH',
       body: JSON.stringify(payload),
+    });
+  },
+  listOrganizationLocations(): Promise<{ locations: OrganizationLocation[] }> {
+    return request<{ locations: OrganizationLocation[] }>('/organizations/me/locations');
+  },
+  createOrganizationLocation(payload: {
+    label: string;
+    addressLine?: string;
+    city?: string;
+    region?: string;
+    postalCode?: string;
+    country?: string;
+    isPrimary?: boolean;
+    isPublic?: boolean;
+  }): Promise<OrganizationLocation> {
+    return request<OrganizationLocation>('/organizations/me/locations', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  updateOrganizationLocation(
+    id: string,
+    payload: Partial<Omit<OrganizationLocation, 'id'>>,
+  ): Promise<OrganizationLocation> {
+    return request<OrganizationLocation>(`/organizations/me/locations/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+  deleteOrganizationLocation(id: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(`/organizations/me/locations/${id}`, {
+      method: 'DELETE',
     });
   },
   uploadOrganizationCover(file: File): Promise<{ url: string }> {
@@ -1748,6 +1910,43 @@ export const api = {
   getReviewCampaign(id: string): Promise<ReviewCampaignDetail> {
     return request<ReviewCampaignDetail>(`/organizations/me/review-requests/campaigns/${id}`);
   },
+  listClientRelations(params: { projectId?: string } = {}): Promise<{ items: ClientRelation[] }> {
+    return request<{ items: ClientRelation[] }>(
+      `/organizations/me/client-relations${buildQuery(params)}`,
+    );
+  },
+  createClientRelation(payload: {
+    projectId: string;
+    contactName: string;
+    contactEmail: string;
+    consent?: boolean;
+    verificationLevel?: ClientVerificationLevel;
+  }): Promise<ClientRelation> {
+    return request<ClientRelation>('/organizations/me/client-relations', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  updateClientRelation(
+    id: string,
+    payload: Partial<{
+      contactName: string;
+      contactEmail: string;
+      status: ClientRelationStatus;
+      consent: boolean;
+      verificationLevel: ClientVerificationLevel;
+    }>,
+  ): Promise<ClientRelation> {
+    return request<ClientRelation>(`/organizations/me/client-relations/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+  deleteClientRelation(id: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(`/organizations/me/client-relations/${id}`, {
+      method: 'DELETE',
+    });
+  },
   publicOrganizations(params: {
     search?: string;
     sector?: string;
@@ -1780,6 +1979,7 @@ export const api = {
     country?: string;
     message?: string;
     consent: boolean;
+    honeypot?: string;
   }): Promise<{ received: boolean }> {
     return request<{ received: boolean }>('/public/verification-inquiry', {
       method: 'POST',
@@ -2061,9 +2261,19 @@ export const api = {
   uploadVerificationDocument(
     category: VerificationDocumentCategory,
     file: File,
+    metadata: {
+      issuer?: string;
+      documentNumber?: string;
+      issueDate?: string;
+      expiryDate?: string;
+    } = {},
   ): Promise<VerificationDocument> {
     const form = new FormData();
     form.append('category', category);
+    if (metadata.issuer) form.append('issuer', metadata.issuer);
+    if (metadata.documentNumber) form.append('documentNumber', metadata.documentNumber);
+    if (metadata.issueDate) form.append('issueDate', metadata.issueDate);
+    if (metadata.expiryDate) form.append('expiryDate', metadata.expiryDate);
     form.append('file', file);
     return requestForm<VerificationDocument>('/organizations/me/verification/documents', form);
   },
@@ -2078,7 +2288,11 @@ export const api = {
     url?: string;
     projectType?: string;
     city?: string;
+    location?: string;
     year?: number;
+    startDate?: string;
+    endDate?: string;
+    publicVisibility?: 'private' | 'public' | 'restricted';
     status?: string;
   }): Promise<VerificationProject> {
     return request<VerificationProject>('/organizations/me/verification/projects', {
@@ -2142,7 +2356,12 @@ export const api = {
   },
   adminApproveVerification(
     id: string,
-    payload: { expiresInDays?: number; note?: string },
+    payload: {
+      expiresInDays?: number;
+      note?: string;
+      scope?: string;
+      methodologyVersion?: string;
+    },
   ): Promise<VerificationRequest> {
     return request<VerificationRequest>(`/admin/verifications/${id}/approve`, {
       method: 'POST',

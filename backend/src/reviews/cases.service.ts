@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { decryptFile, secureFile } from '../common/file-security';
 import { effectiveRole, roleAtLeast } from '../common/roles';
 import { hashToken, randomToken } from '../common/tokens';
 import { MailService } from '../mail/mail.service';
@@ -25,6 +26,15 @@ type Tx = Prisma.TransactionClient;
 type Sender = 'admin' | 'client' | 'company' | 'system';
 
 const FILE_META = { id: true, filename: true, mimeType: true, size: true } as const;
+
+function decryptCaseFile<T extends { data: Uint8Array; encryptionVersion: number }>(
+  file: T,
+): T & { data: Buffer } {
+  return {
+    ...file,
+    data: decryptFile(Buffer.from(file.data), file.encryptionVersion),
+  };
+}
 
 const CASE_INCLUDE = {
   review: { include: { organization: { select: { tradeName: true, slug: true } } } },
@@ -335,7 +345,7 @@ export class ReviewCasesService {
       if (!file) {
         throw new NotFoundException('Archivo no encontrado');
       }
-      return file;
+      return decryptCaseFile(file);
     });
   }
 
@@ -446,7 +456,7 @@ export class ReviewCasesService {
       if (!file) {
         throw new NotFoundException('Archivo no encontrado');
       }
-      return file;
+      return decryptCaseFile(file);
     });
   }
 
@@ -588,7 +598,7 @@ export class ReviewCasesService {
       ) {
         throw new NotFoundException('Archivo no encontrado');
       }
-      return file;
+      return decryptCaseFile(file);
     });
   }
 
@@ -790,15 +800,18 @@ export class ReviewCasesService {
       },
     });
     if (files.length > 0) {
+      const securedFiles = await Promise.all(files.map((file) => secureFile(file)));
       await tx.reviewCaseFile.createMany({
-        data: files.map((file) => ({
+        data: files.map((file, index) => ({
           caseId: current.id,
           messageId: message.id,
           organizationId: current.organizationId,
           filename: safeFilename(file.originalname),
           mimeType: file.mimetype,
-          size: file.size,
-          data: file.buffer,
+          size: securedFiles[index].size,
+          data: securedFiles[index].data,
+          encryptionVersion: securedFiles[index].encryptionVersion,
+          scanStatus: securedFiles[index].scanStatus,
         })),
       });
     }

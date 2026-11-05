@@ -102,6 +102,18 @@ export default function PublicProjectsPage() {
                     ? ` · Cliente ${project.clientStatus === 'verified' ? 'verificado' : project.clientStatus}`
                     : ''}
                 </p>
+                {(project.location || project.startDate || project.endDate) && (
+                  <p className="mt-2 text-xs text-slate-500">
+                    {project.location && <>{project.location} · </>}
+                    {project.startDate
+                      ? new Date(project.startDate).toLocaleDateString('es-ES')
+                      : '—'}{' '}
+                    →{' '}
+                    {project.endDate
+                      ? new Date(project.endDate).toLocaleDateString('es-ES')
+                      : '—'}
+                  </p>
+                )}
                 {project.verificationScope && (
                   <p className="mt-2 text-xs text-slate-500">
                     <strong>Alcance:</strong> {project.verificationScope}
@@ -131,12 +143,12 @@ export default function PublicProjectsPage() {
                           <span className="material-symbols-outlined text-[15px] text-slate-400">
                             {evidence.kind === 'image' ? 'image' : 'description'}
                           </span>
-                          {evidence.evidenceType
-                            ? evidence.evidenceType.replaceAll('_', ' ')
-                            : evidence.kind === 'image'
-                              ? 'Imagen'
-                              : 'PDF'}{' '}
-                          validado
+                          {evidence.kind === 'image' ? 'Imagen' : 'PDF'} validado
+                          {evidence.evidenceType && (
+                            <span className="text-slate-400">
+                              · {evidence.evidenceType.replaceAll('_', ' ')}
+                            </span>
+                          )}
                         </span>
                         <span className="text-slate-400">
                           {Math.max(1, Math.round(evidence.size / 1024))} KB ·{' '}

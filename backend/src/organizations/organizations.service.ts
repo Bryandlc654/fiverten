@@ -8,9 +8,18 @@ import { Prisma } from '@prisma/client';
 import * as ROLES from '../common/roles';
 import { ensureSystemRole } from '../common/system-roles';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  CreateOrganizationLocationDto,
+  UpdateOrganizationLocationDto,
+} from './dto/organization-location.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
-import { membershipRole, toMember, toOrganizationDetail } from './organizations.mappers';
+import {
+  membershipRole,
+  toLocation,
+  toMember,
+  toOrganizationDetail,
+} from './organizations.mappers';
 
 /**
  * Ámbito empresa (tenant): perfil de la organización y gestión de sus miembros.
@@ -23,11 +32,118 @@ export class OrganizationsService {
 
   async getMine(orgId: string) {
     return this.prisma.withContext({ orgId }, async (tx) => {
-      const org = await tx.organization.findFirst({ where: { id: orgId, deletedAt: null } });
+      const org = await tx.organization.findFirst({
+        where: { id: orgId, deletedAt: null },
+        include: {
+          locations: {
+            orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
+          },
+        },
+      });
       if (!org) {
         throw new NotFoundException('Empresa no encontrada');
       }
-      return toOrganizationDetail(org);
+      return {
+        ...toOrganizationDetail(org),
+        locations: org.locations.map(toLocation),
+      };
+    });
+  }
+
+  async listLocations(orgId: string) {
+    return this.prisma.withContext({ orgId }, async (tx) => {
+      const locations = await tx.organizationLocation.findMany({
+        where: { organizationId: orgId },
+        orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
+      });
+      return { locations: locations.map(toLocation) };
+    });
+  }
+
+  async createLocation(orgId: string, dto: CreateOrganizationLocationDto) {
+    return this.prisma.withContext({ orgId }, async (tx) => {
+      const count = await tx.organizationLocation.count({
+        where: { organizationId: orgId },
+      });
+      const isPrimary = dto.isPrimary ?? count === 0;
+      if (isPrimary) {
+        await tx.organizationLocation.updateMany({
+          where: { organizationId: orgId, isPrimary: true },
+          data: { isPrimary: false },
+        });
+      }
+      const location = await tx.organizationLocation.create({
+        data: {
+          organizationId: orgId,
+          label: dto.label.trim(),
+          addressLine: dto.addressLine?.trim() || null,
+          city: dto.city?.trim() || null,
+          region: dto.region?.trim() || null,
+          postalCode: dto.postalCode?.trim() || null,
+          country: dto.country?.trim() || null,
+          isPrimary,
+        },
+      });
+      return toLocation(location);
+    });
+  }
+
+  async updateLocation(
+    orgId: string,
+    locationId: string,
+    dto: UpdateOrganizationLocationDto,
+  ) {
+    return this.prisma.withContext({ orgId }, async (tx) => {
+      const current = await tx.organizationLocation.findFirst({
+        where: { id: locationId, organizationId: orgId },
+      });
+      if (!current) throw new NotFoundException('Ubicación no encontrada');
+      if (dto.isPrimary) {
+        await tx.organizationLocation.updateMany({
+          where: { organizationId: orgId, isPrimary: true },
+          data: { isPrimary: false },
+        });
+      }
+      const location = await tx.organizationLocation.update({
+        where: { id: locationId },
+        data: {
+          ...(dto.label !== undefined ? { label: dto.label.trim() } : {}),
+          ...(dto.addressLine !== undefined
+            ? { addressLine: dto.addressLine.trim() || null }
+            : {}),
+          ...(dto.city !== undefined ? { city: dto.city.trim() || null } : {}),
+          ...(dto.region !== undefined ? { region: dto.region.trim() || null } : {}),
+          ...(dto.postalCode !== undefined
+            ? { postalCode: dto.postalCode.trim() || null }
+            : {}),
+          ...(dto.country !== undefined ? { country: dto.country.trim() || null } : {}),
+          ...(dto.isPrimary !== undefined ? { isPrimary: dto.isPrimary } : {}),
+        },
+      });
+      return toLocation(location);
+    });
+  }
+
+  async deleteLocation(orgId: string, locationId: string) {
+    return this.prisma.withContext({ orgId }, async (tx) => {
+      const location = await tx.organizationLocation.findFirst({
+        where: { id: locationId, organizationId: orgId },
+      });
+      if (!location) throw new NotFoundException('Ubicación no encontrada');
+      await tx.organizationLocation.delete({ where: { id: locationId } });
+      if (location.isPrimary) {
+        const next = await tx.organizationLocation.findFirst({
+          where: { organizationId: orgId },
+          orderBy: { createdAt: 'asc' },
+        });
+        if (next) {
+          await tx.organizationLocation.update({
+            where: { id: next.id },
+            data: { isPrimary: true },
+          });
+        }
+      }
+      return { success: true };
     });
   }
 

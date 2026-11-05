@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ChangeEvent } from 'react';
 import DashboardShell from '../../../components/DashboardShell';
+import LocationsPanel from '../../../components/organizations/LocationsPanel';
 import { ApiError, api, type OrganizationDetail, type PublicCatalogs, resolveAssetUrl } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
 import { roleAtLeast } from '../../../lib/roles';
@@ -645,6 +646,8 @@ export default function CompanyPage() {
                 </div>
               )}
             </form>
+
+            <LocationsPanel canEdit={canEdit} />
 
             <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
               <span

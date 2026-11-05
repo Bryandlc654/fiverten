@@ -41,6 +41,15 @@ export class ReviewRequestsService {
     if (!organization) {
       throw new NotFoundException('Empresa no encontrada');
     }
+    if (dto.clientRelationId) {
+      const relation = await this.prisma.withContext({ orgId }, (tx) =>
+        tx.clientRelation.findFirst({
+          where: { id: dto.clientRelationId, organizationId: orgId },
+          select: { id: true },
+        }),
+      );
+      if (!relation) throw new NotFoundException('Relación con cliente no encontrada');
+    }
 
     const created = await this.prisma.withContext({ orgId }, (tx) =>
       tx.reviewRequest.create({
@@ -49,6 +58,7 @@ export class ReviewRequestsService {
           tokenHash: hashToken(token),
           reviewerName: name,
           reviewerEmail: email,
+          clientRelationId: dto.clientRelationId ?? null,
           expiresAt,
           createdBy: userId,
         },
@@ -335,7 +345,12 @@ export class ReviewRequestsService {
   ): Promise<void> {
     const request = await tx.reviewRequest.findFirst({
       where: { organizationId: orgId, tokenHash: hashToken(token), reviewId: null },
-      select: { id: true, expiresAt: true, reviewerEmail: true },
+      select: {
+        id: true,
+        expiresAt: true,
+        reviewerEmail: true,
+        clientRelationId: true,
+      },
     });
     if (!request || request.expiresAt.getTime() < Date.now()) {
       throw new BadRequestException('El enlace de solicitud no es válido o ha caducado');
@@ -349,14 +364,30 @@ export class ReviewRequestsService {
       where: { id: request.id },
       data: { reviewId },
     });
+    if (request.clientRelationId) {
+      await tx.review.update({
+        where: { id: reviewId },
+        data: { clientRelationId: request.clientRelationId },
+      });
+    }
   }
 
   /** Al confirmarse la reseña: la solicitud queda completada. */
   async completeForReview(tx: Prisma.TransactionClient, reviewId: string): Promise<void> {
+    const request = await tx.reviewRequest.findFirst({
+      where: { reviewId },
+      select: { clientRelationId: true },
+    });
     await tx.reviewRequest.updateMany({
       where: { reviewId, status: { not: 'completed' } },
       data: { status: 'completed', completedAt: new Date() },
     });
+    if (request?.clientRelationId) {
+      await tx.clientRelation.update({
+        where: { id: request.clientRelationId },
+        data: { status: 'completed', verificationLevel: 'confirmed' },
+      });
+    }
   }
 
   private campaignStats(rows: { status: string; _count: { _all: number } }[]) {

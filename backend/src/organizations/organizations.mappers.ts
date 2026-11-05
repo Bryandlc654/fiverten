@@ -68,6 +68,28 @@ export function toOrganizationDetail(org: {
   };
 }
 
+export function toLocation(location: {
+  id: string;
+  label: string;
+  addressLine: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  country: string | null;
+  isPrimary: boolean;
+}) {
+  return {
+    id: location.id,
+    label: location.label,
+    addressLine: location.addressLine,
+    city: location.city,
+    region: location.region,
+    postalCode: location.postalCode,
+    country: location.country,
+    isPrimary: location.isPrimary,
+  };
+}
+
 export function toOrganizationSummary(org: {
   id: string;
   publicId: string;

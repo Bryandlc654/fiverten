@@ -15,6 +15,7 @@ import {
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { PlatformAdmin } from '../auth/decorators/platform-admin.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { StaffMfaGuard } from '../auth/guards/staff-mfa.guard';
 import { PlatformAdminGuard } from '../auth/guards/platform-admin.guard';
 import { CreateInvitationDto } from '../organizations/dto/create-invitation.dto';
 import { UpdateMemberDto } from '../organizations/dto/update-member.dto';
@@ -25,7 +26,7 @@ import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 
 @Controller('admin')
-@UseGuards(JwtAuthGuard, PlatformAdminGuard)
+@UseGuards(JwtAuthGuard, StaffMfaGuard, PlatformAdminGuard)
 @PlatformAdmin()
 export class AdminController {
   constructor(private readonly admin: AdminService) {}

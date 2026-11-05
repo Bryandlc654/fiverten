@@ -9,9 +9,11 @@ type SealTab = 'seal' | 'widget' | 'qr';
 export default function SealCard({
   publicUrl,
   publicId,
+  embedToken,
 }: {
   publicUrl: string;
   publicId: string | undefined;
+  embedToken?: string | null;
 }) {
   const [activeTab, setActiveTab] = useState<SealTab>('seal');
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -19,9 +21,10 @@ export default function SealCard({
   const [copied, setCopied] = useState(false);
 
   const origin = typeof window === 'undefined' ? 'https://fiverten.com' : window.location.origin;
-  const sealSvgUrl = publicId ? `${origin}/api/seal/${publicId}.svg` : '';
-  const sealPngUrl = publicId ? `${origin}/api/seal/${publicId}.png` : '';
-  const widgetUrl = publicId ? `${origin}/api/widget/${publicId}.js` : '';
+  const sealId = embedToken ?? publicId;
+  const sealSvgUrl = sealId ? `${origin}/api/seal/${sealId}.svg` : '';
+  const sealPngUrl = sealId ? `${origin}/api/seal/${sealId}.png` : '';
+  const widgetUrl = sealId ? `${origin}/api/widget/${sealId}.js` : '';
   const sealEmbed = `<a href="${publicUrl}" target="_blank" rel="noopener"><img src="${sealSvgUrl}" alt="Sello FIVERTEN" width="300" height="104"></a>`;
   const widgetEmbed = `<script src="${widgetUrl}" async></script>`;
   const embed =

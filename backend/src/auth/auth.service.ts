@@ -67,6 +67,9 @@ export class AuthService {
     if (!(await this.settings.registrationsEnabled())) {
       throw new ForbiddenException('El registro de nuevas empresas está desactivado');
     }
+    if (dto.website?.trim()) {
+      throw new ConflictException('No se pudo completar el registro con esos datos.');
+    }
     const email = dto.email.trim().toLowerCase();
 
     // El hash se calcula antes de comprobar si el correo existe para que ambos

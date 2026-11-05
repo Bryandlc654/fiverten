@@ -6,6 +6,7 @@ import { AdminModule } from './admin/admin.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AuthModule } from './auth/auth.module';
 import { BillingModule } from './billing/billing.module';
+import { ClientsModule } from './clients/clients.module';
 import { ConfigurationModule } from './configuration/configuration.module';
 import { validateEnvironment } from './config/env.validation';
 import { HealthController } from './health/health.controller';
@@ -13,6 +14,7 @@ import { MailModule } from './mail/mail.module';
 import { MediaModule } from './media/media.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { PrivacyModule } from './privacy/privacy.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { SettingsModule } from './settings/settings.module';
 import { SupportModule } from './support/support.module';
@@ -33,6 +35,7 @@ import { WidgetModule } from './widget/widget.module';
       errorMessage: 'Demasiadas solicitudes. Inténtalo de nuevo mas tarde.',
     }),
     PrismaModule,
+    PrivacyModule,
     SettingsModule,
     MailModule,
     AuthModule,
@@ -41,6 +44,7 @@ import { WidgetModule } from './widget/widget.module';
     AdminModule,
     MediaModule,
     ReviewsModule,
+    ClientsModule,
     BillingModule,
     ConfigurationModule,
     SupportModule,

@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { randomBytes } from 'crypto';
 import { generatePublicId } from '../common/ids';
 import * as ROLES from '../common/roles';
 import { ensureAllSystemRoles } from '../common/system-roles';
@@ -313,6 +314,8 @@ export class AdminService {
         await tx.verificationEvent.create({
           data: {
             organizationId: id,
+            entityType: 'organization',
+            entityId: id,
             actorId,
             actorType: 'fiverten_admin',
             action: 'manual_status_change',
@@ -325,6 +328,39 @@ export class AdminService {
             expiresAt: updated.verificationExpiresAt,
           },
         });
+      }
+      if (dto.verificationStatus !== undefined) {
+        if (dto.verificationStatus === 'verified') {
+          const existingBadge = await tx.publicBadge.findUnique({
+            where: { organizationId: id },
+            select: { state: true },
+          });
+          await tx.publicBadge.upsert({
+            where: { organizationId: id },
+            create: {
+              organizationId: id,
+              state: 'active',
+              embedToken: randomBytes(24).toString('base64url'),
+              currentUrl: `/empresa/${updated.slug}`,
+            },
+            update: {
+              state: 'active',
+              currentUrl: `/empresa/${updated.slug}`,
+              revokedAt: null,
+              ...(existingBadge && existingBadge.state !== 'active'
+                ? { embedToken: randomBytes(24).toString('base64url') }
+                : {}),
+            },
+          });
+        } else {
+          await tx.publicBadge.updateMany({
+            where: { organizationId: id, state: 'active' },
+            data: {
+              state: dto.verificationStatus === 'rejected' ? 'revoked' : 'expired',
+              revokedAt: dto.verificationStatus === 'rejected' ? new Date() : null,
+            },
+          });
+        }
       }
       return toOrganizationDetail(updated);
     });

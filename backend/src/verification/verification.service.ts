@@ -3,8 +3,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { randomBytes, randomUUID } from 'crypto';
 import { Prisma } from '@prisma/client';
+import { decryptFile, secureFile } from '../common/file-security';
 import { MailService } from '../mail/mail.service';
+import { recordConsent } from '../privacy/consent';
 import { PrismaService } from '../prisma/prisma.service';
 import { PlatformSettingsService } from '../settings/settings.service';
 import {
@@ -27,6 +30,13 @@ export interface VerificationUpload {
   originalname: string;
 }
 
+export interface VerificationDocumentDetails {
+  issuer?: string;
+  documentNumber?: string;
+  issueDate?: string;
+  expiryDate?: string;
+}
+
 const ALLOWED_MIME = new Set([
   'application/pdf',
   'image/jpeg',
@@ -36,6 +46,14 @@ const ALLOWED_MIME = new Set([
 ]);
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+function newEmbedToken(): string {
+  return randomBytes(24).toString('base64url');
+}
+
+function defaultBadgeUrl(slug: string): string {
+  return `/empresa/${slug}`;
+}
 
 const REQUEST_INCLUDE = {
   organization: {
@@ -52,14 +70,33 @@ const REQUEST_INCLUDE = {
   documents: {
     select: {
       id: true,
+      evidenceId: true,
       category: true,
       evidenceType: true,
       projectId: true,
+      issuer: true,
+      documentNumber: true,
+      version: true,
+      issueDate: true,
+      expiryDate: true,
       filename: true,
       mimeType: true,
       size: true,
       dataOrigin: true,
       createdAt: true,
+      evidence: {
+        select: {
+          id: true,
+          type: true,
+          fileRef: true,
+          sourceRef: true,
+          visibility: true,
+          status: true,
+          hash: true,
+          issueDate: true,
+          expiryDate: true,
+        },
+      },
     },
     orderBy: { createdAt: 'asc' as const },
   },
@@ -69,14 +106,35 @@ const REQUEST_INCLUDE = {
       documents: {
         select: {
           id: true,
+          evidenceId: true,
           category: true,
           evidenceType: true,
           projectId: true,
+          issuer: true,
+          documentNumber: true,
+          version: true,
+          issueDate: true,
+          expiryDate: true,
           filename: true,
           mimeType: true,
           size: true,
+          encryptionVersion: true,
+          scanStatus: true,
           dataOrigin: true,
           createdAt: true,
+          evidence: {
+            select: {
+              id: true,
+              type: true,
+              fileRef: true,
+              sourceRef: true,
+              visibility: true,
+              status: true,
+              hash: true,
+              issueDate: true,
+              expiryDate: true,
+            },
+          },
         },
         orderBy: { createdAt: 'asc' as const },
       },
@@ -98,11 +156,13 @@ export class VerificationService {
 
   /** Formulario público de captación de /verificar-empresa. */
   async submitInquiry(dto: VerificationInquiryDto) {
+    // Respuesta neutra: no se crea nada y el bot no recibe una señal distinta.
+    if (dto.honeypot?.trim()) return { received: true };
     const support =
       (await this.settings.get<string>('general.support_email'))?.trim() ||
       'soporte@fiverten.com';
-    await this.prisma.withContext({ isPlatformAdmin: true }, (tx) =>
-      tx.verificationInquiry.create({
+    await this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
+      const inquiry = await tx.verificationInquiry.create({
         data: {
           companyName: dto.companyName.trim(),
           taxId: dto.taxId?.trim() || null,
@@ -114,8 +174,15 @@ export class VerificationService {
           country: dto.country?.trim() || null,
           message: dto.message?.trim() || null,
         },
-      }),
-    );
+      });
+      await recordConsent(tx, {
+        subjectType: 'verification_inquiry',
+        subjectId: inquiry.id,
+        email: dto.email.trim().toLowerCase(),
+        type: 'verification_inquiry',
+        granted: dto.consent,
+      });
+    });
     const email = dto.email.trim().toLowerCase();
     this.mail
       .sendVerificationInquiry(
@@ -160,9 +227,71 @@ export class VerificationService {
           verificationStatus: true,
           verifiedAt: true,
           verificationExpiresAt: true,
+          publicBadge: {
+            select: {
+              id: true,
+              state: true,
+              embedToken: true,
+              currentUrl: true,
+              revokedAt: true,
+            },
+          },
         },
       });
       if (!org) throw new NotFoundException('Empresa no encontrada');
+
+      const status = effectiveVerificationStatus(org);
+      let badge = org.publicBadge;
+      if (status === 'verified') {
+        if (!badge) {
+          badge = await tx.publicBadge.create({
+            data: {
+              organizationId: org.id,
+              state: 'active',
+              embedToken: newEmbedToken(),
+              currentUrl: defaultBadgeUrl(org.slug),
+            },
+            select: {
+              id: true,
+              state: true,
+              embedToken: true,
+              currentUrl: true,
+              revokedAt: true,
+            },
+          });
+        } else if (badge.state !== 'active') {
+          badge = await tx.publicBadge.update({
+            where: { id: badge.id },
+            data: {
+              state: 'active',
+              revokedAt: null,
+              embedToken: newEmbedToken(),
+            },
+            select: {
+              id: true,
+              state: true,
+              embedToken: true,
+              currentUrl: true,
+              revokedAt: true,
+            },
+          });
+        }
+      } else if (badge && badge.state === 'active') {
+        badge = await tx.publicBadge.update({
+          where: { id: badge.id },
+          data: {
+            state: status === 'rejected' ? 'revoked' : 'expired',
+            revokedAt: status === 'rejected' ? new Date() : null,
+          },
+          select: {
+            id: true,
+            state: true,
+            embedToken: true,
+            currentUrl: true,
+            revokedAt: true,
+          },
+        });
+      }
 
       const [request, certifications] = await Promise.all([
         tx.verificationRequest.findFirst({
@@ -175,7 +304,6 @@ export class VerificationService {
           orderBy: { createdAt: 'desc' },
         }),
       ]);
-      const status = effectiveVerificationStatus(org);
       const hasOpenRequest =
         request !== null && ['submitted', 'in_review'].includes(request.status);
       const renewalWindow =
@@ -193,6 +321,7 @@ export class VerificationService {
         status,
         verifiedAt: org.verifiedAt,
         expiresAt: org.verificationExpiresAt,
+        badge,
         canSubmit,
         requirements: {
           requiredDocuments: Array.isArray(requiredDocs) ? requiredDocs : ['identity', 'tax', 'address'],
@@ -212,31 +341,88 @@ export class VerificationService {
     userId: string,
     category: string,
     file: VerificationUpload,
+    details: VerificationDocumentDetails = {},
   ) {
     if (!ALLOWED_MIME.has(file.mimetype)) {
       throw new BadRequestException('Formato no permitido. Usa PDF, JPG, PNG, WEBP o AVIF.');
     }
+    const secured = await secureFile(file);
     return this.prisma.withContext({ orgId, userId }, async (tx) => {
       const draft = await this.ensureDraft(tx, orgId);
-      const document = await tx.verificationDocument.create({
+      const last = await tx.verificationDocument.aggregate({
+        where: { organizationId: orgId, category },
+        _max: { version: true },
+      });
+      const documentId = randomUUID();
+      const evidenceId = randomUUID();
+      const issueDate = details.issueDate ? new Date(details.issueDate) : null;
+      const expiryDate = details.expiryDate ? new Date(details.expiryDate) : null;
+      await tx.evidence.create({
         data: {
+          id: evidenceId,
           organizationId: orgId,
           requestId: draft.id,
+          ownerType: 'organization',
+          ownerId: orgId,
+          type: category,
+          fileRef: `db://verification-documents/${documentId}`,
+          sourceRef: file.originalname.slice(0, 500),
+          visibility: 'private',
+          issueDate,
+          expiryDate,
+          status: 'submitted',
+          hash: secured.hash,
+          createdBy: userId,
+        },
+      });
+      const document = await tx.verificationDocument.create({
+        data: {
+          id: documentId,
+          organizationId: orgId,
+          requestId: draft.id,
+          evidenceId,
           category,
+          issuer: details.issuer?.trim() || null,
+          documentNumber: details.documentNumber?.trim() || null,
+          version: (last._max.version ?? 0) + 1,
+          issueDate,
+          expiryDate,
           filename: file.originalname.slice(0, 255),
           mimeType: file.mimetype,
-          size: file.size,
-          data: file.buffer,
+          size: secured.size,
+          data: secured.data,
+          encryptionVersion: secured.encryptionVersion,
+          scanStatus: secured.scanStatus,
           createdBy: userId,
         },
         select: {
           id: true,
+          evidenceId: true,
           category: true,
           projectId: true,
+          issuer: true,
+          documentNumber: true,
+          version: true,
+          issueDate: true,
+          expiryDate: true,
           filename: true,
           mimeType: true,
           size: true,
           createdAt: true,
+        },
+      });
+      await tx.verificationEvent.create({
+        data: {
+          organizationId: orgId,
+          requestId: draft.id,
+          entityType: 'evidence',
+          entityId: evidenceId,
+          actorId: userId,
+          actorType: 'company_admin',
+          action: 'evidence_uploaded',
+          reason: 'Documento aportado por la empresa',
+          source: 'company_submission',
+          dataOrigin: 'company_submitted',
         },
       });
       return document;
@@ -254,6 +440,7 @@ export class VerificationService {
     if (!ALLOWED_MIME.has(file.mimetype)) {
       throw new BadRequestException('Formato no permitido. Usa PDF, JPG, PNG, WEBP o AVIF.');
     }
+    const secured = await secureFile(file);
     return this.prisma.withContext({ orgId, userId }, async (tx) => {
       const project = await tx.verificationProject.findFirst({
         where: { id: projectId, organizationId: orgId },
@@ -263,30 +450,79 @@ export class VerificationService {
       if (project.request && project.request.status !== 'draft') {
         throw new BadRequestException('La solicitud ya está enviada y no se puede modificar');
       }
-      return tx.verificationDocument.create({
+      const last = await tx.verificationDocument.aggregate({
+        where: { organizationId: orgId, category: 'project' },
+        _max: { version: true },
+      });
+      const documentId = randomUUID();
+      const evidenceId = randomUUID();
+      await tx.evidence.create({
         data: {
+          id: evidenceId,
           organizationId: orgId,
           requestId: project.requestId,
           projectId,
+          ownerType: 'project',
+          ownerId: projectId,
+          type: evidenceType ?? 'project',
+          fileRef: `db://verification-documents/${documentId}`,
+          sourceRef: file.originalname.slice(0, 500),
+          visibility: 'private',
+          status: 'submitted',
+          hash: secured.hash,
+          createdBy: userId,
+        },
+      });
+      const document = await tx.verificationDocument.create({
+        data: {
+          id: documentId,
+          organizationId: orgId,
+          requestId: project.requestId,
+          projectId,
+          evidenceId,
           category: 'project',
           evidenceType: evidenceType ?? null,
+          version: (last._max.version ?? 0) + 1,
           filename: file.originalname.slice(0, 255),
           mimeType: file.mimetype,
-          size: file.size,
-          data: file.buffer,
+          size: secured.size,
+          data: secured.data,
+          encryptionVersion: secured.encryptionVersion,
+          scanStatus: secured.scanStatus,
           createdBy: userId,
         },
         select: {
           id: true,
+          evidenceId: true,
           category: true,
           evidenceType: true,
           projectId: true,
+          issuer: true,
+          documentNumber: true,
+          version: true,
+          issueDate: true,
+          expiryDate: true,
           filename: true,
           mimeType: true,
           size: true,
           createdAt: true,
         },
       });
+      await tx.verificationEvent.create({
+        data: {
+          organizationId: orgId,
+          requestId: project.requestId,
+          entityType: 'evidence',
+          entityId: evidenceId,
+          actorId: userId,
+          actorType: 'company_admin',
+          action: 'evidence_uploaded',
+          reason: `Evidencia del proyecto ${project.name}`,
+          source: 'company_submission',
+          dataOrigin: 'company_submitted',
+        },
+      });
+      return document;
     });
   }
 
@@ -294,13 +530,32 @@ export class VerificationService {
     return this.prisma.withContext({ orgId }, async (tx) => {
       const document = await tx.verificationDocument.findFirst({
         where: { id: documentId, organizationId: orgId },
-        include: { request: { select: { status: true } } },
+        select: {
+          id: true,
+          evidenceId: true,
+          requestId: true,
+          filename: true,
+          request: { select: { status: true } },
+        },
       });
       if (!document) throw new NotFoundException('Documento no encontrado');
       if (document.request && document.request.status !== 'draft') {
         throw new BadRequestException('La solicitud ya está enviada y no se puede modificar');
       }
-      await tx.verificationDocument.delete({ where: { id: documentId } });
+      await tx.verificationEvent.create({
+        data: {
+          organizationId: orgId,
+          requestId: document.requestId,
+          entityType: 'evidence',
+          entityId: document.evidenceId,
+          actorType: 'company_admin',
+          action: 'evidence_deleted',
+          reason: `Documento eliminado: ${document.filename}`,
+          source: 'company_submission',
+          dataOrigin: 'company_submitted',
+        },
+      });
+      await tx.evidence.delete({ where: { id: document.evidenceId } });
       return { success: true };
     });
   }
@@ -308,21 +563,40 @@ export class VerificationService {
   async addProject(orgId: string, userId: string, dto: CreateVerificationProjectDto) {
     return this.prisma.withContext({ orgId, userId }, async (tx) => {
       const draft = await this.ensureDraft(tx, orgId);
-      return tx.verificationProject.create({
+      const project = await tx.verificationProject.create({
         data: {
           organizationId: orgId,
           requestId: draft.id,
           name: dto.name.trim(),
           projectType: dto.projectType ?? null,
           city: dto.city?.trim() || null,
+          location: dto.location?.trim() || null,
           year: dto.year ?? null,
+          startDate: dto.startDate ? new Date(dto.startDate) : null,
+          endDate: dto.endDate ? new Date(dto.endDate) : null,
           status: dto.status ?? 'completed',
+          publicVisibility: dto.publicVisibility ?? 'public',
           clientStatus: 'identified',
           description: dto.description?.trim() || null,
           url: dto.url?.trim() || null,
           createdBy: userId,
         },
       });
+      await tx.verificationEvent.create({
+        data: {
+          organizationId: orgId,
+          requestId: draft.id,
+          entityType: 'project',
+          entityId: project.id,
+          actorId: userId,
+          actorType: 'company_admin',
+          action: 'project_created',
+          reason: `Proyecto añadido: ${project.name}`,
+          source: 'company_submission',
+          dataOrigin: 'company_submitted',
+        },
+      });
+      return project;
     });
   }
 
@@ -408,10 +682,16 @@ export class VerificationService {
           data: { verificationStatus: 'pending', verificationComputedAt: new Date() },
         });
       }
+      await tx.evidence.updateMany({
+        where: { requestId: updated.id },
+        data: { status: 'submitted' },
+      });
       await tx.verificationEvent.create({
         data: {
           organizationId: orgId,
           requestId: updated.id,
+          entityType: 'organization_verification',
+          entityId: updated.id,
           actorId,
           actorType: 'company_admin',
           action: status === 'verified' ? 'renewal_submitted' : 'submitted',
@@ -438,12 +718,12 @@ export class VerificationService {
     const document = await this.prisma.withContext({ orgId }, (tx) =>
       tx.verificationDocument.findFirst({
         where: { id: documentId, organizationId: orgId },
-        select: { data: true, mimeType: true, filename: true },
+        select: { data: true, encryptionVersion: true, mimeType: true, filename: true },
       }),
     );
     if (!document) throw new NotFoundException('Documento no encontrado');
     return {
-      data: Buffer.from(document.data),
+      data: decryptFile(Buffer.from(document.data), document.encryptionVersion),
       mimeType: document.mimeType,
       filename: document.filename,
     };
@@ -463,6 +743,19 @@ export class VerificationService {
         include: {
           sector: { select: { slug: true, name: true } },
           country: { select: { iso2: true, name: true } },
+          locations: {
+            orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
+            select: {
+              id: true,
+              label: true,
+              addressLine: true,
+              city: true,
+              region: true,
+              postalCode: true,
+              country: true,
+              isPrimary: true,
+            },
+          },
         },
       });
       if (!org) throw new NotFoundException('Empresa no encontrada');
@@ -476,6 +769,7 @@ export class VerificationService {
               include: {
                 documents: { select: { category: true } },
                 projects: {
+                  where: { publicVisibility: 'public' },
                   orderBy: { createdAt: 'asc' },
                   include: {
                     documents: {
@@ -521,10 +815,13 @@ export class VerificationService {
           logoUrl: org.logoUrl,
           sector: org.sector,
           country: org.country,
+          locations: org.locations,
         },
         status,
         verifiedAt: org.verifiedAt,
         expiresAt: org.verificationExpiresAt,
+        scope: approved?.scope ?? null,
+        methodologyVersion: approved?.methodologyVersion ?? null,
         reviewedAt: approved?.reviewedAt ?? null,
         documentsCount: approved?.documents.length ?? 0,
         categories,
@@ -532,8 +829,8 @@ export class VerificationService {
           id: certification.id,
           name: certification.name,
           issuer: certification.issuer,
-          credentialId: certification.credentialId,
-          credentialUrl: certification.credentialUrl,
+          credentialId: certification.publicCredential ? certification.credentialId : null,
+          credentialUrl: certification.publicCredential ? certification.credentialUrl : null,
           issuedAt: certification.issuedAt,
           expiresAt: certification.expiresAt,
         })),
@@ -542,19 +839,21 @@ export class VerificationService {
           name: project.name,
           projectType: project.projectType,
           city: project.city,
+          location: project.location,
           year: project.year,
+          startDate: project.startDate,
+          endDate: project.endDate,
           status: project.status,
+          publicVisibility: project.publicVisibility,
           clientStatus: project.clientStatus,
           description: project.description,
           url: project.url,
           verificationScope: project.verificationScope,
           methodology: project.methodology,
+          evidenceTypes: project.evidenceTypes,
           verifiedAt: project.verifiedAt,
           createdAt: project.createdAt,
           evidenceCount: project.documents.length,
-          evidenceTypes: Array.from(
-            new Set(project.documents.map((document) => document.evidenceType).filter(Boolean)),
-          ),
           evidence: project.documents.map((document) => ({
             id: document.id,
             kind: document.mimeType.startsWith('image/') ? 'image' : 'pdf',
@@ -607,6 +906,7 @@ export class VerificationService {
           credentialUrl: dto.credentialUrl?.trim() || null,
           issuedAt: dto.issuedAt ? new Date(dto.issuedAt) : null,
           expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
+          publicCredential: dto.publicCredential ?? false,
           createdBy: userId,
         },
       });
@@ -713,12 +1013,12 @@ export class VerificationService {
     const document = await this.prisma.withContext({ isPlatformAdmin: true }, (tx) =>
       tx.verificationDocument.findFirst({
         where: { id: documentId, organizationId: request.organizationId },
-        select: { data: true, mimeType: true, filename: true },
+        select: { data: true, encryptionVersion: true, mimeType: true, filename: true },
       }),
     );
     if (!document) throw new NotFoundException('Documento no encontrado');
     return {
-      data: Buffer.from(document.data),
+      data: decryptFile(Buffer.from(document.data), document.encryptionVersion),
       mimeType: document.mimeType,
       filename: document.filename,
     };
@@ -732,7 +1032,18 @@ export class VerificationService {
         where: { id },
         include: {
           organization: {
-            select: { verificationStatus: true, verificationExpiresAt: true },
+            select: {
+              verificationStatus: true,
+              verificationExpiresAt: true,
+              slug: true,
+            },
+          },
+          projects: {
+            include: {
+              documents: {
+                select: { evidenceType: true, evidence: { select: { type: true } } },
+              },
+            },
           },
         },
       });
@@ -743,10 +1054,14 @@ export class VerificationService {
       const now = new Date();
       const expiresAt = new Date(now.getTime() + days * DAY_MS);
       const previousStatus = effectiveVerificationStatus(request.organization);
+      const scope = dto.scope?.trim() || 'identity,documentation,projects';
+      const methodologyVersion = dto.methodologyVersion?.trim() || 'v1.0';
       await tx.verificationRequest.update({
         where: { id },
         data: {
           status: 'approved',
+          scope,
+          methodologyVersion,
           reviewedAt: now,
           reviewedBy: reviewerId,
           decisionReason: dto.note?.trim() || null,
@@ -762,18 +1077,56 @@ export class VerificationService {
           verificationComputedAt: now,
         },
       });
-      await tx.verificationProject.updateMany({
+      for (const project of request.projects) {
+        const evidenceTypes = Array.from(
+          new Set(
+            project.documents
+              .map((document) => document.evidenceType ?? document.evidence.type)
+              .filter(Boolean),
+          ),
+        );
+        await tx.verificationProject.update({
+          where: { id: project.id },
+          data: {
+            verifiedAt: now,
+            verificationReviewerId: reviewerId,
+            evidenceTypes,
+            methodology: 'Revisión documental y de evidencias por FIVERTEN',
+            verificationScope: 'Identidad, documentación y evidencias del proyecto',
+          },
+        });
+      }
+      await tx.evidence.updateMany({
         where: { requestId: request.id },
-        data: {
-          verifiedAt: now,
-          methodology: 'Revisión documental y de evidencias por FIVERTEN',
-          verificationScope: 'Identidad, documentación y evidencias del proyecto',
+        data: { status: 'verified', expiryDate: expiresAt },
+      });
+      const currentBadge = await tx.publicBadge.findUnique({
+        where: { organizationId: request.organizationId },
+        select: { state: true },
+      });
+      await tx.publicBadge.upsert({
+        where: { organizationId: request.organizationId },
+        create: {
+          organizationId: request.organizationId,
+          state: 'active',
+          embedToken: newEmbedToken(),
+          currentUrl: defaultBadgeUrl(request.organization.slug),
+        },
+        update: {
+          state: 'active',
+          currentUrl: defaultBadgeUrl(request.organization.slug),
+          revokedAt: null,
+          ...(currentBadge && currentBadge.state !== 'active'
+            ? { embedToken: newEmbedToken() }
+            : {}),
         },
       });
       await tx.verificationEvent.create({
         data: {
           organizationId: request.organizationId,
           requestId: request.id,
+          entityType: 'organization_verification',
+          entityId: request.id,
           actorId: reviewerId,
           actorType: await this.reviewerType(tx, reviewerId),
           action: 'approved',
@@ -816,6 +1169,10 @@ export class VerificationService {
         request.organization.verificationStatus === 'verified' &&
         request.organization.verificationExpiresAt !== null &&
         request.organization.verificationExpiresAt.getTime() > now.getTime();
+      await tx.evidence.updateMany({
+        where: { requestId: request.id },
+        data: { status: 'rejected' },
+      });
       if (!stillVerified) {
         await tx.organization.update({
           where: { id: request.organizationId },
@@ -825,11 +1182,17 @@ export class VerificationService {
             verificationComputedAt: now,
           },
         });
+        await tx.publicBadge.updateMany({
+          where: { organizationId: request.organizationId, state: 'active' },
+          data: { state: 'revoked', revokedAt: now },
+        });
       }
       await tx.verificationEvent.create({
         data: {
           organizationId: request.organizationId,
           requestId: request.id,
+          entityType: 'organization_verification',
+          entityId: request.id,
           actorId: reviewerId,
           actorType: await this.reviewerType(tx, reviewerId),
           action: 'rejected',
@@ -876,10 +1239,20 @@ export class VerificationService {
           verificationComputedAt: now,
         },
       });
+      await tx.evidence.updateMany({
+        where: { requestId: request.id },
+        data: { status: 'expired' },
+      });
+      await tx.publicBadge.updateMany({
+        where: { organizationId: request.organizationId },
+        data: { state: 'revoked', revokedAt: now },
+      });
       await tx.verificationEvent.create({
         data: {
           organizationId: request.organizationId,
           requestId: request.id,
+          entityType: 'organization_verification',
+          entityId: request.id,
           actorId: reviewerId,
           actorType: await this.reviewerType(tx, reviewerId),
           action: 'revoked',
@@ -1085,8 +1458,11 @@ export class VerificationService {
     return {
       id: request.id,
       status: request.status,
+      scope: request.scope,
+      methodologyVersion: request.methodologyVersion,
       submittedAt: request.submittedAt,
       reviewedAt: request.reviewedAt,
+      reviewedBy: request.reviewedBy,
       decisionReason: request.decisionReason,
       expiresAt: request.expiresAt,
       createdAt: request.createdAt,
@@ -1098,14 +1474,20 @@ export class VerificationService {
         name: project.name,
         projectType: project.projectType,
         city: project.city,
+        location: project.location,
         year: project.year,
+        startDate: project.startDate,
+        endDate: project.endDate,
         status: project.status,
+        publicVisibility: project.publicVisibility,
         clientStatus: project.clientStatus,
         description: project.description,
         url: project.url,
         dataOrigin: project.dataOrigin,
         verificationScope: project.verificationScope,
         methodology: project.methodology,
+        evidenceTypes: project.evidenceTypes,
+        verificationReviewerId: project.verificationReviewerId,
         verifiedAt: project.verifiedAt,
         createdAt: project.createdAt,
         documents: project.documents,

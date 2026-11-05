@@ -21,6 +21,7 @@
     "prisma:validate": "prisma validate",
     "db:rls": "ts-node prisma/rls/apply.ts",
     "db:rls:sql": "ts-node prisma/rls/render.ts",
+    "db:encrypt-files": "ts-node prisma/encrypt-files.ts",
     "db:retention": "ts-node prisma/retention.ts",
     "db:seed": "ts-node prisma/seed.ts",
     "db:seed:demo": "ts-node prisma/seed-demo.ts",

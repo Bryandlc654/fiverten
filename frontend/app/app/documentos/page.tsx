@@ -52,6 +52,10 @@ export default function DocumentsPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [category, setCategory] = useState<VerificationDocumentCategory>('identity');
+  const [issuer, setIssuer] = useState('');
+  const [documentNumber, setDocumentNumber] = useState('');
+  const [issueDate, setIssueDate] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
 
   const load = useCallback(async () => {
     setError(null);
@@ -92,9 +96,19 @@ export default function DocumentsPage() {
       return;
     }
     await run(
-      () => api.uploadVerificationDocument(category, file),
+      () =>
+        api.uploadVerificationDocument(category, file, {
+          issuer: issuer.trim() || undefined,
+          documentNumber: documentNumber.trim() || undefined,
+          issueDate: issueDate || undefined,
+          expiryDate: expiryDate || undefined,
+        }),
       'Documento añadido. Recuerda enviar la solicitud cuando esté todo.',
     );
+    setIssuer('');
+    setDocumentNumber('');
+    setIssueDate('');
+    setExpiryDate('');
   }
 
   if (loading || !data) {
@@ -187,7 +201,7 @@ export default function DocumentsPage() {
               Los documentos son privados: solo los revisa el equipo de FIVERTEN. Cada nueva subida
               del mismo tipo se guarda como una versión nueva.
             </p>
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[220px_1fr]">
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Tipo de documento" className="block">
                 <select
                   value={category}
@@ -207,6 +221,37 @@ export default function DocumentsPage() {
                   accept="application/pdf,image/jpeg,image/png,image/webp,image/avif"
                   onChange={(event) => void upload(event)}
                   disabled={busy}
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Emisor (opcional)" className="block">
+                <input
+                  value={issuer}
+                  onChange={(event) => setIssuer(event.target.value)}
+                  placeholder="Agencia Tributaria, colegio profesional…"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Número de documento (opcional)" className="block">
+                <input
+                  value={documentNumber}
+                  onChange={(event) => setDocumentNumber(event.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Fecha de emisión (opcional)" className="block">
+                <input
+                  type="date"
+                  value={issueDate}
+                  onChange={(event) => setIssueDate(event.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Fecha de caducidad (opcional)" className="block">
+                <input
+                  type="date"
+                  value={expiryDate}
+                  onChange={(event) => setExpiryDate(event.target.value)}
                   className={inputClass}
                 />
               </Field>
@@ -236,8 +281,27 @@ export default function DocumentsPage() {
                     <p className="truncate font-medium text-slate-900">{document.filename}</p>
                     <p className="text-xs text-slate-500">
                       {CATEGORIES[document.category] ?? document.category} · v
-                      {versionById.get(document.id) ?? 1} · {formatDate(document.createdAt)} ·{' '}
-                      {(document.size / 1024).toFixed(0)} KB
+                      {document.version ?? versionById.get(document.id) ?? 1} ·{' '}
+                      {formatDate(document.createdAt)} · {(document.size / 1024).toFixed(0)} KB
+                    </p>
+                    {(document.issuer || document.documentNumber || document.expiryDate) && (
+                      <p className="mt-0.5 text-[11px] text-slate-400">
+                        {[
+                          document.issuer,
+                          document.documentNumber,
+                          document.expiryDate
+                            ? `Válido hasta ${formatDate(document.expiryDate)}`
+                            : null,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </p>
+                    )}
+                    <p className="mt-0.5 text-[11px] text-slate-400">
+                      Evidencia: {document.evidence?.status ?? 'submitted'}
+                      {document.evidence?.hash
+                        ? ` · SHA-256 ${document.evidence.hash.slice(0, 12)}…`
+                        : ''}
                     </p>
                   </div>
                   {data.canSubmit && (

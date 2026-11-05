@@ -2,6 +2,12 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { randomUUID } from 'node:crypto';
+import {
+  decryptFile,
+  scanFile,
+  secureFile,
+  validateFileSignature,
+} from '../common/file-security';
 import { PrismaService } from '../prisma/prisma.service';
 
 const MIME_EXTENSIONS: Record<string, string> = {
@@ -67,18 +73,25 @@ export class MediaService {
   /** Imagen pública guardada en la base (fallback sin R2). */
   async getFile(id: string): Promise<{ data: Buffer; mimeType: string }> {
     const file = await this.prisma.withContext({}, (tx) =>
-      tx.mediaFile.findUnique({ where: { id }, select: { data: true, mimeType: true } }),
+      tx.mediaFile.findUnique({
+        where: { id },
+        select: { data: true, encryptionVersion: true, mimeType: true },
+      }),
     );
     if (!file) {
       throw new NotFoundException('Imagen no encontrada');
     }
-    return { data: Buffer.from(file.data), mimeType: file.mimeType };
+    return {
+      data: decryptFile(Buffer.from(file.data), file.encryptionVersion),
+      mimeType: file.mimeType,
+    };
   }
 
   private async storeInDatabase(
     owner: { organizationId?: string; userId?: string; kind: string },
     file: UploadedImage,
   ): Promise<string> {
+    const secured = await secureFile(file);
     const record = await this.prisma.withContext(
       { orgId: owner.organizationId ?? null, userId: owner.userId ?? null },
       (tx) =>
@@ -88,8 +101,10 @@ export class MediaService {
             userId: owner.userId ?? null,
             kind: owner.kind,
             mimeType: file.mimetype,
-            size: file.size,
-            data: file.buffer,
+            size: secured.size,
+            data: secured.data,
+            encryptionVersion: secured.encryptionVersion,
+            scanStatus: secured.scanStatus,
           },
           select: { id: true },
         }),
@@ -98,6 +113,8 @@ export class MediaService {
   }
 
   private async upload(prefix: string, file: UploadedImage): Promise<string> {
+    validateFileSignature(file);
+    await scanFile(file.buffer);
     const client = this.getClient();
     const extension = MIME_EXTENSIONS[file.mimetype] ?? 'jpg';
     const key = `${prefix}/${randomUUID()}.${extension}`;

@@ -22,6 +22,7 @@ export default function RegisterPage() {
     username: '',
     email: '',
     password: '',
+    website: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +62,7 @@ export default function RegisterPage() {
         firstName: form.firstName || undefined,
         lastName: form.lastName || undefined,
         username: form.username || undefined,
+        website: form.website || undefined,
       });
       setFeedback('success');
       if (response.requiresEmailVerification) {
@@ -166,6 +168,17 @@ export default function RegisterPage() {
             </div>
 
             <form className="space-y-space-md" onSubmit={onSubmit} noValidate>
+              <div className="hidden" aria-hidden="true">
+                <label htmlFor="website">Sitio web</label>
+                <input
+                  id="website"
+                  name="website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={form.website}
+                  onChange={(event) => update('website', event.target.value)}
+                />
+              </div>
               <div className="space-y-1.5">
                 <label className={labelClass} htmlFor="companyName">
                   Nombre de la empresa

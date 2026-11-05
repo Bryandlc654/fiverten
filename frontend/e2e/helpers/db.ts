@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from 'crypto';
+import { createHash, randomBytes, randomUUID } from 'crypto';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -230,23 +230,57 @@ export async function seedApprovedVerification(
     data: {
       organizationId: organization.id,
       status: 'approved',
+      scope: 'identity,documentation,projects',
+      methodologyVersion: 'v1.0',
       submittedAt: now,
       reviewedAt: now,
       expiresAt,
     },
   });
-  for (const category of ['identity', 'tax', 'address']) {
-    await db().verificationDocument.create({
+
+  async function seedDocument(options: {
+    category: string;
+    projectId?: string;
+    evidenceType?: string;
+  }) {
+    const documentId = randomUUID();
+    const evidenceId = randomUUID();
+    const data = Buffer.from('%PDF-1.4 test');
+    await db().evidence.create({
       data: {
+        id: evidenceId,
         organizationId: organization.id,
         requestId: request.id,
-        category,
-        filename: `${category}.pdf`,
-        mimeType: 'application/pdf',
-        size: 16,
-        data: Buffer.from('%PDF-1.4 test'),
+        projectId: options.projectId,
+        ownerType: options.projectId ? 'project' : 'organization',
+        ownerId: options.projectId ?? organization.id,
+        type: options.evidenceType ?? options.category,
+        fileRef: `db://verification-documents/${documentId}`,
+        sourceRef: `${options.category}.pdf`,
+        visibility: 'private',
+        status: 'verified',
+        hash: createHash('sha256').update(data).digest('hex'),
       },
     });
+    await db().verificationDocument.create({
+      data: {
+        id: documentId,
+        organizationId: organization.id,
+        requestId: request.id,
+        projectId: options.projectId,
+        evidenceId,
+        category: options.category,
+        evidenceType: options.evidenceType,
+        filename: `${options.category}.pdf`,
+        mimeType: 'application/pdf',
+        size: data.length,
+        data,
+      },
+    });
+  }
+
+  for (const category of ['identity', 'tax', 'address']) {
+    await seedDocument({ category });
   }
   const project = await db().verificationProject.create({
     data: {
@@ -255,20 +289,13 @@ export async function seedApprovedVerification(
       name: projectName,
       description: 'Evidencia pública de prueba',
       url: 'https://example.com/proyecto',
+      publicVisibility: 'public',
+      verifiedAt: now,
+      clientStatus: 'verified',
+      evidenceTypes: ['contract'],
     },
   });
-  await db().verificationDocument.create({
-    data: {
-      organizationId: organization.id,
-      requestId: request.id,
-      projectId: project.id,
-      category: 'project',
-      filename: 'evidencia.pdf',
-      mimeType: 'application/pdf',
-      size: 16,
-      data: Buffer.from('%PDF-1.4 test'),
-    },
-  });
+  await seedDocument({ category: 'project', projectId: project.id, evidenceType: 'contract' });
   await db().organization.update({
     where: { id: organization.id },
     data: {

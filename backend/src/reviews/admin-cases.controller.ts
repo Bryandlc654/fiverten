@@ -18,6 +18,7 @@ import type { Response } from 'express';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { PlatformAdmin } from '../auth/decorators/platform-admin.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { StaffMfaGuard } from '../auth/guards/staff-mfa.guard';
 import { PlatformAdminGuard } from '../auth/guards/platform-admin.guard';
 import { evidenceResponse } from './case-files';
 import { ReviewCasesService, type CaseListQuery } from './cases.service';
@@ -27,7 +28,7 @@ const SCOPES: CaseListQuery['scope'][] = ['active', 'closed', 'all'];
 
 /** Casos de evidencias de reseñas de baja valoración (super admin). */
 @Controller('admin/cases')
-@UseGuards(JwtAuthGuard, PlatformAdminGuard)
+@UseGuards(JwtAuthGuard, StaffMfaGuard, PlatformAdminGuard)
 @PlatformAdmin()
 export class AdminCasesController {
   constructor(private readonly cases: ReviewCasesService) {}

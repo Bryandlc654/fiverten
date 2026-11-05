@@ -15,6 +15,10 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { CreateInvitationDto } from './dto/create-invitation.dto';
+import {
+  CreateOrganizationLocationDto,
+  UpdateOrganizationLocationDto,
+} from './dto/organization-location.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { InvitationsService } from './invitations.service';
@@ -31,6 +35,39 @@ export class OrganizationsController {
   @Get('me')
   getMine(@CurrentUser('organizationId') orgId: string | null) {
     return this.organizations.getMine(this.requireOrg(orgId));
+  }
+
+  @Get('me/locations')
+  listLocations(@CurrentUser('organizationId') orgId: string | null) {
+    return this.organizations.listLocations(this.requireOrg(orgId));
+  }
+
+  @Post('me/locations')
+  @Roles('editor')
+  createLocation(
+    @CurrentUser('organizationId') orgId: string | null,
+    @Body() dto: CreateOrganizationLocationDto,
+  ) {
+    return this.organizations.createLocation(this.requireOrg(orgId), dto);
+  }
+
+  @Patch('me/locations/:id')
+  @Roles('editor')
+  updateLocation(
+    @CurrentUser('organizationId') orgId: string | null,
+    @Param('id') id: string,
+    @Body() dto: UpdateOrganizationLocationDto,
+  ) {
+    return this.organizations.updateLocation(this.requireOrg(orgId), id, dto);
+  }
+
+  @Delete('me/locations/:id')
+  @Roles('editor')
+  deleteLocation(
+    @CurrentUser('organizationId') orgId: string | null,
+    @Param('id') id: string,
+  ) {
+    return this.organizations.deleteLocation(this.requireOrg(orgId), id);
   }
 
   @Patch('me')

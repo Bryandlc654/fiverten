@@ -702,6 +702,34 @@ export default function PublicProfilePage() {
               </div>
             </div>
 
+            {profile.locations && profile.locations.length > 0 && (
+              <div className="rounded-lg border border-slate-200/80 bg-white p-5 shadow-sm">
+                <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h3 className="text-sm font-bold text-slate-900">Ubicaciones</h3>
+                  <LocationIcon className="h-4 w-4 text-slate-400" />
+                </div>
+                <ul className="space-y-3">
+                  {profile.locations.map((location) => (
+                    <li key={location.id} className="text-xs">
+                      <p className="font-bold text-slate-800">
+                        {location.label}
+                        {location.isPrimary && (
+                          <span className="ml-2 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700">
+                            Principal
+                          </span>
+                        )}
+                      </p>
+                      <p className="mt-0.5 text-[10px] leading-snug text-slate-500">
+                        {[location.addressLine, location.city, location.postalCode, location.country]
+                          .filter(Boolean)
+                          .join(' · ') || 'Sin dirección pública'}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="rounded-lg border border-slate-200/80 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-900">Estado de verificación</h3>

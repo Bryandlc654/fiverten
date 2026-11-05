@@ -73,6 +73,7 @@ export default function VerifyCompanyPage() {
   const [country, setCountry] = useState('');
   const [message, setMessage] = useState('');
   const [consent, setConsent] = useState(false);
+  const [honeypot, setHoneypot] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
@@ -108,6 +109,7 @@ export default function VerifyCompanyPage() {
         country: countryName || undefined,
         message: message.trim() || undefined,
         consent,
+        honeypot: honeypot || undefined,
       });
       setSent(true);
     } catch (err) {
@@ -367,6 +369,17 @@ export default function VerifyCompanyPage() {
                 </div>
               ) : (
                 <form onSubmit={submit} className="space-y-4">
+                  <div className="hidden" aria-hidden="true">
+                    <label htmlFor="companyFax">Fax</label>
+                    <input
+                      id="companyFax"
+                      name="companyFax"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={honeypot}
+                      onChange={(event) => setHoneypot(event.target.value)}
+                    />
+                  </div>
                   <h3 className="text-lg font-bold text-slate-900">Formulario de solicitud</h3>
                   {error && <Alert tone="error">{error}</Alert>}
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

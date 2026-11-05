@@ -27,6 +27,7 @@ export interface AuthenticatedUser {
   isStaff: boolean;
   isSupportAgent: boolean;
   isVerifier: boolean;
+  mfaEnabled: boolean;
   sessionId: string | null;
 }
 
@@ -106,6 +107,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       isStaff: user.isFivertenStaff,
       isSupportAgent: user.isSupportAgent,
       isVerifier: user.isVerifier,
+      mfaEnabled: user.mfaEnabled,
       sessionId: payload.sid,
     };
   }

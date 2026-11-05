@@ -204,7 +204,11 @@ export default function DashboardPage() {
             <div className="min-w-0 xl:col-span-2">
               <PerformanceChart monthly={stats?.monthly ?? null} />
             </div>
-            <SealCard publicUrl={publicUrl} publicId={organization?.publicId} />
+            <SealCard
+              publicUrl={publicUrl}
+              publicId={organization?.publicId}
+              embedToken={verification?.badge?.embedToken}
+            />
           </section>
 
           <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">

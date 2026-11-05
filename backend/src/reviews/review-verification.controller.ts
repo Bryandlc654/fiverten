@@ -11,12 +11,13 @@ import {
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { VerificationReviewer } from '../auth/decorators/verification-reviewer.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { StaffMfaGuard } from '../auth/guards/staff-mfa.guard';
 import { VerificationReviewerGuard } from '../auth/guards/verification-reviewer.guard';
 import { ReviewVerificationDto } from './dto/moderation.dto';
 import { ModerationService } from './moderation.service';
 
 @Controller('admin/review-verifications')
-@UseGuards(JwtAuthGuard, VerificationReviewerGuard)
+@UseGuards(JwtAuthGuard, StaffMfaGuard, VerificationReviewerGuard)
 @VerificationReviewer()
 export class ReviewVerificationController {
   constructor(private readonly moderation: ModerationService) {}

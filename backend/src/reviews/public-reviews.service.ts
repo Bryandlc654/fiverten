@@ -15,6 +15,7 @@ import { PlatformSettingsService } from '../settings/settings.service';
 import { effectiveVerificationStatus } from '../verification/verification-status';
 import { SubmitReviewDto } from './dto/submit-review.dto';
 import { ReviewCasesService } from './cases.service';
+import { recordConsent } from '../privacy/consent';
 import { ReviewRequestsService } from './review-requests.service';
 import { dataForStatus } from './review-states';
 import { PUBLIC_REVIEW_SELECT, toPublicReview } from './reviews.mappers';
@@ -119,6 +120,7 @@ export class PublicReviewsService {
       phone: org.allowContact ? org.phone : null,
       sector: org.sector ? { slug: org.sector.slug, name: org.sector.name } : null,
       country: org.country ? { iso2: org.country.iso2, name: org.country.name } : null,
+      locations: org.locations,
       verified: effectiveVerificationStatus(org) === 'verified',
       createdAt: org.createdAt,
       // La media solo usa opiniones que cumplen el mínimo publicado:
@@ -518,6 +520,16 @@ export class PublicReviewsService {
           data: { clientStatus: 'confirmed' },
         });
       }
+      await recordConsent(tx, {
+        organizationId: org.id,
+        subjectType: 'review',
+        subjectId: created.id,
+        email,
+        type: 'review_publication',
+        granted: dto.consent,
+        ipAddress: ctx.ipAddress ?? null,
+        userAgent: ctx.userAgent ?? null,
+      });
     });
 
     // No se espera: el envío por SMTP puede tardar y la respuesta debe ser inmediata.
@@ -661,6 +673,19 @@ export class PublicReviewsService {
         include: {
           sector: { select: { slug: true, name: true } },
           country: { select: { iso2: true, name: true } },
+          locations: {
+            orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
+            select: {
+              id: true,
+              label: true,
+              addressLine: true,
+              city: true,
+              region: true,
+              postalCode: true,
+              country: true,
+              isPrimary: true,
+            },
+          },
         },
       }),
     );

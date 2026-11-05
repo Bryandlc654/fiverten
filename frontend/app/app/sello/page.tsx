@@ -82,6 +82,7 @@ export default function VerificationPage() {
   const [certCredentialUrl, setCertCredentialUrl] = useState('');
   const [certIssuedAt, setCertIssuedAt] = useState('');
   const [certExpiresAt, setCertExpiresAt] = useState('');
+  const [certPublic, setCertPublic] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -239,9 +240,14 @@ export default function VerificationPage() {
     missing.length === 0 &&
     projects.length >= data.requirements.minProjects;
   const origin = typeof window === 'undefined' ? 'https://fiverten.com' : window.location.origin;
-  const sealSvg = `${origin}/api/seal/${data.organization.publicId}.svg`;
-  const sealPng = `${origin}/api/seal/${data.organization.publicId}.png`;
-  const embed = `<a href="${origin}/empresa/${data.organization.slug}" target="_blank" rel="noopener"><img src="${sealSvg}" alt="Sello FIVERTEN" width="300" height="104"></a>`;
+  const badge = data.badge;
+  const sealToken = badge?.embedToken ?? data.organization.publicId;
+  const profileUrl = badge?.currentUrl
+    ? `${origin}${badge.currentUrl}`
+    : `${origin}/empresa/${data.organization.slug}`;
+  const sealSvg = `${origin}/api/seal/${sealToken}.svg`;
+  const sealPng = `${origin}/api/seal/${sealToken}.png`;
+  const embed = `<a href="${profileUrl}" target="_blank" rel="noopener"><img src="${sealSvg}" alt="Sello FIVERTEN" width="300" height="104"></a>`;
 
   return (
     <DashboardShell
@@ -309,6 +315,11 @@ export default function VerificationPage() {
             <p className="mt-1 text-xs text-slate-500">
               El sello es dinámico: si la verificación caduca o se revoca, cambiará automáticamente.
             </p>
+            {badge && (
+              <p className="mt-2 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                Badge {badge.state} · token independiente · {profileUrl}
+              </p>
+            )}
             <div className="mt-4 flex flex-wrap items-center gap-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={sealSvg} alt="Sello FIVERTEN" className="h-24 w-auto" />
@@ -402,6 +413,15 @@ export default function VerificationPage() {
                 className={inputClass}
               />
             </Field>
+            <label className="flex items-start gap-2 text-xs text-slate-600 sm:col-span-2">
+              <input
+                type="checkbox"
+                checked={certPublic}
+                onChange={(event) => setCertPublic(event.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-slate-300"
+              />
+              Mostrar el número y la URL de la credencial en el perfil público.
+            </label>
             <button
               type="submit"
               disabled={busy || !certName.trim() || !certIssuer.trim()}

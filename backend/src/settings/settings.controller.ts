@@ -9,12 +9,13 @@ import {
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { PlatformAdmin } from '../auth/decorators/platform-admin.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { StaffMfaGuard } from '../auth/guards/staff-mfa.guard';
 import { PlatformAdminGuard } from '../auth/guards/platform-admin.guard';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { PlatformSettingsService } from './settings.service';
 
 @Controller('admin/settings')
-@UseGuards(JwtAuthGuard, PlatformAdminGuard)
+@UseGuards(JwtAuthGuard, StaffMfaGuard, PlatformAdminGuard)
 @PlatformAdmin()
 export class AdminSettingsController {
   constructor(private readonly settings: PlatformSettingsService) {}

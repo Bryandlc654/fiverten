@@ -212,6 +212,12 @@ export const rlsStatements: string[] = [
   ...tenantTablePolicy('verification_events'),
   ...tenantTablePolicy('certifications'),
   ...tenantTablePolicy('analytics_events'),
+  ...tenantTablePolicy('organization_locations'),
+  ...tenantTablePolicy('evidence'),
+  ...tenantTablePolicy('client_relations'),
+  ...tenantTablePolicy('public_badges'),
+  ...tenantTablePolicy('consent_records'),
+  ...userTablePolicy('privacy_requests'),
   // Solicitudes de captación: solo las gestiona el equipo de plataforma.
   ...platformTablePolicy('verification_inquiries'),
 
@@ -276,6 +282,8 @@ export const rlsStatements: string[] = [
   // La tabla de auditoría de intentos de autenticación es de sólo-anexado:
   // el rol de aplicación no debe poder borrar su historial.
   `REVOKE DELETE ON auth_attempts FROM fiverten_app`,
+  `REVOKE UPDATE, DELETE ON verification_events FROM fiverten_app`,
+  `REVOKE UPDATE, DELETE ON moderation_actions FROM fiverten_app`,
 ];
 
 export function renderSql(): string {

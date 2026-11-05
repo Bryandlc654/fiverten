@@ -66,20 +66,26 @@ model Organization {
   reviewCampaigns    ReviewCampaign[]
   notifications      Notification[]
 
-  sector             Sector?               @relation(fields: [sectorId], references: [id])
-  country            Country?              @relation(fields: [countryId], references: [id])
-  subscription       Subscription?
-  subscriptionEvents SubscriptionEvent[]
-  payments           Payment[]
-  supportTickets     SupportTicket[]
-  supportMessages    SupportTicketMessage[]
-  mediaFiles         MediaFile[]
+  sector                Sector?                @relation(fields: [sectorId], references: [id])
+  country               Country?               @relation(fields: [countryId], references: [id])
+  subscription          Subscription?
+  subscriptionEvents    SubscriptionEvent[]
+  payments              Payment[]
+  supportTickets        SupportTicket[]
+  supportMessages       SupportTicketMessage[]
+  mediaFiles            MediaFile[]
   verificationRequests  VerificationRequest[]
   verificationDocuments VerificationDocument[]
   verificationProjects  VerificationProject[]
   verificationEvents    VerificationEvent[]
   certifications        Certification[]
   analyticsEvents       AnalyticsEvent[]
+  locations             OrganizationLocation[]
+  evidence              Evidence[]
+  clientRelations       ClientRelation[]
+  publicBadge           PublicBadge?
+  consentRecords        ConsentRecord[]
+  privacyRequests       PrivacyRequest[]
 
   @@index([slug])
   @@index([status, isActive, deletedAt])
@@ -87,6 +93,27 @@ model Organization {
   @@index([sectorId])
   @@index([countryId])
   @@map("organizations")
+}
+
+// Sedes o ubicaciones físicas de la organización.
+model OrganizationLocation {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  label          String   @db.VarChar(120)
+  addressLine    String?  @map("address_line") @db.VarChar(255)
+  city           String?  @db.VarChar(120)
+  region         String?  @db.VarChar(120)
+  postalCode     String?  @map("postal_code") @db.VarChar(30)
+  country        String?  @db.VarChar(120)
+  isPrimary      Boolean  @default(false) @map("is_primary")
+  isPublic       Boolean  @default(false) @map("is_public")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, isPrimary])
+  @@map("organization_locations")
 }
 
 model User {
@@ -122,18 +149,21 @@ model User {
   updatedBy             String?   @map("updated_by") @db.Uuid
   deletedBy             String?   @map("deleted_by") @db.Uuid
 
-  defaultOrganization Organization?            @relation("UserDefaultOrg", fields: [defaultOrganizationId], references: [id])
-  memberships         OrganizationMembership[]
-  sessions            Session[]
-  refreshTokens       RefreshToken[]
-  authAttempts        AuthAttempt[]
-  emailVerifications  EmailVerification[]
-  passwordResets      PasswordResetToken[]
-  notifications       Notification[]
-  supportTicketsCreated  SupportTicket[] @relation("SupportTicketCreator")
-  supportTicketsAssigned SupportTicket[] @relation("SupportTicketAssignee")
+  defaultOrganization    Organization?            @relation("UserDefaultOrg", fields: [defaultOrganizationId], references: [id])
+  memberships            OrganizationMembership[]
+  sessions               Session[]
+  refreshTokens          RefreshToken[]
+  authAttempts           AuthAttempt[]
+  emailVerifications     EmailVerification[]
+  passwordResets         PasswordResetToken[]
+  notifications          Notification[]
+  supportTicketsCreated  SupportTicket[]          @relation("SupportTicketCreator")
+  supportTicketsAssigned SupportTicket[]          @relation("SupportTicketAssignee")
   supportMessages        SupportTicketMessage[]
   mediaFiles             MediaFile[]
+  clientRelations        ClientRelation[]
+  consentRecords         ConsentRecord[]
+  privacyRequests        PrivacyRequest[]
 
   @@index([isActive, deletedAt])
   @@index([isFivertenStaff])
@@ -246,35 +276,37 @@ model OrganizationInvitation {
 // (modelo_bd_fiverten_completo.sql): ciclo de vida, verificación, visibilidad
 // y moderación son independientes. Se publica cuando el autor confirma su email.
 model Review {
-  id                 String    @id @default(uuid()) @db.Uuid
-  organizationId     String    @map("organization_id") @db.Uuid
-  reviewerName       String    @map("reviewer_name") @db.VarChar(200)
-  reviewerEmail      String    @map("reviewer_email") @db.VarChar(255)
-  projectId          String?   @map("project_id") @db.Uuid
-  rating             Int       @db.SmallInt
-  title              String?   @db.VarChar(255)
-  body               String    @db.Text
-  experienceDate     DateTime? @map("experience_date") @db.Date
-  orderReference     String?   @map("order_reference") @db.VarChar(100)
-  consent            Boolean   @default(false)
-  lifecycleStatus    String    @default("submitted") @map("lifecycle_status") @db.VarChar(20)
-  verificationStatus String    @default("identified") @map("verification_status") @db.VarChar(20)
-  verificationMethodology String? @map("verification_methodology") @db.VarChar(200)
-  verifiedAt         DateTime? @map("verified_at") @db.Timestamptz(6)
-  visibility         String    @default("private") @db.VarChar(20)
-  moderationStatus   String    @default("none") @map("moderation_status") @db.VarChar(20)
-  confirmTokenHash   String?   @unique @map("confirm_token_hash") @db.VarChar(255)
-  emailConfirmedAt   DateTime? @map("email_confirmed_at") @db.Timestamptz(6)
-  publishedAt        DateTime? @map("published_at") @db.Timestamptz(6)
-  ipAddress          String?   @map("ip_address") @db.VarChar(45)
-  userAgent          String?   @map("user_agent") @db.VarChar(500)
-  metadata           Json      @default("{}") @db.JsonB
-  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt          DateTime? @map("deleted_at") @db.Timestamptz(6)
+  id                      String    @id @default(uuid()) @db.Uuid
+  organizationId          String    @map("organization_id") @db.Uuid
+  reviewerName            String    @map("reviewer_name") @db.VarChar(200)
+  reviewerEmail           String    @map("reviewer_email") @db.VarChar(255)
+  projectId               String?   @map("project_id") @db.Uuid
+  clientRelationId        String?   @map("client_relation_id") @db.Uuid
+  rating                  Int       @db.SmallInt
+  title                   String?   @db.VarChar(255)
+  body                    String    @db.Text
+  experienceDate          DateTime? @map("experience_date") @db.Date
+  orderReference          String?   @map("order_reference") @db.VarChar(100)
+  consent                 Boolean   @default(false)
+  lifecycleStatus         String    @default("submitted") @map("lifecycle_status") @db.VarChar(20)
+  verificationStatus      String    @default("identified") @map("verification_status") @db.VarChar(20)
+  verificationMethodology String?   @map("verification_methodology") @db.VarChar(200)
+  verifiedAt              DateTime? @map("verified_at") @db.Timestamptz(6)
+  visibility              String    @default("private") @db.VarChar(20)
+  moderationStatus        String    @default("none") @map("moderation_status") @db.VarChar(20)
+  confirmTokenHash        String?   @unique @map("confirm_token_hash") @db.VarChar(255)
+  emailConfirmedAt        DateTime? @map("email_confirmed_at") @db.Timestamptz(6)
+  publishedAt             DateTime? @map("published_at") @db.Timestamptz(6)
+  ipAddress               String?   @map("ip_address") @db.VarChar(45)
+  userAgent               String?   @map("user_agent") @db.VarChar(500)
+  metadata                Json      @default("{}") @db.JsonB
+  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt               DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization      Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   project           VerificationProject? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  clientRelation    ClientRelation?      @relation(fields: [clientRelationId], references: [id], onDelete: SetNull)
   response          ReviewResponse?
   reports           ReviewReport[]
   moderationActions ModerationAction[]
@@ -292,6 +324,7 @@ model Review {
   @@index([ipAddress])
   @@index([organizationId, reviewerEmail])
   @@index([projectId])
+  @@index([clientRelationId])
   @@map("reviews")
 }
 
@@ -487,15 +520,17 @@ model ReviewCaseMessage {
 // público) porque pueden contener datos personales: solo se descargan con
 // sesión de admin o empresa, o con el enlace del cliente.
 model ReviewCaseFile {
-  id             String   @id @default(uuid()) @db.Uuid
-  caseId         String   @map("case_id") @db.Uuid
-  messageId      String   @map("message_id") @db.Uuid
-  organizationId String   @map("organization_id") @db.Uuid
-  filename       String   @db.VarChar(255)
-  mimeType       String   @map("mime_type") @db.VarChar(100)
-  size           Int
-  data           Bytes
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id                String   @id @default(uuid()) @db.Uuid
+  caseId            String   @map("case_id") @db.Uuid
+  messageId         String   @map("message_id") @db.Uuid
+  organizationId    String   @map("organization_id") @db.Uuid
+  filename          String   @db.VarChar(255)
+  mimeType          String   @map("mime_type") @db.VarChar(100)
+  size              Int
+  data              Bytes
+  encryptionVersion Int      @default(0) @map("encryption_version")
+  scanStatus        String   @default("not_scanned") @map("scan_status") @db.VarChar(20)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   case         ReviewCase        @relation(fields: [caseId], references: [id], onDelete: Cascade)
   message      ReviewCaseMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
@@ -510,35 +545,69 @@ model ReviewCaseFile {
 // enviado a un cliente concreto; permite saber si se abrió y si terminó en
 // reseña (seguimiento y tasa de conversión de las solicitudes).
 model ReviewRequest {
-  id             String    @id @default(uuid()) @db.Uuid
-  organizationId String    @map("organization_id") @db.Uuid
-  tokenHash      String    @unique @map("token_hash") @db.VarChar(255)
-  reviewerName   String    @map("reviewer_name") @db.VarChar(200)
-  reviewerEmail  String    @map("reviewer_email") @db.VarChar(255)
+  id               String    @id @default(uuid()) @db.Uuid
+  organizationId   String    @map("organization_id") @db.Uuid
+  tokenHash        String    @unique @map("token_hash") @db.VarChar(255)
+  reviewerName     String    @map("reviewer_name") @db.VarChar(200)
+  reviewerEmail    String    @map("reviewer_email") @db.VarChar(255)
   // sent -> opened -> completed. El vencimiento se calcula con expiresAt.
-  status         String    @default("sent") @db.VarChar(20)
-  sentAt         DateTime  @default(now()) @map("sent_at") @db.Timestamptz(6)
-  openedAt       DateTime? @map("opened_at") @db.Timestamptz(6)
-  completedAt    DateTime? @map("completed_at") @db.Timestamptz(6)
-  expiresAt      DateTime  @map("expires_at") @db.Timestamptz(6)
-  reviewId       String?   @unique @map("review_id") @db.Uuid
-  campaignId     String?   @map("campaign_id") @db.Uuid
-  createdBy      String?   @map("created_by") @db.Uuid
-  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  status           String    @default("sent") @db.VarChar(20)
+  sentAt           DateTime  @default(now()) @map("sent_at") @db.Timestamptz(6)
+  openedAt         DateTime? @map("opened_at") @db.Timestamptz(6)
+  completedAt      DateTime? @map("completed_at") @db.Timestamptz(6)
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(6)
+  reviewId         String?   @unique @map("review_id") @db.Uuid
+  campaignId       String?   @map("campaign_id") @db.Uuid
+  clientRelationId String?   @map("client_relation_id") @db.Uuid
+  createdBy        String?   @map("created_by") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  review       Review?         @relation(fields: [reviewId], references: [id], onDelete: SetNull)
-  campaign     ReviewCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  review         Review?         @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+  campaign       ReviewCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  clientRelation ClientRelation? @relation(fields: [clientRelationId], references: [id], onDelete: SetNull)
 
   @@index([organizationId, status, createdAt])
   @@index([organizationId, reviewerEmail])
   @@index([campaignId])
+  @@index([clientRelationId])
   @@map("review_requests")
 }
 
 // Campaña de solicitud de reseñas: agrupa enlaces personalizados enviados a
 // un lote de clientes para medir apertura, respuestas y conversión.
+// Relación formal entre un proyecto y el cliente que lo contrató. Permite
+// vincular invitaciones, reseñas y consentimiento sin exponer datos privados.
+model ClientRelation {
+  id                String    @id @default(uuid()) @db.Uuid
+  organizationId    String    @map("organization_id") @db.Uuid
+  projectId         String    @map("project_id") @db.Uuid
+  clientUserId      String?   @map("client_user_id") @db.Uuid
+  contactName       String    @map("contact_name") @db.VarChar(200)
+  contactEmail      String    @map("contact_email") @db.VarChar(255)
+  // invited | active | completed | revoked
+  status            String    @default("invited") @db.VarChar(20)
+  consent           Boolean   @default(false)
+  consentAt         DateTime? @map("consent_at") @db.Timestamptz(6)
+  // identified | confirmed | verified
+  verificationLevel String    @default("identified") @map("verification_level") @db.VarChar(20)
+  createdBy         String?   @map("created_by") @db.Uuid
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project        VerificationProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  clientUser     User?               @relation(fields: [clientUserId], references: [id], onDelete: SetNull)
+  reviews        Review[]
+  reviewRequests ReviewRequest[]
+
+  @@unique([projectId, contactEmail])
+  @@index([organizationId, status])
+  @@index([contactEmail])
+  @@map("client_relations")
+}
+
 model ReviewCampaign {
   id             String    @id @default(uuid()) @db.Uuid
   organizationId String    @map("organization_id") @db.Uuid
@@ -550,7 +619,7 @@ model ReviewCampaign {
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   requests     ReviewRequest[]
 
   @@index([organizationId, status, createdAt])
@@ -577,6 +646,55 @@ model Notification {
   @@index([organizationId, userId, createdAt])
   @@index([organizationId, userId, readAt])
   @@map("notifications")
+}
+
+// Consentimiento versionado y trazable (reseñas, captación, clientes).
+model ConsentRecord {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String?   @map("organization_id") @db.Uuid
+  userId         String?   @map("user_id") @db.Uuid
+  subjectType    String    @map("subject_type") @db.VarChar(30)
+  subjectId      String?   @map("subject_id") @db.Uuid
+  email          String?   @db.VarChar(255)
+  type           String    @db.VarChar(40)
+  version        String    @db.VarChar(30)
+  granted        Boolean   @default(true)
+  textHash       String?   @map("text_hash") @db.VarChar(64)
+  ipAddress      String?   @map("ip_address") @db.VarChar(45)
+  userAgent      String?   @map("user_agent") @db.VarChar(500)
+  revokedAt      DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, type, createdAt])
+  @@index([email, type])
+  @@index([subjectType, subjectId])
+  @@map("consent_records")
+}
+
+// Solicitudes de derechos GDPR: acceso, rectificación, supresión y oposición.
+model PrivacyRequest {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  organizationId String?   @map("organization_id") @db.Uuid
+  email          String    @db.VarChar(255)
+  type           String    @db.VarChar(20)
+  status         String    @default("pending") @db.VarChar(20)
+  details        String?   @db.Text
+  response       String?   @db.Text
+  handledBy      String?   @map("handled_by") @db.Uuid
+  handledAt      DateTime? @map("handled_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("privacy_requests")
 }
 
 model Session {
@@ -908,14 +1026,16 @@ model SupportTicketMessage {
 // Las imágenes son públicas (logo, portada, avatar); la escritura se limita al
 // tenant o al propio usuario.
 model MediaFile {
-  id             String   @id @default(uuid()) @db.Uuid
-  organizationId String?  @map("organization_id") @db.Uuid
-  userId         String?  @map("user_id") @db.Uuid
-  kind           String   @db.VarChar(20)
-  mimeType       String   @map("mime_type") @db.VarChar(100)
-  size           Int
-  data           Bytes
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id                String   @id @default(uuid()) @db.Uuid
+  organizationId    String?  @map("organization_id") @db.Uuid
+  userId            String?  @map("user_id") @db.Uuid
+  kind              String   @db.VarChar(20)
+  mimeType          String   @map("mime_type") @db.VarChar(100)
+  size              Int
+  data              Bytes
+  encryptionVersion Int      @default(0) @map("encryption_version")
+  scanStatus        String   @default("not_scanned") @map("scan_status") @db.VarChar(20)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -951,103 +1071,164 @@ model AnalyticsEvent {
 // Verificaci��n de empresa y sello dinǭmico
 // ============================================================================
 
-model VerificationRequest {
+// Evidencia: unidad auditable que respalda una verificación. El archivo puede
+// residir en el Document vinculado o en un almacenamiento externo (fileRef).
+model Evidence {
   id             String    @id @default(uuid()) @db.Uuid
   organizationId String    @map("organization_id") @db.Uuid
-  // draft | submitted | in_review | approved | rejected | revoked
-  status         String    @default("draft") @db.VarChar(20)
-  submittedAt    DateTime? @map("submitted_at") @db.Timestamptz(6)
-  reviewedAt     DateTime? @map("reviewed_at") @db.Timestamptz(6)
-  reviewedBy     String?   @map("reviewed_by") @db.Uuid
-  decisionReason String?   @map("decision_reason") @db.Text
-  expiresAt      DateTime? @map("expires_at") @db.Timestamptz(6)
+  requestId      String?   @map("request_id") @db.Uuid
+  projectId      String?   @map("project_id") @db.Uuid
+  ownerType      String    @default("organization") @map("owner_type") @db.VarChar(30)
+  ownerId        String?   @map("owner_id") @db.Uuid
+  type           String    @db.VarChar(40)
+  fileRef        String    @map("file_ref") @db.VarChar(500)
+  sourceRef      String?   @map("source_ref") @db.VarChar(500)
+  // private | public | restricted
+  visibility     String    @default("private") @db.VarChar(20)
+  issueDate      DateTime? @map("issue_date") @db.Date
+  expiryDate     DateTime? @map("expiry_date") @db.Date
+  // submitted | verified | rejected | expired
+  status         String    @default("submitted") @db.VarChar(20)
+  hash           String?   @db.VarChar(128)
+  metadata       Json      @default("{}") @db.JsonB
+  createdBy      String?   @map("created_by") @db.Uuid
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  request      VerificationRequest?  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  project      VerificationProject?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  document     VerificationDocument?
+
+  @@index([organizationId, status])
+  @@index([organizationId, visibility])
+  @@index([requestId])
+  @@index([projectId])
+  @@map("evidence")
+}
+
+model VerificationRequest {
+  id                 String    @id @default(uuid()) @db.Uuid
+  organizationId     String    @map("organization_id") @db.Uuid
+  // draft | submitted | in_review | approved | rejected | revoked
+  status             String    @default("draft") @db.VarChar(20)
+  scope              String?   @db.VarChar(200)
+  methodologyVersion String?   @map("methodology_version") @db.VarChar(50)
+  submittedAt        DateTime? @map("submitted_at") @db.Timestamptz(6)
+  reviewedAt         DateTime? @map("reviewed_at") @db.Timestamptz(6)
+  reviewedBy         String?   @map("reviewed_by") @db.Uuid
+  decisionReason     String?   @map("decision_reason") @db.Text
+  expiresAt          DateTime? @map("expires_at") @db.Timestamptz(6)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   documents    VerificationDocument[]
   projects     VerificationProject[]
   events       VerificationEvent[]
+  evidence     Evidence[]
 
   @@index([organizationId, status, createdAt])
   @@index([status, createdAt])
   @@map("verification_requests")
 }
 
+// Documento formal vinculado a una evidencia. Conserva su propia versión,
+// emisor, número y vigencia además del archivo subido.
 model VerificationDocument {
-  id             String   @id @default(uuid()) @db.Uuid
-  organizationId String   @map("organization_id") @db.Uuid
-  requestId      String?  @map("request_id") @db.Uuid
-  projectId      String?  @map("project_id") @db.Uuid
+  id                String    @id @default(uuid()) @db.Uuid
+  organizationId    String    @map("organization_id") @db.Uuid
+  requestId         String?   @map("request_id") @db.Uuid
+  projectId         String?   @map("project_id") @db.Uuid
+  evidenceId        String    @unique @map("evidence_id") @db.Uuid
   // identity | tax | address | project | other
-  category       String   @db.VarChar(30)
-  evidenceType   String?  @map("evidence_type") @db.VarChar(30)
-  filename       String   @db.VarChar(255)
-  mimeType       String   @map("mime_type") @db.VarChar(100)
-  size           Int
-  data           Bytes
-  dataOrigin     String   @default("company_submitted") @map("data_origin") @db.VarChar(30)
-  createdBy      String?  @map("created_by") @db.Uuid
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  category          String    @db.VarChar(30)
+  evidenceType      String?   @map("evidence_type") @db.VarChar(30)
+  issuer            String?   @db.VarChar(200)
+  documentNumber    String?   @map("document_number") @db.VarChar(120)
+  version           Int       @default(1)
+  issueDate         DateTime? @map("issue_date") @db.Date
+  expiryDate        DateTime? @map("expiry_date") @db.Date
+  filename          String    @db.VarChar(255)
+  mimeType          String    @map("mime_type") @db.VarChar(100)
+  size              Int
+  data              Bytes
+  encryptionVersion Int       @default(0) @map("encryption_version")
+  scanStatus        String    @default("not_scanned") @map("scan_status") @db.VarChar(20)
+  dataOrigin        String    @default("company_submitted") @map("data_origin") @db.VarChar(30)
+  createdBy         String?   @map("created_by") @db.Uuid
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   request      VerificationRequest? @relation(fields: [requestId], references: [id], onDelete: Cascade)
   project      VerificationProject? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  evidence     Evidence             @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, createdAt])
   @@index([requestId])
   @@index([projectId])
+  @@index([organizationId, category, version])
   @@map("verification_documents")
 }
 
 model VerificationProject {
-  id             String   @id @default(uuid()) @db.Uuid
-  organizationId String   @map("organization_id") @db.Uuid
-  requestId      String?  @map("request_id") @db.Uuid
-  name           String   @db.VarChar(200)
-  projectType    String?  @map("project_type") @db.VarChar(50)
-  city           String?  @db.VarChar(120)
-  year           Int?
-  status         String   @default("completed") @db.VarChar(20)
-  clientStatus   String   @default("identified") @map("client_status") @db.VarChar(20)
-  description    String?  @db.Text
-  url            String?  @db.VarChar(500)
-  dataOrigin     String   @default("company_submitted") @map("data_origin") @db.VarChar(30)
-  verificationScope String? @map("verification_scope") @db.VarChar(200)
-  methodology    String?  @db.VarChar(200)
-  verifiedAt     DateTime? @map("verified_at") @db.Timestamptz(6)
-  createdBy      String?  @map("created_by") @db.Uuid
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id                     String    @id @default(uuid()) @db.Uuid
+  organizationId         String    @map("organization_id") @db.Uuid
+  requestId              String?   @map("request_id") @db.Uuid
+  name                   String    @db.VarChar(200)
+  projectType            String?   @map("project_type") @db.VarChar(50)
+  city                   String?   @db.VarChar(120)
+  location               String?   @db.VarChar(255)
+  year                   Int?
+  startDate              DateTime? @map("start_date") @db.Date
+  endDate                DateTime? @map("end_date") @db.Date
+  status                 String    @default("completed") @db.VarChar(20)
+  publicVisibility       String    @default("public") @map("public_visibility") @db.VarChar(20)
+  clientStatus           String    @default("identified") @map("client_status") @db.VarChar(20)
+  description            String?   @db.Text
+  url                    String?   @db.VarChar(500)
+  dataOrigin             String    @default("company_submitted") @map("data_origin") @db.VarChar(30)
+  verificationScope      String?   @map("verification_scope") @db.VarChar(200)
+  methodology            String?   @db.VarChar(200)
+  evidenceTypes          String[]  @default([]) @map("evidence_types")
+  verificationReviewerId String?   @map("verification_reviewer_id") @db.Uuid
+  verifiedAt             DateTime? @map("verified_at") @db.Timestamptz(6)
+  createdBy              String?   @map("created_by") @db.Uuid
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  request      VerificationRequest?   @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  documents    VerificationDocument[]
-  reviews      Review[]
+  organization    Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  request         VerificationRequest?   @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  documents       VerificationDocument[]
+  evidence        Evidence[]
+  reviews         Review[]
+  clientRelations ClientRelation[]
 
   @@index([organizationId, createdAt])
   @@index([requestId])
+  @@index([organizationId, publicVisibility])
   @@map("verification_projects")
 }
 
 // Credenciales o certificaciones externas aportadas por la empresa y
 // validadas por FIVERTEN. No se publican hasta que un administrador las aprueba.
 model Certification {
-  id             String    @id @default(uuid()) @db.Uuid
-  organizationId String    @map("organization_id") @db.Uuid
-  name           String    @db.VarChar(200)
-  issuer         String    @db.VarChar(200)
-  credentialId   String?   @map("credential_id") @db.VarChar(200)
-  credentialUrl  String?   @map("credential_url") @db.VarChar(500)
-  issuedAt       DateTime? @map("issued_at") @db.Date
-  expiresAt      DateTime? @map("expires_at") @db.Date
-  status         String    @default("pending") @db.VarChar(20)
-  dataOrigin     String    @default("source_derived") @map("data_origin") @db.VarChar(30)
-  decisionReason String?   @map("decision_reason") @db.Text
-  reviewedAt     DateTime? @map("reviewed_at") @db.Timestamptz(6)
-  reviewedBy     String?   @map("reviewed_by") @db.Uuid
-  createdBy      String?   @map("created_by") @db.Uuid
-  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id               String    @id @default(uuid()) @db.Uuid
+  organizationId   String    @map("organization_id") @db.Uuid
+  name             String    @db.VarChar(200)
+  issuer           String    @db.VarChar(200)
+  credentialId     String?   @map("credential_id") @db.VarChar(200)
+  credentialUrl    String?   @map("credential_url") @db.VarChar(500)
+  issuedAt         DateTime? @map("issued_at") @db.Date
+  expiresAt        DateTime? @map("expires_at") @db.Date
+  status           String    @default("pending") @db.VarChar(20)
+  publicCredential Boolean   @default(false) @map("public_credential")
+  dataOrigin       String    @default("source_derived") @map("data_origin") @db.VarChar(30)
+  decisionReason   String?   @map("decision_reason") @db.Text
+  reviewedAt       DateTime? @map("reviewed_at") @db.Timestamptz(6)
+  reviewedBy       String?   @map("reviewed_by") @db.Uuid
+  createdBy        String?   @map("created_by") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -1061,6 +1242,8 @@ model VerificationEvent {
   id             String    @id @default(uuid()) @db.Uuid
   organizationId String    @map("organization_id") @db.Uuid
   requestId      String?   @map("request_id") @db.Uuid
+  entityType     String    @default("organization_verification") @map("entity_type") @db.VarChar(40)
+  entityId       String?   @map("entity_id") @db.Uuid
   actorId        String?   @map("actor_id") @db.Uuid
   actorType      String    @map("actor_type") @db.VarChar(30)
   action         String    @db.VarChar(40)
@@ -1078,10 +1261,30 @@ model VerificationEvent {
 
   @@index([organizationId, createdAt])
   @@index([requestId, createdAt])
+  @@index([entityType, entityId, createdAt])
   @@map("verification_events")
 }
 
 // Solicitudes de captación recibidas desde /verificar-empresa.
+// Sello público de la organización. El token de embed es independiente del
+// public_id para poder revocarlo o rotarlo sin cambiar el identificador.
+model PublicBadge {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @unique @map("organization_id") @db.Uuid
+  // active | revoked | expired
+  state          String    @default("active") @db.VarChar(20)
+  embedToken     String    @unique @map("embed_token") @db.VarChar(80)
+  currentUrl     String    @map("current_url") @db.VarChar(500)
+  revokedAt      DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([state])
+  @@map("public_badges")
+}
+
 model VerificationInquiry {
   id          String    @id @default(uuid()) @db.Uuid
   companyName String    @map("company_name") @db.VarChar(200)
@@ -1104,7 +1307,3 @@ model VerificationInquiry {
   @@index([email])
   @@map("verification_inquiries")
 }
-
-
-
-

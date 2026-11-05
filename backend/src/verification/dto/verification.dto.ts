@@ -24,6 +24,24 @@ import {
 export class UploadVerificationDocumentDto {
   @IsIn(VERIFICATION_DOCUMENT_CATEGORIES)
   category!: (typeof VERIFICATION_DOCUMENT_CATEGORIES)[number];
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  issuer?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  documentNumber?: string;
+
+  @IsOptional()
+  @IsDateString({}, { message: 'La fecha de emisión no es válida' })
+  issueDate?: string;
+
+  @IsOptional()
+  @IsDateString({}, { message: 'La fecha de caducidad no es válida' })
+  expiryDate?: string;
 }
 
 export class CreateVerificationProjectDto {
@@ -52,11 +70,28 @@ export class CreateVerificationProjectDto {
   city?: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  location?: string;
+
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1900)
   @Max(2100)
   year?: number;
+
+  @IsOptional()
+  @IsDateString({}, { message: 'La fecha de inicio no es válida' })
+  startDate?: string;
+
+  @IsOptional()
+  @IsDateString({}, { message: 'La fecha de fin no es válida' })
+  endDate?: string;
+
+  @IsOptional()
+  @IsIn(['private', 'public', 'restricted'])
+  publicVisibility?: 'private' | 'public' | 'restricted';
 
   @IsOptional()
   @IsIn(PROJECT_STATUSES)
@@ -81,6 +116,16 @@ export class ApproveVerificationDto {
   @IsString()
   @MaxLength(2000)
   note?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  scope?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  methodologyVersion?: string;
 }
 
 export class RejectVerificationDto {
@@ -125,6 +170,10 @@ export class CreateCertificationDto {
   @IsOptional()
   @IsDateString({}, { message: 'La fecha de caducidad no es válida' })
   expiresAt?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  publicCredential?: boolean;
 }
 
 export class ReviewCertificationDto {
@@ -199,5 +248,11 @@ export class VerificationInquiryDto {
   @IsBoolean()
   @Equals(true, { message: 'Debes aceptar la política de privacidad' })
   consent!: boolean;
+
+  /** Campo trampa anti-bot: debe quedar vacío. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  honeypot?: string;
 }
 

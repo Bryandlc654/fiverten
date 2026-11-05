@@ -27,6 +27,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { VerificationReviewer } from '../auth/decorators/verification-reviewer.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { StaffMfaGuard } from '../auth/guards/staff-mfa.guard';
 import { VerificationReviewerGuard } from '../auth/guards/verification-reviewer.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import {
@@ -68,7 +69,12 @@ export class CompanyVerificationController {
     @UploadedFile() file?: VerificationUpload,
   ) {
     if (!file) throw new BadRequestException('No se recibió ningún archivo');
-    return this.verification.uploadDocument(this.requireOrg(orgId), userId, dto.category, file);
+    return this.verification.uploadDocument(this.requireOrg(orgId), userId, dto.category, file, {
+      issuer: dto.issuer,
+      documentNumber: dto.documentNumber,
+      issueDate: dto.issueDate,
+      expiryDate: dto.expiryDate,
+    });
   }
 
   @Delete('documents/:id')
@@ -200,7 +206,7 @@ export class PublicVerificationController {
 }
 
 @Controller('admin/verifications')
-@UseGuards(JwtAuthGuard, VerificationReviewerGuard)
+@UseGuards(JwtAuthGuard, StaffMfaGuard, VerificationReviewerGuard)
 @VerificationReviewer()
 export class AdminVerificationController {
   constructor(private readonly verification: VerificationService) {}

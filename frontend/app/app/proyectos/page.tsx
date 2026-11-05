@@ -23,6 +23,10 @@ export default function ProjectsPage() {
   const [projectCity, setProjectCity] = useState('');
   const [projectYear, setProjectYear] = useState(String(new Date().getFullYear()));
   const [projectStatus, setProjectStatus] = useState('completed');
+  const [projectLocation, setProjectLocation] = useState('');
+  const [projectStartDate, setProjectStartDate] = useState('');
+  const [projectEndDate, setProjectEndDate] = useState('');
+  const [projectVisibility, setProjectVisibility] = useState('public');
   const [evidenceType, setEvidenceType] = useState('contract');
   const [projectDescription, setProjectDescription] = useState('');
   const [projectUrl, setProjectUrl] = useState('');
@@ -75,6 +79,10 @@ export default function ProjectsPage() {
         url: projectUrl.trim() || undefined,
         projectType,
         city: projectCity.trim() || undefined,
+        location: projectLocation.trim() || undefined,
+        startDate: projectStartDate || undefined,
+        endDate: projectEndDate || undefined,
+        publicVisibility: projectVisibility as 'private' | 'public' | 'restricted',
         year: Number(projectYear) || undefined,
         status: projectStatus,
       });
@@ -88,6 +96,9 @@ export default function ProjectsPage() {
       );
       setProjectName('');
       setProjectCity('');
+      setProjectLocation('');
+      setProjectStartDate('');
+      setProjectEndDate('');
       setProjectDescription('');
       setProjectUrl('');
       setProjectFiles([]);
@@ -189,6 +200,30 @@ export default function ProjectsPage() {
                     className={inputClass}
                   />
                 </Field>
+                <Field label="Ubicación completa (opcional)" className="block">
+                  <input
+                    value={projectLocation}
+                    onChange={(event) => setProjectLocation(event.target.value)}
+                    placeholder="Dirección o zona del proyecto"
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="Fecha de inicio (opcional)" className="block">
+                  <input
+                    type="date"
+                    value={projectStartDate}
+                    onChange={(event) => setProjectStartDate(event.target.value)}
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="Fecha de fin (opcional)" className="block">
+                  <input
+                    type="date"
+                    value={projectEndDate}
+                    onChange={(event) => setProjectEndDate(event.target.value)}
+                    className={inputClass}
+                  />
+                </Field>
                 <Field label="Año" className="block">
                   <input
                     type="number"
@@ -207,6 +242,17 @@ export default function ProjectsPage() {
                   >
                     <option value="completed">Finalizado</option>
                     <option value="ongoing">En curso</option>
+                  </select>
+                </Field>
+                <Field label="Visibilidad pública" className="block">
+                  <select
+                    value={projectVisibility}
+                    onChange={(event) => setProjectVisibility(event.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="public">Público</option>
+                    <option value="private">Privado</option>
+                    <option value="restricted">Restringido</option>
                   </select>
                 </Field>
               </div>
@@ -288,6 +334,13 @@ export default function ProjectsPage() {
                       </p>
                       <div className="mt-1.5 flex flex-wrap gap-1.5">
                         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                          {project.publicVisibility === 'public'
+                            ? 'Visible en el perfil'
+                            : project.publicVisibility === 'restricted'
+                              ? 'Visibilidad restringida'
+                              : 'Proyecto privado'}
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
                           {CLIENT_STATUS[project.clientStatus] ?? project.clientStatus}
                         </span>
                         <span
@@ -300,6 +353,22 @@ export default function ProjectsPage() {
                           {project.verifiedAt ? 'Verificación completada' : 'Pendiente de verificar'}
                         </span>
                       </div>
+                      {project.location && (
+                        <p className="mt-1 text-[11px] text-slate-500">
+                          Ubicación: {project.location}
+                        </p>
+                      )}
+                      {(project.startDate || project.endDate) && (
+                        <p className="mt-0.5 text-[11px] text-slate-500">
+                          {project.startDate
+                            ? new Date(project.startDate).toLocaleDateString('es-ES')
+                            : '—'}{' '}
+                          →{' '}
+                          {project.endDate
+                            ? new Date(project.endDate).toLocaleDateString('es-ES')
+                            : '—'}
+                        </p>
+                      )}
                       {project.verificationScope && (
                         <p className="mt-1 text-[11px] text-slate-500">
                           Alcance: {project.verificationScope}

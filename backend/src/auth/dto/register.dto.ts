@@ -39,6 +39,12 @@ export class RegisterDto {
   @MaxLength(50)
   taxId?: string;
 
+  /** Campo trampa anti-bot: debe quedar vacío. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  website?: string;
+
   @IsOptional()
   @IsString()
   @MaxLength(50)

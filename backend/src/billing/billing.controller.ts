@@ -19,6 +19,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { PlatformAdmin } from '../auth/decorators/platform-admin.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { StaffMfaGuard } from '../auth/guards/staff-mfa.guard';
 import { PlatformAdminGuard } from '../auth/guards/platform-admin.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { BillingService } from './billing.service';
@@ -34,7 +35,7 @@ import {
 } from './dto/billing.dto';
 
 @Controller('admin')
-@UseGuards(JwtAuthGuard, PlatformAdminGuard)
+@UseGuards(JwtAuthGuard, StaffMfaGuard, PlatformAdminGuard)
 @PlatformAdmin()
 export class AdminBillingController {
   constructor(private readonly billing: BillingService) {}

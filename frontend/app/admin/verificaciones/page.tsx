@@ -241,9 +241,19 @@ export default function AdminVerificationsPage() {
                           <div className="min-w-0">
                             <p className="truncate font-medium text-slate-900">{document.filename}</p>
                             <p className="text-xs text-slate-500">
-                              {CATEGORIES[document.category] ?? document.category} ·{' '}
-                              {(document.size / 1024).toFixed(0)} KB
+                              {CATEGORIES[document.category] ?? document.category} · v
+                              {document.version ?? 1} · {(document.size / 1024).toFixed(0)} KB
+                              {document.evidence
+                                ? ` · evidencia ${document.evidence.status}`
+                                : ''}
                             </p>
+                            {(document.issuer || document.documentNumber) && (
+                              <p className="mt-0.5 text-[11px] text-slate-400">
+                                {[document.issuer, document.documentNumber]
+                                  .filter(Boolean)
+                                  .join(' · ')}
+                              </p>
+                            )}
                           </div>
                           <button
                             type="button"

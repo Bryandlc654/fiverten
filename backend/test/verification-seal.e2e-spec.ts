@@ -245,6 +245,7 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
         credentialUrl: 'https://example.com/credencial',
         issuedAt: '2025-01-01',
         expiresAt: '2027-01-01',
+        publicCredential: true,
       })
       .expect(201);
     expect(created.body.status).toBe('pending');

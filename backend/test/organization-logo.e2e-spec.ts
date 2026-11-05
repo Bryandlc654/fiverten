@@ -44,10 +44,14 @@ describe('FIVERTEN logo de empresa (e2e)', () => {
   });
 
   it('sube el logo y devuelve la URL pública', async () => {
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lz9cAAAAAElFTkSuQmCC',
+      'base64',
+    );
     const response = await http()
       .post(`${MEDIA}/organization-logo`)
       .set('Authorization', `Bearer ${token}`)
-      .attach('file', Buffer.from('fake-png'), {
+      .attach('file', png, {
         filename: 'logo.png',
         contentType: 'image/png',
       })
@@ -56,7 +60,7 @@ describe('FIVERTEN logo de empresa (e2e)', () => {
 
     const file = await http().get(response.body.url).expect(200);
     expect(file.headers['content-type']).toContain('image/png');
-    expect(file.body).toEqual(Buffer.from('fake-png'));
+    expect(file.body).toEqual(png);
   });
 
   it('rechaza archivos que no son imágenes', async () => {

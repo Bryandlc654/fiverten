@@ -102,7 +102,13 @@ export class SealController {
 
     const org = await this.prisma.withContext({ isPlatformAdmin: true }, (tx) =>
       tx.organization.findFirst({
-        where: { publicId, deletedAt: null },
+        where: {
+          deletedAt: null,
+          OR: [
+            { publicId },
+            { publicBadge: { embedToken: publicId, state: 'active' } },
+          ],
+        },
         select: {
           tradeName: true,
           verificationStatus: true,

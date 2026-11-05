@@ -16,6 +16,7 @@ import {
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { PlatformAdmin } from '../auth/decorators/platform-admin.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { StaffMfaGuard } from '../auth/guards/staff-mfa.guard';
 import { PlatformAdminGuard } from '../auth/guards/platform-admin.guard';
 import { ModerateReviewDto } from './dto/moderation.dto';
 import { ModerationService } from './moderation.service';
@@ -24,7 +25,7 @@ import { REVIEW_STATUSES, type ReviewStatus } from './reviews.mappers';
 
 /** Cola de moderación del administrador general. */
 @Controller('admin/reviews')
-@UseGuards(JwtAuthGuard, PlatformAdminGuard)
+@UseGuards(JwtAuthGuard, StaffMfaGuard, PlatformAdminGuard)
 @PlatformAdmin()
 export class AdminReviewsController {
   constructor(private readonly moderation: ModerationService) {}

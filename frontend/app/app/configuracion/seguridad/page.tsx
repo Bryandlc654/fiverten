@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import DashboardShell from '../../../../components/DashboardShell';
+import PrivacyPanel from '../../../../components/privacy/PrivacyPanel';
 import { Alert, Field, inputClass } from '../../../../components/ui';
 import { ApiError, api, type SessionInfo } from '../../../../lib/api';
 import { useAuth } from '../../../../lib/auth-context';
@@ -487,6 +488,8 @@ export default function SecurityPage() {
             </div>
           )}
         </section>
+
+        <PrivacyPanel />
       </div>
     </DashboardShell>
   );

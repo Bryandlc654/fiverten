@@ -35,11 +35,14 @@ export class WidgetController {
     const org = await this.prisma.withContext({ isPlatformAdmin: true }, (tx) =>
       tx.organization.findFirst({
         where: {
-          publicId,
           deletedAt: null,
           isActive: true,
           isPublic: true,
           status: 'active',
+          OR: [
+            { publicId },
+            { publicBadge: { embedToken: publicId, state: 'active' } },
+          ],
         },
         select: {
           id: true,

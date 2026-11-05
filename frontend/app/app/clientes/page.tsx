@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import ClientRelationsPanel from '../../../components/clients/ClientRelationsPanel';
 import DashboardShell from '../../../components/DashboardShell';
 import Modal from '../../../components/ui/Modal';
 import { Alert, Badge, Field, inputClass } from '../../../components/ui';
@@ -93,6 +94,8 @@ export default function CampaignsPage() {
             los publica en el perfil ni los comparte con otras empresas.
           </p>
         </div>
+
+        <ClientRelationsPanel />
 
         <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Metric label="Enviadas" value={totals.sent} />
