@@ -11,6 +11,7 @@ import { PublicResolutionsController } from './public-resolutions.controller';
 import { PublicReviewsController } from './public-reviews.controller';
 import { PublicReviewsService } from './public-reviews.service';
 import { ReviewRequestsController } from './review-requests.controller';
+import { ReviewVerificationController } from './review-verification.controller';
 import { ReviewRequestsService } from './review-requests.service';
 import { ResolutionsService } from './resolutions.service';
 import { ReviewsController } from './reviews.controller';
@@ -30,6 +31,7 @@ import { ReviewStatsService } from './stats.service';
     CompanyCasesController,
     AdminReviewsController,
     AdminCasesController,
+    ReviewVerificationController,
   ],
   providers: [
     PublicReviewsService,

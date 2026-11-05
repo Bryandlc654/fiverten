@@ -67,8 +67,21 @@ export const PUBLIC_REVIEW_SELECT = {
   body: true,
   experienceDate: true,
   verificationStatus: true,
+  verificationMethodology: true,
+  verifiedAt: true,
   publishedAt: true,
-  project: { select: { id: true, name: true } },
+  project: {
+    select: {
+      id: true,
+      name: true,
+      projectType: true,
+      city: true,
+      year: true,
+      status: true,
+      clientStatus: true,
+      documents: { select: { evidenceType: true } },
+    },
+  },
   response: { select: { body: true, createdAt: true, editedAt: true, isPublic: true } },
 } satisfies Prisma.ReviewSelect;
 
@@ -83,7 +96,28 @@ export function toPublicReview(review: PublicReviewRow) {
     body: review.body,
     experienceDate: review.experienceDate,
     verified: review.verificationStatus === 'verified',
-    project: review.project,
+    verificationState: review.verificationStatus,
+    verificationMethodology: review.verificationMethodology,
+    verifiedAt: review.verifiedAt,
+    project: review.project
+      ? {
+          id: review.project.id,
+          name: review.project.name,
+          projectType: review.project.projectType,
+          city: review.project.city,
+          year: review.project.year,
+          status: review.project.status,
+          clientStatus: review.project.clientStatus,
+          evidenceCount: review.project.documents.length,
+          evidenceTypes: Array.from(
+            new Set(
+              review.project.documents
+                .map((document) => document.evidenceType)
+                .filter((value): value is string => Boolean(value)),
+            ),
+          ),
+        }
+      : null,
     publishedAt: review.publishedAt,
     response:
       review.response && review.response.isPublic
@@ -116,6 +150,9 @@ export function toTenantReview(
       ? { id: resolution.id, status: resolution.status, outcome: resolution.outcome }
       : null,
     verified: review.verificationStatus === 'verified',
+    verificationState: review.verificationStatus,
+    verificationMethodology: review.verificationMethodology,
+    verifiedAt: review.verifiedAt,
     createdAt: review.createdAt,
     publishedAt: review.publishedAt,
     response: review.response

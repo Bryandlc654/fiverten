@@ -35,10 +35,12 @@ test.describe('Adaptación móvil @mobile', () => {
 
     await page.goto(`/empresa/${organization.slug}`);
 
-    await expect(page.getByRole('heading', { name: 'Móvil Reputación SL' })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Escribir una reseña/ })).toBeVisible();
-    await expect(page.getByRole('group', { name: 'Filtrar por estrellas' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Información' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Móvil Reputación SL', level: 1 }),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Contactar' }).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Opiniones verificadas' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Datos clave' })).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
 

@@ -15,6 +15,11 @@ import {
   MinLength,
 } from 'class-validator';
 import { VERIFICATION_DOCUMENT_CATEGORIES } from '../verification-status';
+import {
+  PROJECT_EVIDENCE_TYPES,
+  PROJECT_STATUSES,
+  PROJECT_TYPES,
+} from '../verification-project.constants';
 
 export class UploadVerificationDocumentDto {
   @IsIn(VERIFICATION_DOCUMENT_CATEGORIES)
@@ -36,6 +41,32 @@ export class CreateVerificationProjectDto {
   @IsUrl({ require_protocol: false })
   @MaxLength(500)
   url?: string;
+
+  @IsOptional()
+  @IsIn(PROJECT_TYPES)
+  projectType?: (typeof PROJECT_TYPES)[number];
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  city?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1900)
+  @Max(2100)
+  year?: number;
+
+  @IsOptional()
+  @IsIn(PROJECT_STATUSES)
+  status?: (typeof PROJECT_STATUSES)[number];
+}
+
+export class UploadProjectEvidenceDto {
+  @IsOptional()
+  @IsIn(PROJECT_EVIDENCE_TYPES)
+  evidenceType?: (typeof PROJECT_EVIDENCE_TYPES)[number];
 }
 
 export class ApproveVerificationDto {

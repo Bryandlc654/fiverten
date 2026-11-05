@@ -56,6 +56,7 @@ model Organization {
   sessions           Session[]
   invitations        OrganizationInvitation[]
   reviews            Review[]
+  reviewRevisions    ReviewRevision[]
   reviewResolutions  ReviewResolution[]
   resolutionMessages ResolutionMessage[]
   reviewCases        ReviewCase[]
@@ -256,7 +257,9 @@ model Review {
   orderReference     String?   @map("order_reference") @db.VarChar(100)
   consent            Boolean   @default(false)
   lifecycleStatus    String    @default("submitted") @map("lifecycle_status") @db.VarChar(20)
-  verificationStatus String    @default("not_verified") @map("verification_status") @db.VarChar(20)
+  verificationStatus String    @default("identified") @map("verification_status") @db.VarChar(20)
+  verificationMethodology String? @map("verification_methodology") @db.VarChar(200)
+  verifiedAt         DateTime? @map("verified_at") @db.Timestamptz(6)
   visibility         String    @default("private") @db.VarChar(20)
   moderationStatus   String    @default("none") @map("moderation_status") @db.VarChar(20)
   confirmTokenHash   String?   @unique @map("confirm_token_hash") @db.VarChar(255)
@@ -277,6 +280,7 @@ model Review {
   resolutions       ReviewResolution[]
   case              ReviewCase?
   reviewRequest     ReviewRequest?
+  revisions         ReviewRevision[]
 
   @@index([organizationId, deletedAt])
   @@index([organizationId, lifecycleStatus, moderationStatus])
@@ -291,6 +295,30 @@ model Review {
 }
 
 // Respuesta pública de la empresa, mostrada debajo de la reseña.
+// Historial de cambios de una opinión publicada. Conserva los valores previos
+// para que una edición posterior a la revisión siga siendo trazable.
+model ReviewRevision {
+  id             String   @id @default(uuid()) @db.Uuid
+  reviewId       String   @map("review_id") @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  actorId        String?  @map("actor_id") @db.Uuid
+  previousRating Int?     @map("previous_rating") @db.SmallInt
+  newRating      Int?     @map("new_rating") @db.SmallInt
+  previousTitle  String?  @map("previous_title") @db.VarChar(255)
+  newTitle       String?  @map("new_title") @db.VarChar(255)
+  previousBody   String?  @map("previous_body") @db.Text
+  newBody        String?  @map("new_body") @db.Text
+  reason         String?  @db.Text
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  review       Review       @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId, createdAt])
+  @@index([organizationId, createdAt])
+  @@map("review_revisions")
+}
+
 model ReviewResponse {
   id             String    @id @default(uuid()) @db.Uuid
   reviewId       String    @unique @map("review_id") @db.Uuid
@@ -930,6 +958,7 @@ model VerificationDocument {
   projectId      String?  @map("project_id") @db.Uuid
   // identity | tax | address | project | other
   category       String   @db.VarChar(30)
+  evidenceType   String?  @map("evidence_type") @db.VarChar(30)
   filename       String   @db.VarChar(255)
   mimeType       String   @map("mime_type") @db.VarChar(100)
   size           Int
@@ -953,9 +982,17 @@ model VerificationProject {
   organizationId String   @map("organization_id") @db.Uuid
   requestId      String?  @map("request_id") @db.Uuid
   name           String   @db.VarChar(200)
+  projectType    String?  @map("project_type") @db.VarChar(50)
+  city           String?  @db.VarChar(120)
+  year           Int?
+  status         String   @default("completed") @db.VarChar(20)
+  clientStatus   String   @default("identified") @map("client_status") @db.VarChar(20)
   description    String?  @db.Text
   url            String?  @db.VarChar(500)
   dataOrigin     String   @default("company_submitted") @map("data_origin") @db.VarChar(30)
+  verificationScope String? @map("verification_scope") @db.VarChar(200)
+  methodology    String?  @db.VarChar(200)
+  verifiedAt     DateTime? @map("verified_at") @db.Timestamptz(6)
   createdBy      String?  @map("created_by") @db.Uuid
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 

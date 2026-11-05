@@ -15,11 +15,10 @@ test.describe('Reseñas', () => {
 
     await page.goto(`/empresa/${organization.slug}`);
 
-    await expect(page.getByRole('heading', { name: 'Perfil Público E2E' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Perfil Público E2E', level: 1 })).toBeVisible();
     await expect(page.getByText('Producto impecable y entrega rapidísima.')).toBeVisible();
-    await expect(page.getByText('1 reseña').first()).toBeVisible();
-    await expect(page.getByRole('group', { name: 'Filtrar por estrellas' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Información' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Opiniones verificadas' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Datos clave' })).toBeVisible();
   });
 
   test('no publica un aviso cuando la empresa oculta las reseñas bajas', async ({

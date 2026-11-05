@@ -29,6 +29,8 @@ interface ListQuery {
   rating?: number;
   /** Solo reseñas publicadas desde esta fecha. */
   since?: Date;
+  projectType?: string;
+  clientStatus?: string;
   sort: ReviewSort;
   page: number;
   pageSize: number;
@@ -88,7 +90,11 @@ export class PublicReviewsService {
     const grouped = await this.prisma.withContext({}, (tx) =>
       tx.review.groupBy({
         by: ['rating'],
-        where: { organizationId: org.id, ...PUBLISHED },
+        where: {
+          organizationId: org.id,
+          ...PUBLISHED,
+          verificationStatus: { in: ['identified', 'confirmed', 'verified'] },
+        },
         _count: { _all: true },
       }),
     );
@@ -115,12 +121,13 @@ export class PublicReviewsService {
       country: org.country ? { iso2: org.country.iso2, name: org.country.name } : null,
       verified: effectiveVerificationStatus(org) === 'verified',
       createdAt: org.createdAt,
-      // La media y el total siguen incluyendo todas las reseñas publicadas:
-      // ocultarlas del listado no debe falsear la puntuación.
+      // La media solo usa opiniones que cumplen el mínimo publicado:
+      // identidad/canal confirmado (IDENTIFIED) o superior.
       lowRatingsHidden: org.hideLowRatings,
       rating: {
         average: total > 0 ? Math.round((sum / total) * 10) / 10 : null,
         total,
+        sampleSize: total,
         distribution,
       },
     };
@@ -140,6 +147,12 @@ export class PublicReviewsService {
     }
     if (query.since) {
       where.publishedAt = { gte: query.since };
+    }
+    if (query.projectType || query.clientStatus) {
+      where.project = {
+        ...(query.projectType ? { projectType: query.projectType } : {}),
+        ...(query.clientStatus ? { clientStatus: query.clientStatus } : {}),
+      };
     }
 
     return this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
@@ -272,9 +285,13 @@ export class PublicReviewsService {
 
       const ids = rows.map((row) => row.id);
       const grouped = ids.length
-        ? await tx.review.groupBy({
+        ? await           tx.review.groupBy({
             by: ['organizationId'],
-            where: { organizationId: { in: ids }, ...PUBLISHED },
+            where: {
+              organizationId: { in: ids },
+              ...PUBLISHED,
+              verificationStatus: { in: ['identified', 'confirmed', 'verified'] },
+            },
             _avg: { rating: true },
             _count: { _all: true },
           })
@@ -479,18 +496,26 @@ export class PublicReviewsService {
           experienceDate: dto.experienceDate ? new Date(dto.experienceDate) : null,
           orderReference: dto.orderReference?.trim() || null,
           consent: dto.consent,
+          verificationStatus: projectId || dto.requestToken ? 'confirmed' : 'identified',
           confirmTokenHash: hashToken(token),
           ipAddress: ctx.ipAddress ?? null,
           userAgent: ctx.userAgent?.slice(0, 500) ?? null,
         },
       });
-      // Enlace personalizado: la reseña queda vinculada a la solicitud para
-      // poder medir si el cliente llegó a completarla y marcada como verificada.
+      // Enlace personalizado: la reseña queda vinculada a la solicitud. La
+      // relación cliente-experiencia queda confirmada, pero no verificada:
+      // VERIFIED exige revisión y trazabilidad de FIVERTEN.
       if (dto.requestToken) {
         await this.requests.attachToReview(tx, org.id, dto.requestToken, created.id, email);
         await tx.review.update({
           where: { id: created.id },
-          data: { verificationStatus: 'verified' },
+          data: { verificationStatus: 'confirmed' },
+        });
+      }
+      if (projectId) {
+        await tx.verificationProject.update({
+          where: { id: projectId },
+          data: { clientStatus: 'confirmed' },
         });
       }
     });

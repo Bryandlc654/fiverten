@@ -123,12 +123,17 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
         name: 'Proyecto de prueba',
         description: 'Evidencia del servicio prestado',
         url: 'https://example.com/proyecto',
+        projectType: 'reforma_integral',
+        city: 'Madrid',
+        year: 2024,
+        status: 'completed',
       })
       .expect(201);
 
     await http()
       .post(`${VERIFY}/projects/${project.body.id}/documents`)
       .set(company())
+      .field('evidenceType', 'contract')
       .attach('file', Buffer.from('%PDF-1.4 evidencia'), {
         filename: 'evidencia.pdf',
         contentType: 'application/pdf',
@@ -195,7 +200,13 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
     expect(publicData.body.categories).toHaveLength(3);
     expect(publicData.body.projects[0]).toMatchObject({
       name: 'Proyecto de prueba',
+      projectType: 'reforma_integral',
+      city: 'Madrid',
+      year: 2024,
+      status: 'completed',
+      clientStatus: 'identified',
       evidenceCount: 1,
+      evidenceTypes: ['contract'],
     });
     // Nunca se exponen nombres de documentos privados.
     expect(JSON.stringify(publicData.body)).not.toContain('identity.pdf');
@@ -266,7 +277,7 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
       .expect(400);
   });
 
-  it('vincula opiniones verificadas a proyectos comprobados', async () => {
+  it('vincula opiniones confirmadas a proyectos comprobados', async () => {
     const org = await prisma.organization.findFirstOrThrow({ where: { slug } });
     const project = await prisma.verificationProject.findFirstOrThrow({
       where: { organizationId: org.id },
@@ -298,7 +309,19 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
       where: { organizationId: org.id, reviewerEmail: 'cliente-verificado@test.local' },
     });
     expect(review.projectId).toBe(project.id);
-    expect(review.verificationStatus).toBe('verified');
+    expect(review.verificationStatus).toBe('confirmed');
+
+    await prisma.review.update({
+      where: { id: review.id },
+      data: { emailConfirmedAt: new Date() },
+    });
+    await http()
+      .post(`/api/admin/review-verifications/${review.id}`)
+      .set({ Authorization: `Bearer ${verifierToken}` })
+      .send({ status: 'verified', methodology: 'Revisión documental y de proyecto' })
+      .expect(200);
+    const verifiedReview = await prisma.review.findUniqueOrThrow({ where: { id: review.id } });
+    expect(verifiedReview.verificationStatus).toBe('verified');
 
     const form = await http()
       .get(`/api/public/organizations/${slug}/review-form`)

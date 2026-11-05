@@ -2,7 +2,11 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { Prisma } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { ModerateReviewDto, ReportReviewDto } from './dto/moderation.dto';
+import {
+  ModerateReviewDto,
+  ReportReviewDto,
+  ReviewVerificationDto,
+} from './dto/moderation.dto';
 import { assertTransition, dataForStatus, type ModerationActionName } from './review-states';
 import { reviewStatus, statusFilter, type ReviewStatus } from './reviews.mappers';
 
@@ -214,6 +218,90 @@ export class ModerationService {
         pageSize,
         queue: { underReview, reported },
       };
+    });
+  }
+
+  async setReviewVerification(
+    actorId: string,
+    reviewId: string,
+    dto: ReviewVerificationDto,
+  ) {
+    return this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
+      const review = await tx.review.findFirst({
+        where: { id: reviewId, deletedAt: null },
+      });
+      if (!review) throw new NotFoundException('Reseña no encontrada');
+      if (!review.emailConfirmedAt) {
+        throw new BadRequestException('El autor debe confirmar su correo antes de verificarla');
+      }
+      if (dto.status === 'verified') {
+        if (!review.projectId) {
+          throw new BadRequestException('La opinión debe estar vinculada a un proyecto');
+        }
+        if (!dto.methodology?.trim()) {
+          throw new BadRequestException('Indica la metodología de revisión');
+        }
+        const project = await tx.verificationProject.findFirst({
+          where: {
+            id: review.projectId,
+            organizationId: review.organizationId,
+            request: { status: 'approved' },
+          },
+          select: { id: true },
+        });
+        if (!project) {
+          throw new BadRequestException('El proyecto vinculado no está verificado');
+        }
+      }
+      const previousStatus = review.verificationStatus;
+      const updated = await tx.review.update({
+        where: { id: reviewId },
+        data: {
+          verificationStatus: dto.status,
+          verificationMethodology: dto.methodology?.trim() || null,
+          verifiedAt: dto.status === 'verified' ? new Date() : null,
+        },
+        select: { id: true, verificationStatus: true, verifiedAt: true },
+      });
+      if (review.projectId) {
+        await tx.verificationProject.update({
+          where: { id: review.projectId },
+          data: {
+            clientStatus:
+              dto.status === 'verified'
+                ? 'verified'
+                : dto.status === 'confirmed'
+                  ? 'confirmed'
+                  : 'identified',
+            ...(dto.status === 'verified'
+              ? {
+                  verifiedAt: new Date(),
+                  methodology: dto.methodology?.trim(),
+                  verificationScope: 'Opinión vinculada a proyecto revisada por FIVERTEN',
+                }
+              : {}),
+          },
+        });
+      }
+      const actor = await tx.user.findUnique({
+        where: { id: actorId },
+        select: { isSuperAdmin: true },
+      });
+      await tx.verificationEvent.create({
+        data: {
+          organizationId: review.organizationId,
+          actorId,
+          actorType: actor?.isSuperAdmin ? 'fiverten_admin' : 'fiverten_verifier',
+          action: 'review_verification',
+          previousStatus,
+          newStatus: dto.status,
+          reason: dto.reason?.trim() || dto.methodology?.trim() || 'Cambio de estado de opinión',
+          source: 'FIVERTEN review',
+          evidence: `review:${reviewId}`,
+          dataOrigin: 'fiverten_verified',
+        },
+      });
+      return updated;
     });
   }
 

@@ -185,6 +185,7 @@ export const rlsStatements: string[] = [
   // cuando están publicadas (perfil público). La política pública solo filtra
   // filas: el backend debe seleccionar columnas seguras (nunca reviewer_email).
   ...tenantTablePolicy('reviews'),
+  ...tenantTablePolicy('review_revisions'),
   `DROP POLICY IF EXISTS rls_reviews_public ON reviews`,
   `CREATE POLICY rls_reviews_public ON reviews FOR SELECT
      USING (lifecycle_status = 'published' AND visibility = 'public' AND deleted_at IS NULL)`,

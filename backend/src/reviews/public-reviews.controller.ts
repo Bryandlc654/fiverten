@@ -75,6 +75,8 @@ export class PublicReviewsController {
     sort: ReviewSort,
     @Query('rating') rating?: string,
     @Query('period') period?: string,
+    @Query('projectType') projectType?: string,
+    @Query('clientStatus') clientStatus?: string,
   ) {
     return this.reviews.listReviews(slug, {
       page,
@@ -82,6 +84,8 @@ export class PublicReviewsController {
       sort,
       rating: parseRating(rating),
       since: parsePeriod(period),
+      projectType,
+      clientStatus,
     });
   }
 

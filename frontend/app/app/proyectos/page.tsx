@@ -13,6 +13,11 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [projectName, setProjectName] = useState('');
+  const [projectType, setProjectType] = useState('reforma_integral');
+  const [projectCity, setProjectCity] = useState('');
+  const [projectYear, setProjectYear] = useState(String(new Date().getFullYear()));
+  const [projectStatus, setProjectStatus] = useState('completed');
+  const [evidenceType, setEvidenceType] = useState('contract');
   const [projectDescription, setProjectDescription] = useState('');
   const [projectUrl, setProjectUrl] = useState('');
   const [projectFiles, setProjectFiles] = useState<File[]>([]);
@@ -62,9 +67,13 @@ export default function ProjectsPage() {
         name: projectName.trim(),
         description: projectDescription.trim() || undefined,
         url: projectUrl.trim() || undefined,
+        projectType,
+        city: projectCity.trim() || undefined,
+        year: Number(projectYear) || undefined,
+        status: projectStatus,
       });
       for (const file of projectFiles) {
-        await api.uploadProjectVerificationDocument(project.id, file);
+        await api.uploadProjectVerificationDocument(project.id, file, evidenceType);
       }
       setNotice(
         projectFiles.length > 0
@@ -72,6 +81,7 @@ export default function ProjectsPage() {
           : 'Proyecto añadido',
       );
       setProjectName('');
+      setProjectCity('');
       setProjectDescription('');
       setProjectUrl('');
       setProjectFiles([]);
@@ -144,6 +154,47 @@ export default function ProjectsPage() {
                     className={inputClass}
                   />
                 </Field>
+                <Field label="Tipo de proyecto" className="block">
+                  <select
+                    value={projectType}
+                    onChange={(event) => setProjectType(event.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="reforma_integral">Reforma integral</option>
+                    <option value="obra_nueva">Obra nueva</option>
+                    <option value="rehabilitacion">Rehabilitación</option>
+                    <option value="instalacion">Instalación</option>
+                    <option value="consultoria">Consultoría</option>
+                    <option value="otro">Otro</option>
+                  </select>
+                </Field>
+                <Field label="Ciudad / área" className="block">
+                  <input
+                    value={projectCity}
+                    onChange={(event) => setProjectCity(event.target.value)}
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="Año" className="block">
+                  <input
+                    type="number"
+                    min={1900}
+                    max={2100}
+                    value={projectYear}
+                    onChange={(event) => setProjectYear(event.target.value)}
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="Estado" className="block">
+                  <select
+                    value={projectStatus}
+                    onChange={(event) => setProjectStatus(event.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="completed">Finalizado</option>
+                    <option value="ongoing">En curso</option>
+                  </select>
+                </Field>
               </div>
               <Field label="Descripción (opcional)" className="block">
                 <textarea
@@ -153,15 +204,32 @@ export default function ProjectsPage() {
                   className={inputClass}
                 />
               </Field>
-              <Field label="Archivos de evidencia (máx. 10 MB cada uno)" className="block">
-                <input
-                  type="file"
-                  multiple
-                  accept="application/pdf,image/jpeg,image/png,image/webp,image/avif"
-                  onChange={(event) => setProjectFiles(Array.from(event.target.files ?? []))}
-                  className={inputClass}
-                />
-              </Field>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Field label="Tipo de evidencia" className="block">
+                  <select
+                    value={evidenceType}
+                    onChange={(event) => setEvidenceType(event.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="contract">Contrato</option>
+                    <option value="budget">Presupuesto</option>
+                    <option value="invoice">Factura</option>
+                    <option value="photos">Fotografías</option>
+                    <option value="certificate">Certificado</option>
+                    <option value="act">Acta</option>
+                    <option value="other">Otra</option>
+                  </select>
+                </Field>
+                <Field label="Archivos de evidencia (máx. 10 MB cada uno)" className="block">
+                  <input
+                    type="file"
+                    multiple
+                    accept="application/pdf,image/jpeg,image/png,image/webp,image/avif"
+                    onChange={(event) => setProjectFiles(Array.from(event.target.files ?? []))}
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
               {projectFiles.length > 0 && (
                 <p className="text-[11px] text-slate-500">
                   {projectFiles.map((file) => file.name).join(' · ')}
@@ -194,6 +262,16 @@ export default function ProjectsPage() {
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="font-semibold text-slate-900">{project.name}</p>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {[
+                          project.projectType?.replaceAll('_', ' '),
+                          project.city,
+                          project.year,
+                          project.status === 'ongoing' ? 'En curso' : 'Finalizado',
+                        ]
+                          .filter(Boolean)
+                          .join(' · ') || 'Sin clasificar'}
+                      </p>
                       {project.description && (
                         <p className="mt-0.5 text-xs text-slate-500">{project.description}</p>
                       )}

@@ -111,8 +111,11 @@ export interface InvitationPreview {
 export interface RatingSummary {
   average: number | null;
   total: number;
+  sampleSize?: number;
   distribution: Record<string, number>;
 }
+
+export type ReviewVerificationState = 'identified' | 'confirmed' | 'verified';
 
 export interface PublicProfile {
   slug: string;
@@ -172,13 +175,23 @@ export interface PublicDirectory {
 export interface PublicVerificationProject {
   id: string;
   name: string;
+  projectType: string | null;
+  city: string | null;
+  year: number | null;
+  status: string;
+  clientStatus: string;
   description: string | null;
   url: string | null;
+  verificationScope: string | null;
+  methodology: string | null;
+  verifiedAt: string | null;
   createdAt: string;
   evidenceCount: number;
+  evidenceTypes: string[];
   evidence: {
     id: string;
     kind: 'image' | 'pdf';
+    evidenceType?: string | null;
     size: number;
     createdAt: string;
   }[];
@@ -228,7 +241,20 @@ export interface PublicReview {
   body: string;
   experienceDate: string | null;
   verified: boolean;
-  project: { id: string; name: string } | null;
+  verificationState: ReviewVerificationState;
+  verificationMethodology: string | null;
+  verifiedAt: string | null;
+  project: {
+    id: string;
+    name: string;
+    projectType: string | null;
+    city: string | null;
+    year: number | null;
+    status: string;
+    clientStatus: string;
+    evidenceCount: number;
+    evidenceTypes: string[];
+  } | null;
   publishedAt: string;
   response: ReviewReply | null;
 }
@@ -903,6 +929,7 @@ export type VerificationDocumentCategory =
 export interface VerificationDocument {
   id: string;
   category: VerificationDocumentCategory;
+  evidenceType?: string | null;
   projectId: string | null;
   filename: string;
   mimeType: string;
@@ -914,9 +941,17 @@ export interface VerificationDocument {
 export interface VerificationProject {
   id: string;
   name: string;
+  projectType: string | null;
+  city: string | null;
+  year: number | null;
+  status: string;
+  clientStatus: string;
   description: string | null;
   url: string | null;
   dataOrigin?: string;
+  verificationScope: string | null;
+  methodology: string | null;
+  verifiedAt: string | null;
   createdAt: string;
   documents: VerificationDocument[];
 }
@@ -1051,6 +1086,8 @@ export interface ReviewListParams {
   sort?: 'recent' | 'oldest' | 'highest' | 'lowest';
   /** Últimos 30, 90 o 365 días. */
   period?: string;
+  projectType?: string;
+  clientStatus?: string;
   /** Panel: 'yes' con respuesta, 'no' sin respuesta. */
   answered?: string;
   /** Panel: 'true' solo reseñas de 1 o 2 estrellas publicadas. */
@@ -1979,6 +2016,10 @@ export const api = {
     name: string;
     description?: string;
     url?: string;
+    projectType?: string;
+    city?: string;
+    year?: number;
+    status?: string;
   }): Promise<VerificationProject> {
     return request<VerificationProject>('/organizations/me/verification/projects', {
       method: 'POST',
@@ -1988,8 +2029,10 @@ export const api = {
   uploadProjectVerificationDocument(
     projectId: string,
     file: File,
+    evidenceType?: string,
   ): Promise<VerificationDocument> {
     const form = new FormData();
+    if (evidenceType) form.append('evidenceType', evidenceType);
     form.append('file', file);
     return requestForm<VerificationDocument>(
       `/organizations/me/verification/projects/${projectId}/documents`,

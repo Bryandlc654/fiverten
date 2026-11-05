@@ -521,9 +521,17 @@ export default function PublicProfilePage() {
                           {project.description && (
                             <span className="line-clamp-1 w-full">{project.description}</span>
                           )}
+                          {(project.projectType || project.city) && (
+                            <span className="flex items-center gap-1">
+                              <FolderIcon className="h-3 w-3 text-slate-400" />
+                              {[project.projectType?.replaceAll('_', ' '), project.city]
+                                .filter(Boolean)
+                                .join(' · ')}
+                            </span>
+                          )}
                           <span className="flex items-center gap-1">
                             <CalendarIcon className="h-3 w-3 text-slate-400" />
-                            {yearOf(project.createdAt)}
+                            {project.year ?? yearOf(project.createdAt)}
                           </span>
                           <span className="flex items-center gap-1">
                             <FolderIcon className="h-3 w-3 text-slate-400" />

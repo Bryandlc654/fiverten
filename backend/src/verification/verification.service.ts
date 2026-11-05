@@ -53,6 +53,7 @@ const REQUEST_INCLUDE = {
     select: {
       id: true,
       category: true,
+      evidenceType: true,
       projectId: true,
       filename: true,
       mimeType: true,
@@ -69,6 +70,7 @@ const REQUEST_INCLUDE = {
         select: {
           id: true,
           category: true,
+          evidenceType: true,
           projectId: true,
           filename: true,
           mimeType: true,
@@ -235,6 +237,7 @@ export class VerificationService {
     userId: string,
     projectId: string,
     file: VerificationUpload,
+    evidenceType?: string,
   ) {
     if (!ALLOWED_MIME.has(file.mimetype)) {
       throw new BadRequestException('Formato no permitido. Usa PDF, JPG, PNG, WEBP o AVIF.');
@@ -254,6 +257,7 @@ export class VerificationService {
           requestId: project.requestId,
           projectId,
           category: 'project',
+          evidenceType: evidenceType ?? null,
           filename: file.originalname.slice(0, 255),
           mimeType: file.mimetype,
           size: file.size,
@@ -263,6 +267,7 @@ export class VerificationService {
         select: {
           id: true,
           category: true,
+          evidenceType: true,
           projectId: true,
           filename: true,
           mimeType: true,
@@ -296,6 +301,11 @@ export class VerificationService {
           organizationId: orgId,
           requestId: draft.id,
           name: dto.name.trim(),
+          projectType: dto.projectType ?? null,
+          city: dto.city?.trim() || null,
+          year: dto.year ?? null,
+          status: dto.status ?? 'completed',
+          clientStatus: 'identified',
           description: dto.description?.trim() || null,
           url: dto.url?.trim() || null,
           createdBy: userId,
@@ -457,7 +467,13 @@ export class VerificationService {
                   orderBy: { createdAt: 'asc' },
                   include: {
                     documents: {
-                      select: { id: true, mimeType: true, size: true, createdAt: true },
+                      select: {
+                        id: true,
+                        mimeType: true,
+                        size: true,
+                        evidenceType: true,
+                        createdAt: true,
+                      },
                       orderBy: { createdAt: 'asc' },
                     },
                   },
@@ -512,13 +528,25 @@ export class VerificationService {
         projects: (approved?.projects ?? []).map((project) => ({
           id: project.id,
           name: project.name,
+          projectType: project.projectType,
+          city: project.city,
+          year: project.year,
+          status: project.status,
+          clientStatus: project.clientStatus,
           description: project.description,
           url: project.url,
+          verificationScope: project.verificationScope,
+          methodology: project.methodology,
+          verifiedAt: project.verifiedAt,
           createdAt: project.createdAt,
           evidenceCount: project.documents.length,
+          evidenceTypes: Array.from(
+            new Set(project.documents.map((document) => document.evidenceType).filter(Boolean)),
+          ),
           evidence: project.documents.map((document) => ({
             id: document.id,
             kind: document.mimeType.startsWith('image/') ? 'image' : 'pdf',
+            evidenceType: document.evidenceType,
             size: document.size,
             createdAt: document.createdAt,
           })),
@@ -720,6 +748,14 @@ export class VerificationService {
           verifiedAt: now,
           verificationExpiresAt: expiresAt,
           verificationComputedAt: now,
+        },
+      });
+      await tx.verificationProject.updateMany({
+        where: { requestId: request.id },
+        data: {
+          verifiedAt: now,
+          methodology: 'Revisión documental y de evidencias por FIVERTEN',
+          verificationScope: 'Identidad, documentación y evidencias del proyecto',
         },
       });
       await tx.verificationEvent.create({
@@ -1048,9 +1084,17 @@ export class VerificationService {
       projects: request.projects.map((project) => ({
         id: project.id,
         name: project.name,
+        projectType: project.projectType,
+        city: project.city,
+        year: project.year,
+        status: project.status,
+        clientStatus: project.clientStatus,
         description: project.description,
         url: project.url,
         dataOrigin: project.dataOrigin,
+        verificationScope: project.verificationScope,
+        methodology: project.methodology,
+        verifiedAt: project.verifiedAt,
         createdAt: project.createdAt,
         documents: project.documents,
       })),

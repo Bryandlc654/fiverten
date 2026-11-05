@@ -38,6 +38,7 @@ import {
   ReviewCertificationDto,
   RevokeVerificationDto,
   UpdateVerificationInquiryDto,
+  UploadProjectEvidenceDto,
   UploadVerificationDocumentDto,
   VerificationInquiryDto,
 } from './dto/verification.dto';
@@ -113,6 +114,7 @@ export class CompanyVerificationController {
     @CurrentUser('organizationId') orgId: string | null,
     @CurrentUser('userId') userId: string,
     @Param('id', ParseUUIDPipe) projectId: string,
+    @Body() dto: UploadProjectEvidenceDto,
     @UploadedFile() file?: VerificationUpload,
   ) {
     if (!file) throw new BadRequestException('No se recibió ningún archivo');
@@ -121,6 +123,7 @@ export class CompanyVerificationController {
       userId,
       projectId,
       file,
+      dto.evidenceType,
     );
   }
 

@@ -41,8 +41,10 @@ test.describe('Web pública', () => {
     await expect(page.getByText(/PDF validado/)).toBeVisible();
 
     await page.goto(`/empresa/${organization.slug}/opiniones`);
-    await expect(page.getByRole('heading', { name: 'Página Pública E2E' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Opiniones/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Página Pública E2E', level: 1 })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Experiencias reales. Proyectos comprobados.' }),
+    ).toBeVisible();
 
     await page.goto(`/empresa/${organization.slug}/certificaciones`);
     await expect(page.getByText('Sello FIVERTEN')).toBeVisible();

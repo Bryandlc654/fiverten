@@ -89,6 +89,29 @@ export default function PublicProjectsPage() {
                     {project.evidenceCount === 1 ? '' : 's'}
                   </span>
                 </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  {[
+                    project.projectType?.replaceAll('_', ' '),
+                    project.city,
+                    project.year,
+                    project.status === 'ongoing' ? 'En curso' : 'Finalizado',
+                  ]
+                    .filter(Boolean)
+                    .join(' · ') || 'Sin clasificar'}
+                  {project.clientStatus
+                    ? ` · Cliente ${project.clientStatus === 'verified' ? 'verificado' : project.clientStatus}`
+                    : ''}
+                </p>
+                {project.verificationScope && (
+                  <p className="mt-2 text-xs text-slate-500">
+                    <strong>Alcance:</strong> {project.verificationScope}
+                  </p>
+                )}
+                {project.methodology && (
+                  <p className="mt-1 text-xs text-slate-500">
+                    <strong>Metodología:</strong> {project.methodology}
+                  </p>
+                )}
                 {project.description && (
                   <p className="mt-2 text-sm leading-relaxed text-slate-600">
                     {project.description}
@@ -108,7 +131,12 @@ export default function PublicProjectsPage() {
                           <span className="material-symbols-outlined text-[15px] text-slate-400">
                             {evidence.kind === 'image' ? 'image' : 'description'}
                           </span>
-                          {evidence.kind === 'image' ? 'Imagen' : 'PDF'} validado
+                          {evidence.evidenceType
+                            ? evidence.evidenceType.replaceAll('_', ' ')
+                            : evidence.kind === 'image'
+                              ? 'Imagen'
+                              : 'PDF'}{' '}
+                          validado
                         </span>
                         <span className="text-slate-400">
                           {Math.max(1, Math.round(evidence.size / 1024))} KB ·{' '}
