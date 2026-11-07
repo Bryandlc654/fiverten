@@ -134,6 +134,8 @@ export default function DashboardPage() {
   const roleText = roleLabel(role);
   const company = organization?.tradeName ?? 'Sin organización';
   const isVerified = organization?.verificationStatus === 'verified';
+  // El estado efectivo caduca: miVerification() ya devuelve "expired" si toca.
+  const sealVerified = verification ? verification.status === 'verified' : isVerified;
   const publicUrl = organization?.slug
     ? `${origin}/empresa/${organization.slug}`
     : `${origin}/mi-empresa`;
@@ -197,6 +199,7 @@ export default function DashboardPage() {
             publicUrl={publicUrl}
             publicId={organization?.publicId}
             embedToken={verification?.badge?.embedToken}
+            verified={sealVerified}
           />
         </section>
 

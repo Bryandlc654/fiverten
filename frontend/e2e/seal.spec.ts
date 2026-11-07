@@ -7,12 +7,17 @@ test.describe('Sello, QR y widget', () => {
     await loginInBrowser(page, organization);
 
     await page.goto('/app');
-    const seal = page.getByRole('heading', { name: 'Sello verificado' }).locator('..');
+    const seal = page.locator('div.rounded-xl', {
+      has: page.getByRole('heading', { name: 'Sello verificado' }),
+    });
+
+    // Empresa recién creada: la insignia oficial está bloqueada hasta verificar.
+    await expect(seal.getByText(/La descarga de la insignia se habilita/)).toBeVisible();
 
     await seal.getByRole('button', { name: 'QR' }).click();
-    await expect(
-      seal.getByRole('img', { name: /Código QR del perfil/ }),
-    ).toBeVisible({ timeout: 15_000 });
+    await expect(seal.getByRole('img', { name: /Código QR del perfil/ })).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(seal.getByRole('link', { name: 'Descargar QR' })).toBeVisible();
 
     await seal.getByRole('button', { name: 'Widget' }).click();

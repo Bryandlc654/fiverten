@@ -355,6 +355,25 @@ export default function VerificationPage() {
                 <figcaption className="mt-1 text-[11px] font-medium text-slate-500">
                   Insignia
                 </figcaption>
+                <div className="mt-1 flex items-center justify-center gap-2 text-[11px] font-semibold">
+                  <a
+                    href="/sello-fiverten-verificado.png"
+                    download="sello-fiverten-verificado.png"
+                    onClick={trackSealDownload}
+                    className="text-blue-700 underline-offset-2 hover:underline"
+                  >
+                    PNG
+                  </a>
+                  <span className="text-slate-300">·</span>
+                  <a
+                    href="/sello-fiverten-verificado.svg"
+                    download="sello-fiverten-verificado.svg"
+                    onClick={trackSealDownload}
+                    className="text-blue-700 underline-offset-2 hover:underline"
+                  >
+                    SVG
+                  </a>
+                </div>
               </figure>
               <figure className="text-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
