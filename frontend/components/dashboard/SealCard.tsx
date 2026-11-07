@@ -1,11 +1,12 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { api } from '../../lib/api';
 
-type SealTab = 'insignia' | 'seal' | 'widget' | 'qr';
+type SealTab = 'seal' | 'widget' | 'qr';
 
 const OFFICIAL_PNG = '/sello-fiverten-verificado.png';
 const OFFICIAL_SVG = '/sello-fiverten-verificado.svg';
@@ -21,27 +22,18 @@ export default function SealCard({
   embedToken?: string | null;
   verified: boolean;
 }) {
-  const [activeTab, setActiveTab] = useState<SealTab>('insignia');
+  const [activeTab, setActiveTab] = useState<SealTab>('seal');
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [qrError, setQrError] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const origin = typeof window === 'undefined' ? 'https://fiverten.com' : window.location.origin;
   const sealId = embedToken ?? publicId;
-  const sealSvgUrl = sealId ? `${origin}/api/seal/${sealId}.svg` : '';
-  const sealPngUrl = sealId ? `${origin}/api/seal/${sealId}.png` : '';
   const widgetUrl = sealId ? `${origin}/api/widget/${sealId}.js` : '';
-  const sealEmbed = `<a href="${publicUrl}" target="_blank" rel="noopener"><img src="${sealSvgUrl}" alt="Sello FIVERTEN" width="300" height="104"></a>`;
   const officialEmbed = `<a href="${publicUrl}" target="_blank" rel="noopener"><img src="${origin}${OFFICIAL_SVG}" alt="Sello FIVERTEN" width="160" height="160"></a>`;
   const widgetEmbed = `<script src="${widgetUrl}" async></script>`;
   const embed =
-    activeTab === 'insignia'
-      ? officialEmbed
-      : activeTab === 'seal'
-        ? sealEmbed
-        : activeTab === 'widget'
-          ? widgetEmbed
-          : publicUrl;
+    activeTab === 'seal' ? officialEmbed : activeTab === 'widget' ? widgetEmbed : publicUrl;
 
   useEffect(() => {
     if (activeTab !== 'qr') return;
@@ -106,7 +98,6 @@ export default function SealCard({
 
       <div className="mt-4 flex gap-1 rounded-lg bg-slate-100 p-1 text-xs font-medium">
         {[
-          { id: 'insignia', label: 'Insignia' },
           { id: 'seal', label: 'Sello web' },
           { id: 'widget', label: 'Widget' },
           { id: 'qr', label: 'QR' },
@@ -154,12 +145,12 @@ export default function SealCard({
             </a>
           )}
         </div>
-      ) : activeTab === 'insignia' ? (
+      ) : activeTab === 'seal' ? (
         <div className="mt-4">
           <div className="flex items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4">
             <Image
               src={OFFICIAL_PNG}
-              alt="Insignia FIVERTEN de empresa verificada"
+              alt="Sello FIVERTEN de empresa verificada"
               width={512}
               height={512}
               className="h-24 w-24"
@@ -188,53 +179,26 @@ export default function SealCard({
                 </a>
               </div>
               <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
-                Insignia oficial de FIVERTEN. Úsala solo mientras tu empresa mantenga la
-                verificación activa.
+                Sello oficial de FIVERTEN. Úsalo solo mientras tu empresa mantenga la verificación
+                activa.
+              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
+                El sello que se actualiza solo está en{' '}
+                <Link
+                  href="/app/sello"
+                  className="font-semibold text-blue-700 underline-offset-2 hover:underline"
+                >
+                  Sello y embeds
+                </Link>
+                .
               </p>
             </>
           ) : (
             <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[11px] leading-relaxed text-slate-600">
-              La descarga de la insignia se habilita cuando FIVERTEN aprueba la verificación de tu
+              La descarga del sello se habilita cuando FIVERTEN aprueba la verificación de tu
               empresa.
             </p>
           )}
-        </div>
-      ) : activeTab === 'seal' ? (
-        <div className="mt-4">
-          <div className="flex items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4">
-            {sealSvgUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={sealSvgUrl} alt="Sello FIVERTEN" className="h-24 w-auto" />
-            ) : (
-              <p className="text-sm text-slate-500">Publica tu perfil para obtener el sello.</p>
-            )}
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <a
-              href={sealPngUrl || '#'}
-              download={`fiverten-sello-${publicId ?? 'empresa'}.png`}
-              onClick={trackDownload}
-              aria-disabled={!sealPngUrl}
-              className={`inline-flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-semibold text-white transition ${
-                sealPngUrl ? 'bg-blue-600 hover:bg-blue-600' : 'pointer-events-none bg-slate-300'
-              }`}
-            >
-              <span className="material-symbols-outlined text-[16px]">download</span>
-              PNG
-            </a>
-            <a
-              href={sealSvgUrl || '#'}
-              download={`fiverten-sello-${publicId ?? 'empresa'}.svg`}
-              onClick={trackDownload}
-              aria-disabled={!sealSvgUrl}
-              className={`inline-flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-semibold text-white transition ${
-                sealSvgUrl ? 'bg-slate-900 hover:bg-slate-700' : 'pointer-events-none bg-slate-300'
-              }`}
-            >
-              <span className="material-symbols-outlined text-[16px]">download</span>
-              SVG
-            </a>
-          </div>
         </div>
       ) : (
         <div className="mt-4 flex items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 py-6">
@@ -248,7 +212,7 @@ export default function SealCard({
         </div>
       )}
 
-      {!(activeTab === 'insignia' && !verified) && (
+      {!(activeTab === 'seal' && !verified) && (
         <div className="mt-4 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
           <span className="material-symbols-outlined text-[16px] text-slate-400">
             {activeTab === 'qr' ? 'qr_code_2' : 'code'}

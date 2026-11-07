@@ -11,8 +11,8 @@ test.describe('Sello, QR y widget', () => {
       has: page.getByRole('heading', { name: 'Sello verificado' }),
     });
 
-    // Empresa recién creada: la insignia oficial está bloqueada hasta verificar.
-    await expect(seal.getByText(/La descarga de la insignia se habilita/)).toBeVisible();
+    // Empresa recién creada: el sello oficial está bloqueado hasta verificar.
+    await expect(seal.getByText(/La descarga del sello se habilita/)).toBeVisible();
 
     await seal.getByRole('button', { name: 'QR' }).click();
     await expect(seal.getByRole('img', { name: /Código QR del perfil/ })).toBeVisible({
