@@ -286,12 +286,7 @@ export default function DashboardShell({
               type="button"
               onClick={() => {
                 setMobileOpen(false);
-                // El perfil público depende del slug de la empresa.
-                router.push(
-                  item.key === 'profile' && organization
-                    ? `/empresa/${organization.slug}`
-                    : item.href,
-                );
+                router.push(item.href);
               }}
               className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                 active === item.key

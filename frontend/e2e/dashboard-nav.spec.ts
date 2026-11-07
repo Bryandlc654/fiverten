@@ -44,4 +44,20 @@ test.describe('Navegación del panel', () => {
       await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible();
     }
   });
+
+  test('la opción Perfil del sidebar abre el perfil de empresa, no el público', async ({
+    page,
+    request,
+  }) => {
+    const organization = await seedOrganization(request, 'Sidebar Perfil E2E SL');
+    await loginInBrowser(page, organization);
+
+    await page.goto('/app');
+    await page
+      .locator('aside nav button')
+      .filter({ hasText: /Perfil/ })
+      .click();
+    await expect(page).toHaveURL(/\/app\/perfil$/);
+    await expect(page.getByRole('heading', { name: 'Perfil', exact: true })).toBeVisible();
+  });
 });

@@ -297,6 +297,17 @@ export default function CompanyPage() {
                 {canEdit ? 'Edición habilitada' : 'Solo lectura'}
               </span>
             </div>
+            {org?.isPublic && org.slug && (
+              <a
+                href={`/empresa/${org.slug}`}
+                target="_blank"
+                rel="noopener"
+                className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 underline-offset-2 hover:underline"
+              >
+                <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+                Ver perfil público
+              </a>
+            )}
 
             {notice && (
               <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
