@@ -25,6 +25,7 @@ interface FormState {
   phone: string;
   website: string;
   description: string;
+  presentationUrl: string;
   logoUrl: string;
   coverUrl: string;
   isPublic: boolean;
@@ -46,6 +47,7 @@ function toForm(org: OrganizationDetail): FormState {
     phone: org.phone ?? '',
     website: org.website ?? '',
     description: org.description ?? '',
+    presentationUrl: org.presentationUrl ?? '',
     logoUrl: org.logoUrl ?? '',
     coverUrl: org.coverUrl ?? '',
     isPublic: org.isPublic,
@@ -119,6 +121,7 @@ export default function CompanyPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingPresentation, setUploadingPresentation] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -230,6 +233,7 @@ export default function CompanyPage() {
       if (form.phone.trim()) payload.phone = form.phone.trim();
       if (form.website.trim()) payload.website = form.website.trim();
       payload.description = form.description.trim();
+      payload.presentationUrl = form.presentationUrl.trim() || null;
       payload.logoUrl = form.logoUrl ? form.logoUrl : null;
       payload.coverUrl = form.coverUrl ? form.coverUrl : null;
       payload.isPublic = form.isPublic;
@@ -250,6 +254,35 @@ export default function CompanyPage() {
       setError(err instanceof ApiError ? err.message : 'No se pudo guardar');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function onPresentationChange(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.target;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || !form) {
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      setUploadError('El archivo debe ser una imagen');
+      return;
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setUploadError('La imagen supera el máximo de 5 MB');
+      return;
+    }
+
+    setUploadError(null);
+    setUploadingPresentation(true);
+    try {
+      const prepared = await prepareCoverImage(file);
+      const { url } = await api.uploadOrganizationPresentation(prepared);
+      update('presentationUrl', url);
+    } catch (err) {
+      setUploadError(err instanceof ApiError ? err.message : 'No se pudo subir la imagen');
+    } finally {
+      setUploadingPresentation(false);
     }
   }
 
@@ -683,6 +716,54 @@ export default function CompanyPage() {
                   className={INPUT_CLASS}
                 />
               </label>
+
+              <div className="sm:col-span-2">
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold text-slate-600">
+                    Imagen o vídeo de presentación
+                  </span>
+                  <input
+                    value={form.presentationUrl}
+                    onChange={(e) => update('presentationUrl', e.target.value)}
+                    onBlur={() => update('presentationUrl', form.presentationUrl.trim())}
+                    disabled={!canEdit}
+                    placeholder="https://www.youtube.com/watch?v=… o URL de una imagen"
+                    className={INPUT_CLASS}
+                  />
+                </label>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <label
+                    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-300 ${
+                      !canEdit || uploadingPresentation ? 'pointer-events-none opacity-60' : ''
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[16px]">upload</span>
+                    {uploadingPresentation ? 'Subiendo…' : 'Subir imagen'}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                      className="hidden"
+                      onChange={onPresentationChange}
+                      disabled={!canEdit || uploadingPresentation}
+                    />
+                  </label>
+                  {form.presentationUrl && canEdit && (
+                    <button
+                      type="button"
+                      onClick={() => update('presentationUrl', '')}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 transition hover:text-red-600"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">delete</span>
+                      Quitar
+                    </button>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-slate-400">
+                  Se muestra junto a la descripción en tu perfil público. Acepta un enlace de
+                  YouTube o Vimeo, un MP4 o una imagen de hasta 5 MB. El título del bloque es
+                  siempre «Descripción».
+                </p>
+              </div>
 
               <label className="flex items-center gap-3 sm:col-span-2">
                 <input

@@ -67,6 +67,8 @@ export interface OrganizationDetail {
   email: string | null;
   phone: string | null;
   coverUrl: string | null;
+  /** Imagen o vídeo de presentación junto a la descripción. */
+  presentationUrl: string | null;
   locale: string;
   billingCurrency: string;
   status: string;
@@ -136,6 +138,8 @@ export interface PublicProfile {
   description: string | null;
   logoUrl: string | null;
   coverUrl: string | null;
+  /** Imagen o vídeo de presentación junto a la descripción. */
+  presentationUrl?: string | null;
   website: string | null;
   email: string | null;
   phone: string | null;
@@ -1695,6 +1699,11 @@ export const api = {
     const form = new FormData();
     form.append('file', file);
     return requestForm<{ url: string }>('/media/organization-cover', form);
+  },
+  uploadOrganizationPresentation(file: File): Promise<{ url: string }> {
+    const form = new FormData();
+    form.append('file', file);
+    return requestForm<{ url: string }>('/media/organization-presentation', form);
   },
   uploadOrganizationLogo(file: File): Promise<{ url: string }> {
     const form = new FormData();

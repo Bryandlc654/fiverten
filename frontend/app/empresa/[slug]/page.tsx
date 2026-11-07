@@ -26,14 +26,52 @@ import {
 const HERO_FALLBACK =
   'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1800&q=85';
 
-function firstSentence(value: string | null): string {
-  if (!value) return 'Perfil público verificado';
-  const sentence = value.split(/[.!?]/)[0]?.trim();
-  return sentence || 'Perfil público verificado';
-}
-
 function yearOf(value: string | null): string {
   return value ? String(new Date(value).getFullYear()) : '—';
+}
+
+function parseUrl(value: string): URL | null {
+  try {
+    return new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
+  } catch {
+    return null;
+  }
+}
+
+/** Convierte un enlace de YouTube o Vimeo en la URL de su reproductor. */
+function videoEmbedUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const url = parseUrl(value);
+  if (!url) return null;
+  const host = url.hostname.replace(/^www\./, '').toLowerCase();
+
+  if (host === 'youtu.be') {
+    const id = url.pathname.split('/').filter(Boolean)[0];
+    return id ? `https://www.youtube-nocookie.com/embed/${id}` : null;
+  }
+  if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtube-nocookie.com') {
+    if (url.pathname === '/watch') {
+      const id = url.searchParams.get('v');
+      return id ? `https://www.youtube-nocookie.com/embed/${id}` : null;
+    }
+    const match = /^\/(?:embed|shorts|live)\/([\w-]+)/.exec(url.pathname);
+    return match ? `https://www.youtube-nocookie.com/embed/${match[1]}` : null;
+  }
+  if (host === 'vimeo.com' || host === 'player.vimeo.com') {
+    const match = /(\d{6,})/.exec(url.pathname);
+    return match ? `https://player.vimeo.com/video/${match[1]}` : null;
+  }
+  return null;
+}
+
+function isVideoFile(value: string): boolean {
+  return /\.(mp4|webm|ogg|ogv|mov|m4v)([?#]|$)/i.test(value);
+}
+
+function isImageUrl(value: string): boolean {
+  return (
+    /\.(jpe?g|png|webp|avif|gif|svg)([?#]|$)/i.test(value) || value.includes('/api/media/files/')
+  );
 }
 
 function yearsSince(value: string): number {
@@ -355,9 +393,9 @@ export default function PublicProfilePage() {
                 <div className="flex h-full flex-col justify-between">
                   <div>
                     <h2 className="mb-3 text-xl font-bold leading-snug tracking-tight text-slate-900 sm:text-2xl">
-                      {firstSentence(profile.description)}
+                      Descripción
                     </h2>
-                    <p className="mb-6 text-xs leading-relaxed text-slate-600">
+                    <p className="mb-6 whitespace-pre-line text-xs leading-relaxed text-slate-600">
                       {profile.description ||
                         'Empresa con perfil público y verificación en FIVERTEN.'}
                     </p>
@@ -390,29 +428,12 @@ export default function PublicProfilePage() {
                   </div>
                 </div>
 
-                <a
-                  href={profile.website || '#proyectos'}
-                  target={profile.website ? '_blank' : undefined}
-                  rel={profile.website ? 'noopener noreferrer nofollow' : undefined}
-                  data-fv-event={profile.website ? 'website_click' : undefined}
-                  className="group relative aspect-video overflow-hidden rounded-lg border border-slate-200 bg-slate-900 shadow-inner"
-                >
-                  <Image
-                    src={resolveAssetUrl(profile.coverUrl) ?? profile.coverUrl ?? HERO_FALLBACK}
-                    alt={`Presentación de ${profile.tradeName}`}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 500px"
-                    className="object-cover transition duration-300 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 flex items-end bg-slate-900/30 p-3">
-                    <span className="flex items-center space-x-2 rounded-full bg-black/75 px-3 py-1.5 text-[11px] font-medium text-white backdrop-blur-sm transition group-hover:bg-black/90">
-                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white pl-0.5 text-black">
-                        <PlayIcon className="h-2.5 w-2.5 fill-current" />
-                      </span>
-                      <span>Ver presentación de la empresa</span>
-                    </span>
-                  </div>
-                </a>
+                <PresentationMedia
+                  url={profile.presentationUrl}
+                  coverUrl={profile.coverUrl}
+                  tradeName={profile.tradeName}
+                  website={profile.website}
+                />
               </div>
             </article>
 
@@ -840,6 +861,99 @@ export default function PublicProfilePage() {
 
       <PublicFooter />
     </div>
+  );
+}
+
+function PresentationMedia({
+  url,
+  coverUrl,
+  tradeName,
+  website,
+}: {
+  url: string | null | undefined;
+  coverUrl: string | null;
+  tradeName: string;
+  website: string | null;
+}) {
+  // Solo se renderizan URLs absolutas http(s) o rutas internas de medios.
+  const safeUrl = url && /^(https?:\/\/|\/)/i.test(url) ? url : null;
+  const embed = videoEmbedUrl(safeUrl);
+  if (embed) {
+    return (
+      <div className="relative aspect-video overflow-hidden rounded-lg border border-slate-200 bg-slate-900 shadow-inner">
+        <iframe
+          src={embed}
+          title={`Vídeo de presentación de ${tradeName}`}
+          className="absolute inset-0 h-full w-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+          loading="lazy"
+        />
+      </div>
+    );
+  }
+
+  if (safeUrl && isVideoFile(safeUrl)) {
+    return (
+      <div className="relative aspect-video overflow-hidden rounded-lg border border-slate-200 bg-slate-900 shadow-inner">
+        <video
+          src={safeUrl}
+          controls
+          playsInline
+          preload="metadata"
+          className="absolute inset-0 h-full w-full object-cover"
+        >
+          Tu navegador no puede reproducir este vídeo.
+        </video>
+      </div>
+    );
+  }
+
+  if (safeUrl && isImageUrl(safeUrl)) {
+    const src = resolveAssetUrl(safeUrl) ?? safeUrl;
+    return (
+      <a
+        href={src}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group relative block aspect-video overflow-hidden rounded-lg border border-slate-200 bg-slate-100 shadow-inner"
+      >
+        <Image
+          src={src}
+          alt={`Imagen de presentación de ${tradeName}`}
+          fill
+          sizes="(max-width: 768px) 100vw, 500px"
+          className="object-cover transition duration-300 group-hover:scale-105"
+        />
+      </a>
+    );
+  }
+
+  // Sin imagen o vídeo propio: portada enlazada a la web de la empresa.
+  return (
+    <a
+      href={website || '#proyectos'}
+      target={website ? '_blank' : undefined}
+      rel={website ? 'noopener noreferrer nofollow' : undefined}
+      data-fv-event={website ? 'website_click' : undefined}
+      className="group relative aspect-video overflow-hidden rounded-lg border border-slate-200 bg-slate-900 shadow-inner"
+    >
+      <Image
+        src={resolveAssetUrl(coverUrl) ?? coverUrl ?? HERO_FALLBACK}
+        alt={`Presentación de ${tradeName}`}
+        fill
+        sizes="(max-width: 768px) 100vw, 500px"
+        className="object-cover transition duration-300 group-hover:scale-105"
+      />
+      <div className="absolute inset-0 flex items-end bg-slate-900/30 p-3">
+        <span className="flex items-center space-x-2 rounded-full bg-black/75 px-3 py-1.5 text-[11px] font-medium text-white backdrop-blur-sm transition group-hover:bg-black/90">
+          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white pl-0.5 text-black">
+            <PlayIcon className="h-2.5 w-2.5 fill-current" />
+          </span>
+          <span>Ver presentación de la empresa</span>
+        </span>
+      </div>
+    </a>
   );
 }
 

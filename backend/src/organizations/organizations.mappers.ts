@@ -20,6 +20,7 @@ export function toOrganizationDetail(org: {
   description: string | null;
   logoUrl: string | null;
   coverUrl: string | null;
+  presentationUrl: string | null;
   website: string | null;
   email: string | null;
   phone: string | null;
@@ -48,6 +49,7 @@ export function toOrganizationDetail(org: {
     description: org.description,
     logoUrl: org.logoUrl,
     coverUrl: org.coverUrl,
+    presentationUrl: org.presentationUrl,
     website: org.website,
     email: org.email,
     phone: org.phone,

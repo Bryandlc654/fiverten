@@ -13,6 +13,12 @@ export class UpdateOrganizationDto {
   @MaxLength(160)
   slug?: string;
 
+  /** Imagen o vídeo de presentación que acompaña a la descripción. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  presentationUrl?: string | null;
+
   @IsOptional()
   @IsString()
   @MaxLength(500)

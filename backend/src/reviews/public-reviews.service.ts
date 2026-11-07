@@ -115,6 +115,7 @@ export class PublicReviewsService {
       description: org.description,
       logoUrl: org.logoUrl,
       coverUrl: org.coverUrl,
+      presentationUrl: org.presentationUrl,
       website: org.website,
       email: org.allowContact ? org.email : null,
       phone: org.allowContact ? org.phone : null,
@@ -287,7 +288,7 @@ export class PublicReviewsService {
 
       const ids = rows.map((row) => row.id);
       const grouped = ids.length
-        ? await           tx.review.groupBy({
+        ? await tx.review.groupBy({
             by: ['organizationId'],
             where: {
               organizationId: { in: ids },
@@ -302,8 +303,7 @@ export class PublicReviewsService {
         grouped.map((row) => [
           row.organizationId,
           {
-            average:
-              row._avg.rating === null ? null : Math.round(row._avg.rating * 10) / 10,
+            average: row._avg.rating === null ? null : Math.round(row._avg.rating * 10) / 10,
             total: row._count._all,
           },
         ]),
@@ -314,34 +314,41 @@ export class PublicReviewsService {
         verificationStatus: 'verified',
         OR: [{ verificationExpiresAt: null }, { verificationExpiresAt: { gt: new Date() } }],
       };
-      const [sectorGroups, countryGroups, totalPublic, verifiedCount, withProjects, withOpinions, verifiedProjects] =
-        await Promise.all([
-          tx.organization.groupBy({
-            by: ['sectorId'],
-            where: basePublic,
-            _count: { _all: true },
-          }),
-          tx.organization.groupBy({
-            by: ['countryId'],
-            where: basePublic,
-            _count: { _all: true },
-          }),
-          tx.organization.count({ where: basePublic }),
-          tx.organization.count({ where: verifiedCondition }),
-          tx.organization.count({
-            where: {
-              ...basePublic,
-              verificationRequests: { some: { status: 'approved', projects: { some: {} } } },
-            },
-          }),
-          tx.organization.count({ where: { ...basePublic, reviews: { some: PUBLISHED } } }),
-          tx.verificationProject.count({
-            where: {
-              request: { status: 'approved' },
-              organization: basePublic,
-            },
-          }),
-        ]);
+      const [
+        sectorGroups,
+        countryGroups,
+        totalPublic,
+        verifiedCount,
+        withProjects,
+        withOpinions,
+        verifiedProjects,
+      ] = await Promise.all([
+        tx.organization.groupBy({
+          by: ['sectorId'],
+          where: basePublic,
+          _count: { _all: true },
+        }),
+        tx.organization.groupBy({
+          by: ['countryId'],
+          where: basePublic,
+          _count: { _all: true },
+        }),
+        tx.organization.count({ where: basePublic }),
+        tx.organization.count({ where: verifiedCondition }),
+        tx.organization.count({
+          where: {
+            ...basePublic,
+            verificationRequests: { some: { status: 'approved', projects: { some: {} } } },
+          },
+        }),
+        tx.organization.count({ where: { ...basePublic, reviews: { some: PUBLISHED } } }),
+        tx.verificationProject.count({
+          where: {
+            request: { status: 'approved' },
+            organization: basePublic,
+          },
+        }),
+      ]);
 
       const sectorIds = sectorGroups.map((row) => row.sectorId).filter((id): id is string => !!id);
       const countryIds = countryGroups

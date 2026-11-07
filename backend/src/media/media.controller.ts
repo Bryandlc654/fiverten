@@ -72,6 +72,26 @@ export class MediaController {
     return { url };
   }
 
+  @Post('organization-presentation')
+  @Roles('admin')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_IMAGE_BYTES } }))
+  async uploadOrganizationPresentation(
+    @CurrentUser('organizationId') orgId: string | null,
+    @UploadedFile() file?: UploadedImage,
+  ): Promise<{ url: string }> {
+    if (!orgId) {
+      throw new ForbiddenException('Tu cuenta no pertenece a ninguna empresa');
+    }
+    if (!file) {
+      throw new BadRequestException('No se recibió ninguna imagen');
+    }
+    if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
+      throw new BadRequestException('Formato no permitido. Usa JPG, PNG, WEBP, GIF o AVIF.');
+    }
+    const url = await this.media.uploadOrganizationPresentation(orgId, file);
+    return { url };
+  }
+
   @Post('organization-cover')
   @Roles('admin')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_IMAGE_BYTES } }))

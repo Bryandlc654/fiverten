@@ -74,6 +74,25 @@ describe('FIVERTEN logo de empresa (e2e)', () => {
       .expect(400);
   });
 
+  it('sube la imagen de presentación del perfil', async () => {
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lz9cAAAAAElFTkSuQmCC',
+      'base64',
+    );
+    const response = await http()
+      .post(`${MEDIA}/organization-presentation`)
+      .set('Authorization', `Bearer ${token}`)
+      .attach('file', png, {
+        filename: 'presentacion.png',
+        contentType: 'image/png',
+      })
+      .expect(201);
+    expect(response.body.url).toMatch(/^\/api\/media\/files\/[0-9a-f-]+$/);
+
+    const file = await http().get(response.body.url).expect(200);
+    expect(file.body).toEqual(png);
+  });
+
   it('exige sesión', async () => {
     await http()
       .post(`${MEDIA}/organization-logo`)

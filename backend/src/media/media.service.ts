@@ -2,12 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { randomUUID } from 'node:crypto';
-import {
-  decryptFile,
-  scanFile,
-  secureFile,
-  validateFileSignature,
-} from '../common/file-security';
+import { decryptFile, scanFile, secureFile, validateFileSignature } from '../common/file-security';
 import { PrismaService } from '../prisma/prisma.service';
 
 const MIME_EXTENSIONS: Record<string, string> = {
@@ -42,10 +37,10 @@ export class MediaService {
   isConfigured(): boolean {
     return Boolean(
       this.bucket &&
-        this.publicBaseUrl &&
-        this.config.get<string>('R2_ACCESS_KEY_ID') &&
-        this.config.get<string>('R2_SECRET_ACCESS_KEY') &&
-        (this.config.get<string>('R2_ENDPOINT') || this.config.get<string>('R2_ACCOUNT_ID')),
+      this.publicBaseUrl &&
+      this.config.get<string>('R2_ACCESS_KEY_ID') &&
+      this.config.get<string>('R2_SECRET_ACCESS_KEY') &&
+      (this.config.get<string>('R2_ENDPOINT') || this.config.get<string>('R2_ACCOUNT_ID')),
     );
   }
 
@@ -68,6 +63,13 @@ export class MediaService {
       return this.storeInDatabase({ organizationId: orgId, kind: 'logo' }, file);
     }
     return this.upload(`organizations/${orgId}/logo`, file);
+  }
+
+  async uploadOrganizationPresentation(orgId: string, file: UploadedImage): Promise<string> {
+    if (!this.isConfigured()) {
+      return this.storeInDatabase({ organizationId: orgId, kind: 'presentation' }, file);
+    }
+    return this.upload(`organizations/${orgId}/presentation`, file);
   }
 
   /** Imagen pública guardada en la base (fallback sin R2). */

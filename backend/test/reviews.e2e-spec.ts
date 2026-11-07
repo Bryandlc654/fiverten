@@ -32,13 +32,12 @@ describe('FIVERTEN Perfil público y reseñas (e2e)', () => {
   });
 
   const submit = (body: Record<string, unknown>, ip = '10.0.0.1') =>
-    http()
-      .post(`${PUBLIC}/organizations/${slug}/reviews`)
-      .set('X-Forwarded-For', ip)
-      .send(body);
+    http().post(`${PUBLIC}/organizations/${slug}/reviews`).set('X-Forwarded-For', ip).send(body);
 
   const confirm = (email: string) =>
-    http().post(`${PUBLIC}/reviews/confirm`).send({ token: confirmTokens.get(email) });
+    http()
+      .post(`${PUBLIC}/reviews/confirm`)
+      .send({ token: confirmTokens.get(email) });
 
   const makePublic = () =>
     http()
@@ -103,6 +102,19 @@ describe('FIVERTEN Perfil público y reseñas (e2e)', () => {
       });
       // Contacto oculto mientras allowContact sea false.
       expect(profile.body.email).toBeNull();
+    });
+
+    it('publica la descripción y el vídeo o imagen de presentación', async () => {
+      const mediaUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+      await http()
+        .patch('/api/organizations/me')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ description: 'Descripción pública de la empresa.', presentationUrl: mediaUrl })
+        .expect(200);
+
+      const profile = await http().get(`${PUBLIC}/organizations/${slug}`).expect(200);
+      expect(profile.body.description).toBe('Descripción pública de la empresa.');
+      expect(profile.body.presentationUrl).toBe(mediaUrl);
     });
 
     it('una empresa inexistente devuelve 404', async () => {
@@ -214,9 +226,7 @@ describe('FIVERTEN Perfil público y reseñas (e2e)', () => {
     });
 
     it('filtra por estrellas', async () => {
-      const list = await http()
-        .get(`${PUBLIC}/organizations/${slug}/reviews?rating=2`)
-        .expect(200);
+      const list = await http().get(`${PUBLIC}/organizations/${slug}/reviews?rating=2`).expect(200);
       expect(list.body.items.map((r: { rating: number }) => r.rating)).toEqual([2]);
       expect(list.body.items[0].reviewerName).toBe('Luis');
     });
@@ -325,9 +335,7 @@ describe('FIVERTEN Perfil público y reseñas (e2e)', () => {
         .send({ body: 'Lamentamos lo ocurrido, te escribimos para solucionarlo.' })
         .expect(200);
 
-      const list = await http()
-        .get(`${PUBLIC}/organizations/${slug}/reviews?rating=2`)
-        .expect(200);
+      const list = await http().get(`${PUBLIC}/organizations/${slug}/reviews?rating=2`).expect(200);
       expect(list.body.items[0].response.body).toContain('Lamentamos');
     });
 
@@ -368,9 +376,7 @@ describe('FIVERTEN Perfil público y reseñas (e2e)', () => {
         .delete(`${TENANT}/${reviewId}/response`)
         .set('Authorization', `Bearer ${ownerToken}`)
         .expect(200);
-      const list = await http()
-        .get(`${PUBLIC}/organizations/${slug}/reviews?rating=2`)
-        .expect(200);
+      const list = await http().get(`${PUBLIC}/organizations/${slug}/reviews?rating=2`).expect(200);
       expect(list.body.items[0].response).toBeNull();
     });
 
