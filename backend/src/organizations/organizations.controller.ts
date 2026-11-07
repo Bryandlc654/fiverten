@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
@@ -37,6 +38,14 @@ export class OrganizationsController {
     return this.organizations.getMine(this.requireOrg(orgId));
   }
 
+  @Get('me/slug-availability')
+  slugAvailability(
+    @CurrentUser('organizationId') orgId: string | null,
+    @Query('slug') slug?: string,
+  ) {
+    return this.organizations.slugAvailability(this.requireOrg(orgId), slug ?? '');
+  }
+
   @Get('me/locations')
   listLocations(@CurrentUser('organizationId') orgId: string | null) {
     return this.organizations.listLocations(this.requireOrg(orgId));
@@ -63,10 +72,7 @@ export class OrganizationsController {
 
   @Delete('me/locations/:id')
   @Roles('editor')
-  deleteLocation(
-    @CurrentUser('organizationId') orgId: string | null,
-    @Param('id') id: string,
-  ) {
+  deleteLocation(@CurrentUser('organizationId') orgId: string | null, @Param('id') id: string) {
     return this.organizations.deleteLocation(this.requireOrg(orgId), id);
   }
 

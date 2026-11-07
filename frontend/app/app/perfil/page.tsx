@@ -14,9 +14,11 @@ import {
 } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
 import { roleAtLeast } from '../../../lib/roles';
+import { slugify } from '../../../lib/slug';
 
 interface FormState {
   tradeName: string;
+  slug: string;
   legalName: string;
   taxId: string;
   email: string;
@@ -37,6 +39,7 @@ interface FormState {
 function toForm(org: OrganizationDetail): FormState {
   return {
     tradeName: org.tradeName ?? '',
+    slug: org.slug ?? '',
     legalName: org.legalName ?? '',
     taxId: org.taxId ?? '',
     email: org.email ?? '',
@@ -101,6 +104,12 @@ const VERIFICATION_LABELS: Record<string, { label: string; tone: string }> = {
   expired: { label: 'Verificación caducada', tone: 'bg-slate-100 text-slate-500' },
 };
 
+type SlugStatus =
+  | { state: 'idle' }
+  | { state: 'checking' }
+  | { state: 'available' }
+  | { state: 'taken'; suggestion: string | null };
+
 export default function CompanyPage() {
   const router = useRouter();
   const { role, isSuperAdmin } = useAuth();
@@ -114,6 +123,10 @@ export default function CompanyPage() {
   const [error, setError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /** El usuario ha tocado la URL pública: dejamos de sincronizarla con el nombre. */
+  const [slugEdited, setSlugEdited] = useState(false);
+  const [slugStatus, setSlugStatus] = useState<SlugStatus>({ state: 'idle' });
+  const slugValue = form?.slug ?? '';
 
   const canEdit = isSuperAdmin || roleAtLeast(role, 'admin');
 
@@ -152,17 +165,65 @@ export default function CompanyPage() {
   }, []);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
-    setForm((current) => (current ? { ...current, [key]: value } : current));
+    setForm((current) => {
+      if (!current) return current;
+      // Mientras la URL no se haya editado a mano, se rellena con el nombre.
+      if (key === 'tradeName' && !slugEdited && typeof value === 'string') {
+        return { ...current, tradeName: value, slug: slugify(value) };
+      }
+      return { ...current, [key]: value };
+    });
   }
+
+  // Comprobación con retardo de la URL pública. Solo mira si está libre: el
+  // backend vuelve a comprobarlo al guardar para cubrirse de carreras.
+  useEffect(() => {
+    const candidate = slugify(slugValue);
+    if (!org || !candidate || candidate === org.slug) {
+      setSlugStatus({ state: 'idle' });
+      return;
+    }
+    setSlugStatus({ state: 'checking' });
+    let active = true;
+    const timer = window.setTimeout(() => {
+      api
+        .checkOrganizationSlug(candidate)
+        .then((result) => {
+          if (!active) return;
+          setSlugStatus(
+            result.available
+              ? { state: 'available' }
+              : { state: 'taken', suggestion: result.suggestion },
+          );
+        })
+        .catch(() => {
+          if (active) setSlugStatus({ state: 'idle' });
+        });
+    }, 400);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [slugValue, org]);
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!form || !canEdit) return;
-    setSaving(true);
+    const nextSlug = slugify(form.slug);
     setError(null);
     setNotice(null);
+    if (!nextSlug) {
+      setError('La URL pública no puede estar vacía.');
+      return;
+    }
+    if (nextSlug !== org?.slug && slugStatus.state === 'taken') {
+      setError('Esa URL pública ya está en uso. Elige otra.');
+      return;
+    }
+    setSaving(true);
     try {
       const payload: Record<string, unknown> = { tradeName: form.tradeName.trim() };
+      if (nextSlug !== org?.slug) payload.slug = nextSlug;
       if (form.legalName.trim()) payload.legalName = form.legalName.trim();
       if (form.taxId.trim()) payload.taxId = form.taxId.trim();
       if (form.email.trim()) payload.email = form.email.trim();
@@ -182,6 +243,8 @@ export default function CompanyPage() {
       const updated = await api.updateMyOrganization(payload);
       setOrg(updated);
       setForm(toForm(updated));
+      setSlugEdited(false);
+      setSlugStatus({ state: 'idle' });
       setNotice('Datos de la empresa actualizados.');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo guardar');
@@ -247,6 +310,9 @@ export default function CompanyPage() {
       setUploadingLogo(false);
     }
   }
+
+  const previewSlug = form ? slugify(form.slug) : '';
+  const slugChanged = Boolean(org && previewSlug && previewSlug !== org.slug);
 
   return (
     <DashboardShell
@@ -460,6 +526,64 @@ export default function CompanyPage() {
                   required
                   className={INPUT_CLASS}
                 />
+              </label>
+
+              <label className="sm:col-span-2">
+                <span className="mb-1 block text-xs font-semibold text-slate-600">
+                  URL pública del perfil
+                </span>
+                <div className="flex items-stretch overflow-hidden rounded-lg border border-slate-200 focus-within:border-blue-500">
+                  <span className="flex select-none items-center bg-slate-50 px-3 text-sm text-slate-400">
+                    /empresa/
+                  </span>
+                  <input
+                    value={form.slug}
+                    onChange={(e) => {
+                      setSlugEdited(true);
+                      update('slug', e.target.value);
+                    }}
+                    onBlur={() => update('slug', slugify(form.slug))}
+                    disabled={!canEdit}
+                    spellCheck={false}
+                    autoCapitalize="none"
+                    aria-describedby="slug-help"
+                    className="min-w-0 flex-1 border-0 px-2 py-2 text-sm text-slate-900 outline-none disabled:bg-slate-50 disabled:text-slate-500"
+                  />
+                </div>
+                <p id="slug-help" className="mt-1 text-xs leading-relaxed">
+                  {slugStatus.state === 'checking' ? (
+                    <span className="text-slate-500">Comprobando disponibilidad…</span>
+                  ) : slugStatus.state === 'available' ? (
+                    <span className="text-emerald-700">Disponible.</span>
+                  ) : slugStatus.state === 'taken' ? (
+                    <span className="text-red-600">
+                      Ya está en uso.{' '}
+                      {slugStatus.suggestion && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSlugEdited(true);
+                            update('slug', slugStatus.suggestion ?? '');
+                          }}
+                          className="font-semibold underline underline-offset-2"
+                        >
+                          Usar {slugStatus.suggestion}
+                        </button>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">
+                      Se rellena con el nombre. Puedes cambiarla; dos empresas con el mismo nombre
+                      tendrán URLs distintas.
+                    </span>
+                  )}
+                </p>
+                {slugChanged && (
+                  <p className="mt-1 text-xs font-medium text-amber-700">
+                    Al guardar, la URL pública cambiará y los enlaces o sellos antiguos dejarán de
+                    funcionar.
+                  </p>
+                )}
               </label>
 
               <label>

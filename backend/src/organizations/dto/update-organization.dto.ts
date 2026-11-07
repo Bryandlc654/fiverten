@@ -7,6 +7,12 @@ export class UpdateOrganizationDto {
   @MaxLength(200)
   tradeName?: string;
 
+  /** URL pública del perfil (/empresa/<slug>). Se normaliza en el servidor. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  slug?: string;
+
   @IsOptional()
   @IsString()
   @MaxLength(500)

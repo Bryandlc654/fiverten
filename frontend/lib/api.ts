@@ -1651,6 +1651,14 @@ export const api = {
       body: JSON.stringify(payload),
     });
   },
+  /** Disponibilidad de la URL pública /empresa/<slug>. */
+  checkOrganizationSlug(slug: string): Promise<{
+    slug: string;
+    available: boolean;
+    suggestion: string | null;
+  }> {
+    return request(`/organizations/me/slug-availability?slug=${encodeURIComponent(slug)}`);
+  },
   listOrganizationLocations(): Promise<{ locations: OrganizationLocation[] }> {
     return request<{ locations: OrganizationLocation[] }>('/organizations/me/locations');
   },
