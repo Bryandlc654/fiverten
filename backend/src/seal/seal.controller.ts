@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Header,
-  NotFoundException,
-  Param,
-  Res,
-} from '@nestjs/common';
+import { Controller, Get, Header, NotFoundException, Param, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import sharp from 'sharp';
 import { PrismaService } from '../prisma/prisma.service';
@@ -14,16 +7,14 @@ import {
   type EffectiveVerificationStatus,
 } from '../verification/verification-status';
 
-const PALETTE: Record<
-  EffectiveVerificationStatus,
-  { color: string; soft: string; label: string }
-> = {
-  verified: { color: '#059669', soft: '#ecfdf5', label: 'Empresa verificada' },
-  pending: { color: '#d97706', soft: '#fffbeb', label: 'Verificación pendiente' },
-  expired: { color: '#64748b', soft: '#f8fafc', label: 'Verificación caducada' },
-  rejected: { color: '#dc2626', soft: '#fef2f2', label: 'Verificación rechazada' },
-  not_verified: { color: '#94a3b8', soft: '#f8fafc', label: 'Sin verificar' },
-};
+const PALETTE: Record<EffectiveVerificationStatus, { color: string; soft: string; label: string }> =
+  {
+    verified: { color: '#059669', soft: '#ecfdf5', label: 'Empresa verificada' },
+    pending: { color: '#d97706', soft: '#fffbeb', label: 'Verificación pendiente' },
+    expired: { color: '#64748b', soft: '#f8fafc', label: 'Verificación caducada' },
+    rejected: { color: '#dc2626', soft: '#fef2f2', label: 'Verificación rechazada' },
+    not_verified: { color: '#94a3b8', soft: '#f8fafc', label: 'Sin verificar' },
+  };
 
 function escapeXml(value: string): string {
   return value
@@ -89,6 +80,9 @@ export class SealController {
   @Get(':file')
   @Header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
   @Header('Access-Control-Allow-Origin', '*')
+  // El sello se inserta como <img> en webs de terceros. El CORP por defecto de
+  // helmet (same-origin) bloquearía esa carga entre orígenes.
+  @Header('Cross-Origin-Resource-Policy', 'cross-origin')
   async seal(
     @Param('file') file: string,
     @Res({ passthrough: true }) res: Response,
@@ -104,10 +98,7 @@ export class SealController {
       tx.organization.findFirst({
         where: {
           deletedAt: null,
-          OR: [
-            { publicId },
-            { publicBadge: { embedToken: publicId, state: 'active' } },
-          ],
+          OR: [{ publicId }, { publicBadge: { embedToken: publicId, state: 'active' } }],
         },
         select: {
           tradeName: true,

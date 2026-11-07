@@ -64,11 +64,7 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
     publicId = registered.body.organization.publicId as string;
     slug = registered.body.organization.slug as string;
 
-    await http()
-      .patch('/api/organizations/me')
-      .set(company())
-      .send({ isPublic: true })
-      .expect(200);
+    await http().patch('/api/organizations/me').set(company()).send({ isPublic: true }).expect(200);
 
     await http()
       .post(`${AUTH}/register`)
@@ -86,7 +82,11 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
 
     await http()
       .post(`${AUTH}/register`)
-      .send({ email: 'seal-verifier@fiverten.test', password: PASSWORD, companyName: 'Verificador Seal' })
+      .send({
+        email: 'seal-verifier@fiverten.test',
+        password: PASSWORD,
+        companyName: 'Verificador Seal',
+      })
       .expect(201);
     await prisma.user.update({
       where: { email: 'seal-verifier@fiverten.test' },
@@ -158,10 +158,7 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
     const list = await http().get(ADMIN).set(admin()).expect(200);
     expect(list.body.total).toBe(1);
 
-    const detail = await http()
-      .get(`${ADMIN}/${requestId}`)
-      .set(admin())
-      .expect(200);
+    const detail = await http().get(`${ADMIN}/${requestId}`).set(admin()).expect(200);
     expect(detail.body.documents).toHaveLength(4);
     expect(detail.body.projects).toHaveLength(1);
     expect(detail.body.projects[0].documents).toHaveLength(1);
@@ -211,9 +208,7 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
     // Nunca se exponen nombres de documentos privados.
     expect(JSON.stringify(publicData.body)).not.toContain('identity.pdf');
 
-    const directory = await http()
-      .get('/api/public/organizations?verified=true')
-      .expect(200);
+    const directory = await http().get('/api/public/organizations?verified=true').expect(200);
     expect(directory.body.facets.metrics.verifiedCompanies).toBeGreaterThanOrEqual(1);
     expect(directory.body.items[0]).toMatchObject({
       slug,
@@ -226,6 +221,7 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
 
     const svg = await http().get(`/api/seal/${publicId}.svg`).expect(200);
     expect(svg.headers['content-type']).toContain('image/svg+xml');
+    expect(svg.headers['cross-origin-resource-policy']).toBe('cross-origin');
     expect(svgText(svg)).toContain('Empresa verificada');
     expect(svgText(svg)).toContain('Sello SL');
 
@@ -272,10 +268,7 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
       credentialId: 'ISO-123',
     });
 
-    await http()
-      .delete(`${VERIFY}/certifications/${created.body.id}`)
-      .set(company())
-      .expect(400);
+    await http().delete(`${VERIFY}/certifications/${created.body.id}`).set(company()).expect(400);
   });
 
   it('vincula opiniones confirmadas a proyectos comprobados', async () => {
@@ -324,9 +317,7 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
     const verifiedReview = await prisma.review.findUniqueOrThrow({ where: { id: review.id } });
     expect(verifiedReview.verificationStatus).toBe('verified');
 
-    const form = await http()
-      .get(`/api/public/organizations/${slug}/review-form`)
-      .expect(200);
+    const form = await http().get(`/api/public/organizations/${slug}/review-form`).expect(200);
     expect(form.body.projects).toEqual([{ id: project.id, name: 'Proyecto de prueba' }]);
   });
 
@@ -385,10 +376,7 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
       .expect(200);
     expect(response.body).toEqual({ received: true });
 
-    const list = await http()
-      .get(`${ADMIN}/inquiries?status=new`)
-      .set(admin())
-      .expect(200);
+    const list = await http().get(`${ADMIN}/inquiries?status=new`).set(admin()).expect(200);
     expect(list.body.total).toBe(1);
     expect(list.body.items[0]).toMatchObject({
       companyName: 'Contacto SL',

@@ -29,6 +29,9 @@ export class WidgetController {
   @Header('Content-Type', 'application/javascript; charset=utf-8')
   @Header('Cache-Control', 'public, max-age=120, stale-while-revalidate=600')
   @Header('Access-Control-Allow-Origin', '*')
+  // El script se carga desde la web del cliente, que es otro origen. Sin esto,
+  // el CORP por defecto de helmet (same-origin) hace que el navegador lo bloquee.
+  @Header('Cross-Origin-Resource-Policy', 'cross-origin')
   async script(@Param('file') file: string): Promise<string> {
     const publicId = file.endsWith('.js') ? file.slice(0, -3) : file;
 
@@ -39,10 +42,7 @@ export class WidgetController {
           isActive: true,
           isPublic: true,
           status: 'active',
-          OR: [
-            { publicId },
-            { publicBadge: { embedToken: publicId, state: 'active' } },
-          ],
+          OR: [{ publicId }, { publicBadge: { embedToken: publicId, state: 'active' } }],
         },
         select: {
           id: true,
@@ -83,9 +83,10 @@ export class WidgetController {
     const stars = '★'.repeat(filled) + '☆'.repeat(Math.max(0, 5 - filled));
     const ratingText = average === null ? 'Sin reseñas' : `${average.toFixed(1)} / 5`;
     const countText = `${total} ${total === 1 ? 'reseña' : 'reseñas'}`;
-    const baseUrl = (
-      this.config.get<string>('FRONTEND_URL') ?? 'https://fiverten.com'
-    ).replace(/\/+$/, '');
+    const baseUrl = (this.config.get<string>('FRONTEND_URL') ?? 'https://fiverten.com').replace(
+      /\/+$/,
+      '',
+    );
     const profileUrl = `${baseUrl}/empresa/${encodeURIComponent(org.slug)}`;
     const verified = effectiveVerificationStatus(org) === 'verified';
     const name = escapeHtml(org.tradeName);

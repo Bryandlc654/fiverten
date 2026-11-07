@@ -70,6 +70,7 @@ describe('FIVERTEN widget embebible (e2e)', () => {
   it('sirve un script autocontenido con la reputación de la empresa', async () => {
     const response = await http().get(`/api/widget/${publicId}.js`).expect(200);
     expect(response.headers['content-type']).toContain('application/javascript');
+    expect(response.headers['cross-origin-resource-policy']).toBe('cross-origin');
     expect(response.text).toContain('Widget Dental');
     expect(response.text).toContain('5.0 / 5');
     expect(response.text).toContain('1 reseña');
