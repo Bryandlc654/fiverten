@@ -48,6 +48,17 @@ describe('FIVERTEN modelo completo (e2e)', () => {
     publicId = registered.body.organization.publicId as string;
 
     await request(app.getHttpServer())
+      .patch(ORG)
+      .set(company())
+      .send({
+        isPublic: true,
+        legalName: 'Modelo Completo SL',
+        taxId: 'B87654321',
+        description: 'Empresa de prueba del modelo completo.',
+      })
+      .expect(200);
+
+    await request(app.getHttpServer())
       .post(`${AUTH}/register`)
       .send({
         email: 'modelo-admin@fiverten.test',

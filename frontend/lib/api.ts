@@ -1121,6 +1121,12 @@ export interface VerificationStatusResponse {
   verifiedAt: string | null;
   expiresAt: string | null;
   canSubmit: boolean;
+  /** true solo cuando perfil, documentos y proyectos están completos. */
+  readyToSubmit?: boolean;
+  profile?: {
+    complete: boolean;
+    missing: { key: string; label: string }[];
+  };
   requirements: {
     requiredDocuments: string[];
     minProjects: number;

@@ -203,8 +203,13 @@ export default function VerificationPage() {
   );
   const minProjects = data.requirements.minProjects;
   const missingProjects = Math.max(0, minProjects - projects.length);
+  const profileMissing = data.profile?.missing ?? [];
   const canSend =
-    data.canSubmit && request?.status === 'draft' && missing.length === 0 && missingProjects === 0;
+    data.canSubmit &&
+    request?.status === 'draft' &&
+    profileMissing.length === 0 &&
+    missing.length === 0 &&
+    missingProjects === 0;
   const origin = typeof window === 'undefined' ? 'https://fiverten.com' : window.location.origin;
   const renewalDays = data.requirements.renewalDays;
   const reminderDays = data.requirements.reminderDays ?? renewalDays;
@@ -249,6 +254,19 @@ export default function VerificationPage() {
           <Alert tone="warning">
             <strong>Tu verificación ha caducado.</strong> El sello ya no se muestra como verificado
             en tu web. Envía una nueva solicitud para recuperarlo.
+          </Alert>
+        )}
+
+        {data.canSubmit && profileMissing.length > 0 && (
+          <Alert tone="warning">
+            <strong>Completa tu perfil antes de solicitar la verificación.</strong> Faltan:{' '}
+            {profileMissing.map((item) => item.label).join(', ')}.{' '}
+            <Link
+              href="/app/perfil"
+              className="font-semibold underline underline-offset-2 hover:text-amber-900"
+            >
+              Completar perfil
+            </Link>
           </Alert>
         )}
 
@@ -562,6 +580,72 @@ export default function VerificationPage() {
                 ` Al aprobarla, la verificación se renueva por ${data.requirements.expiryDays} días.`}
             </p>
 
+            <ul className="mt-3 space-y-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs leading-relaxed text-slate-600">
+              <li className="flex items-start gap-2">
+                <span
+                  className={
+                    profileMissing.length === 0 ? 'text-emerald-600' : 'font-bold text-amber-600'
+                  }
+                >
+                  {profileMissing.length === 0 ? '✓' : '○'}
+                </span>
+                <span>
+                  <strong className="text-slate-800">Perfil:</strong>{' '}
+                  {profileMissing.length === 0
+                    ? 'completo'
+                    : `faltan ${profileMissing.map((item) => item.label).join(', ')}`}
+                  {profileMissing.length > 0 && (
+                    <>
+                      {' · '}
+                      <Link
+                        href="/app/perfil"
+                        className="font-semibold text-blue-700 hover:underline"
+                      >
+                        Completar perfil
+                      </Link>
+                    </>
+                  )}
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span
+                  className={missing.length === 0 ? 'text-emerald-600' : 'font-bold text-amber-600'}
+                >
+                  {missing.length === 0 ? '✓' : '○'}
+                </span>
+                <span>
+                  <strong className="text-slate-800">Documentos:</strong>{' '}
+                  {missing.length === 0
+                    ? 'completos'
+                    : `faltan ${missing.map((item) => CATEGORIES[item] ?? item).join(', ')}`}
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span
+                  className={
+                    missingProjects === 0 ? 'text-emerald-600' : 'font-bold text-amber-600'
+                  }
+                >
+                  {missingProjects === 0 ? '✓' : '○'}
+                </span>
+                <span>
+                  <strong className="text-slate-800">Proyectos:</strong> {projects.length} de{' '}
+                  {minProjects}
+                  {missingProjects > 0 && (
+                    <>
+                      {' · '}
+                      <Link
+                        href="/app/proyectos"
+                        className="font-semibold text-blue-700 hover:underline"
+                      >
+                        Añadir proyectos
+                      </Link>
+                    </>
+                  )}
+                </span>
+              </li>
+            </ul>
+
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-[220px_1fr]">
               <Field label="Tipo de documento" className="block">
                 <select
@@ -656,11 +740,13 @@ export default function VerificationPage() {
               </button>
               {!canSend && (
                 <span className="ml-3 text-xs text-slate-500">
-                  {missingProjects > 0
-                    ? `Añade al menos ${minProjects} proyecto(s) en Proyectos para poder enviar.`
-                    : missing.length > 0
-                      ? 'Sube los documentos obligatorios que faltan.'
-                      : 'Completa los requisitos para poder enviar la solicitud.'}
+                  {profileMissing.length > 0
+                    ? 'Completa tu perfil para poder enviar la solicitud.'
+                    : missingProjects > 0
+                      ? `Añade al menos ${minProjects} proyecto(s) en Proyectos para poder enviar.`
+                      : missing.length > 0
+                        ? 'Sube los documentos obligatorios que faltan.'
+                        : 'Completa los requisitos para poder enviar la solicitud.'}
                 </span>
               )}
             </div>

@@ -65,8 +65,16 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
     publicId = registered.body.organization.publicId as string;
     slug = registered.body.organization.slug as string;
 
-    await http().patch('/api/organizations/me').set(company()).send({ isPublic: true }).expect(200);
-
+    await http()
+      .patch('/api/organizations/me')
+      .set(company())
+      .send({
+        isPublic: true,
+        legalName: 'Sello SL',
+        taxId: 'B12345678',
+        description: 'Empresa de prueba para la verificación.',
+      })
+      .expect(200);
     await http()
       .post(`${AUTH}/register`)
       .send({ email: 'seal-admin@fiverten.test', password: PASSWORD, companyName: 'Admin Seal' })
@@ -515,5 +523,40 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
     expect(status.body.canSubmit).toBe(true);
     const svg = await http().get(`/api/seal/${publicId}.svg`).expect(200);
     expect(svgText(svg)).toContain('Verificación caducada');
+  });
+
+  it('bloquea el envío hasta completar los datos imprescindibles del perfil', async () => {
+    const registered = await http()
+      .post(`${AUTH}/register`)
+      .send({
+        email: 'perfil-incompleto@fiverten.test',
+        password: PASSWORD,
+        companyName: 'Perfil Incompleto SL',
+      })
+      .expect(201);
+    const token = registered.body.accessToken as string;
+
+    const status = await http()
+      .get(VERIFY)
+      .set({ Authorization: `Bearer ${token}` })
+      .expect(200);
+    expect(status.body.profile.complete).toBe(false);
+    expect(status.body.profile.missing).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: 'taxId' }),
+        expect.objectContaining({ key: 'description' }),
+        expect.objectContaining({ key: 'isPublic' }),
+      ]),
+    );
+    expect(status.body.readyToSubmit).toBe(false);
+    // El proceso sigue abierto: puede subir documentos y proyectos.
+    expect(status.body.canSubmit).toBe(true);
+
+    const blocked = await http()
+      .post(`${VERIFY}/submit`)
+      .set({ Authorization: `Bearer ${token}` })
+      .expect(400);
+    expect(blocked.body.message).toContain('Completa tu perfil');
+    expect(blocked.body.message).toContain('CIF / NIF');
   });
 });

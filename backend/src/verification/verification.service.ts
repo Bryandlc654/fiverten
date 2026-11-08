@@ -18,6 +18,7 @@ import {
   VerificationInquiryDto,
 } from './dto/verification.dto';
 import { effectiveVerificationStatus } from './verification-status';
+import { missingProfileRequirements } from './company-profile-requirements';
 
 export interface VerificationUpload {
   buffer: Buffer;
@@ -215,6 +216,11 @@ export class VerificationService {
         select: {
           id: true,
           tradeName: true,
+          legalName: true,
+          taxId: true,
+          email: true,
+          description: true,
+          isPublic: true,
           slug: true,
           publicId: true,
           verificationStatus: true,
@@ -309,6 +315,21 @@ export class VerificationService {
           status === 'expired' ||
           (status === 'verified' && renewalWindow));
 
+      const required = Array.isArray(requiredDocs) ? requiredDocs : ['identity', 'tax', 'address'];
+      const documentCategories = new Set(
+        (request?.documents ?? []).map((document) => document.category),
+      );
+      const missingDocuments = required.filter((category) => !documentCategories.has(category));
+      const projectCount = request?.projects.length ?? 0;
+      const minProjectCount = Number(minProjects) || 1;
+      const profileMissing = missingProfileRequirements(org);
+      const readyToSubmit =
+        canSubmit &&
+        request?.status === 'draft' &&
+        profileMissing.length === 0 &&
+        missingDocuments.length === 0 &&
+        projectCount >= minProjectCount;
+
       return {
         organization: org,
         status,
@@ -316,11 +337,14 @@ export class VerificationService {
         expiresAt: org.verificationExpiresAt,
         badge,
         canSubmit,
+        readyToSubmit,
+        profile: {
+          complete: profileMissing.length === 0,
+          missing: profileMissing,
+        },
         requirements: {
-          requiredDocuments: Array.isArray(requiredDocs)
-            ? requiredDocs
-            : ['identity', 'tax', 'address'],
-          minProjects: Number(minProjects) || 1,
+          requiredDocuments: required,
+          minProjects: minProjectCount,
           reviewDays: Number(reviewDays) || 5,
           expiryDays: Number(expiryDays) || 365,
           renewalDays: Number(renewalDays) || 30,
@@ -623,9 +647,26 @@ export class VerificationService {
     return this.prisma.withContext({ orgId }, async (tx) => {
       const org = await tx.organization.findFirst({
         where: { id: orgId, deletedAt: null },
-        select: { verificationStatus: true, verificationExpiresAt: true },
+        select: {
+          verificationStatus: true,
+          verificationExpiresAt: true,
+          legalName: true,
+          taxId: true,
+          email: true,
+          description: true,
+          isPublic: true,
+        },
       });
       if (!org) throw new NotFoundException('Empresa no encontrada');
+
+      const missingProfile = missingProfileRequirements(org);
+      if (missingProfile.length > 0) {
+        throw new BadRequestException(
+          `Completa tu perfil antes de solicitar la verificación: ${missingProfile
+            .map((item) => item.label)
+            .join(', ')}`,
+        );
+      }
 
       const request = await tx.verificationRequest.findFirst({
         where: { organizationId: orgId, status: 'draft' },
