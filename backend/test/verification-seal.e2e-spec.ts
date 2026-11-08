@@ -11,6 +11,7 @@ const AUTH = '/api/auth';
 const VERIFY = '/api/organizations/me/verification';
 const ADMIN = '/api/admin/verifications';
 const PASSWORD = 'Secret1234';
+const DAY_MS = 86_400_000;
 
 describe('FIVERTEN verificación y sello (e2e)', () => {
   type HttpAgent = ReturnType<typeof request>;
@@ -230,6 +231,79 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
     expect(png.body.length).toBeGreaterThan(100);
   });
 
+  it('permite renovar dentro de los 30 días previos al vencimiento', async () => {
+    // Fuera de la ventana de renovación no se pueden tocar los proyectos.
+    const tooEarly = await http()
+      .post(`${VERIFY}/projects`)
+      .set(company())
+      .send({ name: 'Proyecto fuera de plazo' })
+      .expect(400);
+    expect(tooEarly.body.message).toContain('sigue vigente');
+
+    // Simulamos el día 355: quedan 10 días para que caduque.
+    const org = await prisma.organization.findFirstOrThrow({ where: { publicId } });
+    await prisma.organization.update({
+      where: { id: org.id },
+      data: {
+        verificationStatus: 'verified',
+        verificationExpiresAt: new Date(Date.now() + 10 * DAY_MS),
+      },
+    });
+
+    const beforeRenewal = await http().get(VERIFY).set(company()).expect(200);
+    expect(beforeRenewal.body.status).toBe('verified');
+    expect(beforeRenewal.body.canSubmit).toBe(true);
+    expect(new Date(beforeRenewal.body.expiresAt).getTime()).toBeGreaterThan(Date.now());
+
+    await upload('identity').expect(201);
+    await upload('tax').expect(201);
+    await upload('address').expect(201);
+    await http()
+      .post(`${VERIFY}/projects`)
+      .set(company())
+      .send({
+        name: 'Proyecto de renovación',
+        description: 'Evidencia para renovar la verificación',
+        projectType: 'obra_nueva',
+        city: 'Valencia',
+        year: 2025,
+        status: 'completed',
+      })
+      .expect(201);
+
+    const renewed = await http().post(`${VERIFY}/submit`).set(company()).expect(200);
+    requestId = renewed.body.id as string;
+    expect(renewed.body.status).toBe('submitted');
+    expect(renewed.body.events[0]).toMatchObject({
+      action: 'renewal_submitted',
+      previousStatus: 'verified',
+      newStatus: 'verified',
+    });
+
+    const pendingStatus = await http().get(VERIFY).set(company()).expect(200);
+    // La empresa sigue verificada mientras FIVERTEN revisa la renovación,
+    // pero no puede enviar otra solicitud.
+    expect(pendingStatus.body.status).toBe('verified');
+    expect(pendingStatus.body.canSubmit).toBe(false);
+
+    await http()
+      .post(`${ADMIN}/${requestId}/approve`)
+      .set(admin())
+      .send({ expiresInDays: 365, note: 'Renovación correcta' })
+      .expect(200);
+
+    const afterRenewal = await http().get(VERIFY).set(company()).expect(200);
+    expect(afterRenewal.body.status).toBe('verified');
+    expect(new Date(afterRenewal.body.expiresAt).getTime()).toBeGreaterThan(
+      Date.now() + 300 * DAY_MS,
+    );
+
+    const publicData = await http()
+      .get(`/api/public/organizations/${slug}/verification`)
+      .expect(200);
+    expect(publicData.body.status).toBe('verified');
+  });
+
   it('valida certificaciones externas y las publica solo tras aprobarlas', async () => {
     const created = await http()
       .post(`${VERIFY}/certifications`)
@@ -273,9 +347,17 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
 
   it('vincula opiniones confirmadas a proyectos comprobados', async () => {
     const org = await prisma.organization.findFirstOrThrow({ where: { slug } });
-    const project = await prisma.verificationProject.findFirstOrThrow({
-      where: { organizationId: org.id },
+    // El proyecto debe pertenecer a la última solicitud aprobada (tras la
+    // renovación hay más de una solicitud aprobada).
+    const approved = await prisma.verificationRequest.findFirstOrThrow({
+      where: { organizationId: org.id, status: 'approved' },
+      orderBy: { reviewedAt: 'desc' },
+      include: { projects: { take: 1 } },
     });
+    const project = approved.projects[0];
+    if (!project) {
+      throw new Error('La solicitud aprobada no tiene proyectos');
+    }
     await prisma.reviewRequest.create({
       data: {
         organizationId: org.id,
@@ -318,7 +400,7 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
     expect(verifiedReview.verificationStatus).toBe('verified');
 
     const form = await http().get(`/api/public/organizations/${slug}/review-form`).expect(200);
-    expect(form.body.projects).toEqual([{ id: project.id, name: 'Proyecto de prueba' }]);
+    expect(form.body.projects).toEqual([{ id: project.id, name: project.name }]);
   });
 
   it('no marca como verificada una reseña con otro correo', async () => {
@@ -429,6 +511,8 @@ describe('FIVERTEN verificación y sello (e2e)', () => {
 
     const status = await http().get(VERIFY).set(company()).expect(200);
     expect(status.body.status).toBe('expired');
+    // Caducada sigue permitiendo enviar una nueva solicitud.
+    expect(status.body.canSubmit).toBe(true);
     const svg = await http().get(`/api/seal/${publicId}.svg`).expect(200);
     expect(svgText(svg)).toContain('Verificación caducada');
   });

@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import DashboardShell from '../../components/DashboardShell';
 import PlatformDashboard from '../../components/PlatformDashboard';
@@ -133,9 +134,21 @@ export default function DashboardPage() {
 
   const roleText = roleLabel(role);
   const company = organization?.tradeName ?? 'Sin organización';
-  const isVerified = organization?.verificationStatus === 'verified';
-  // El estado efectivo caduca: miVerification() ya devuelve "expired" si toca.
-  const sealVerified = verification ? verification.status === 'verified' : isVerified;
+  // Para el estado efectivo manda miVerification(): caduca al pasar la fecha.
+  const isVerified = verification
+    ? verification.status === 'verified'
+    : organization?.verificationStatus === 'verified';
+  const sealVerified = isVerified;
+  const renewalDays = verification?.requirements.renewalDays ?? 30;
+  const expiresAt = verification?.expiresAt ? new Date(verification.expiresAt) : null;
+  const daysToExpiry = expiresAt
+    ? Math.ceil((expiresAt.getTime() - Date.now()) / 86_400_000)
+    : null;
+  const renewalDue =
+    verification?.status === 'verified' && daysToExpiry !== null && daysToExpiry <= renewalDays;
+  const expiryLabel = expiresAt
+    ? expiresAt.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+    : '';
   const publicUrl = organization?.slug
     ? `${origin}/empresa/${organization.slug}`
     : `${origin}/mi-empresa`;
@@ -169,6 +182,45 @@ export default function DashboardPage() {
             >
               {sendingVerification ? 'Enviando…' : 'Reenviar verificación'}
             </button>
+          </div>
+        )}
+
+        {renewalDue && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <span className="flex items-start gap-2">
+              <span className="material-symbols-outlined text-[18px]">verified_user</span>
+              <span>
+                <strong>Tu verificación caduca el {expiryLabel}.</strong>{' '}
+                {daysToExpiry !== null && daysToExpiry >= 0
+                  ? `Quedan ${daysToExpiry} ${daysToExpiry === 1 ? 'día' : 'días'}. `
+                  : ''}
+                Solicita la renovación para no perder el sello.
+              </span>
+            </span>
+            <Link
+              href="/app/sello"
+              className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-600"
+            >
+              Renovar verificación
+            </Link>
+          </div>
+        )}
+
+        {verification?.status === 'expired' && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            <span className="flex items-start gap-2">
+              <span className="material-symbols-outlined text-[18px]">gpp_bad</span>
+              <span>
+                <strong>Tu verificación ha caducado.</strong> El sello ya no se muestra como
+                verificado. Envía una nueva solicitud para recuperarlo.
+              </span>
+            </span>
+            <Link
+              href="/app/sello"
+              className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
+            >
+              Solicitar verificación
+            </Link>
           </div>
         )}
 

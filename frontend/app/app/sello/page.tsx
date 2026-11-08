@@ -57,6 +57,8 @@ const DOC_STATUSES: Record<string, string> = {
   revoked: 'Revocada',
 };
 
+const DAY_MS = 86_400_000;
+
 function formatDate(value: string | null): string {
   if (!value) return '—';
   return new Date(value).toLocaleDateString('es-ES', {
@@ -204,6 +206,12 @@ export default function VerificationPage() {
   const canSend =
     data.canSubmit && request?.status === 'draft' && missing.length === 0 && missingProjects === 0;
   const origin = typeof window === 'undefined' ? 'https://fiverten.com' : window.location.origin;
+  const renewalDays = data.requirements.renewalDays;
+  const daysToExpiry = data.expiresAt
+    ? Math.ceil((new Date(data.expiresAt).getTime() - Date.now()) / DAY_MS)
+    : null;
+  const renewalDue =
+    data.status === 'verified' && daysToExpiry !== null && daysToExpiry <= renewalDays;
   const badge = data.badge;
   const sealToken = badge?.embedToken ?? data.organization.publicId;
   const profileUrl = badge?.currentUrl
@@ -222,6 +230,24 @@ export default function VerificationPage() {
       <div className="mx-auto max-w-4xl space-y-5">
         {error && <Alert tone="error">{error}</Alert>}
         {notice && <Alert tone="success">{notice}</Alert>}
+
+        {renewalDue && (
+          <Alert tone="warning">
+            <strong>Tu verificación caduca el {formatDate(data.expiresAt)}</strong>
+            {daysToExpiry !== null && daysToExpiry >= 0
+              ? ` (quedan ${daysToExpiry} ${daysToExpiry === 1 ? 'día' : 'días'})`
+              : ''}
+            . Ya puedes solicitar la renovación en el bloque «Solicitar renovación»: vuelve a
+            aportar la documentación y al menos {minProjects} proyecto(s).
+          </Alert>
+        )}
+
+        {data.status === 'expired' && (
+          <Alert tone="warning">
+            <strong>Tu verificación ha caducado.</strong> El sello ya no se muestra como verificado
+            en tu web. Envía una nueva solicitud para recuperarlo.
+          </Alert>
+        )}
 
         <section className="rounded-xl border border-slate-200 bg-white p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -529,6 +555,8 @@ export default function VerificationPage() {
             <p className="mt-1 text-xs text-slate-500">
               Sube aquí los documentos obligatorios. Los proyectos y sus evidencias se gestionan en
               el módulo Proyectos; después vuelve para enviar la solicitud.
+              {data.status === 'verified' &&
+                ` Al aprobarla, la verificación se renueva por ${data.requirements.expiryDays} días.`}
             </p>
 
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-[220px_1fr]">
