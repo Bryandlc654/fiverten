@@ -190,11 +190,7 @@ export class BillingService {
     return { subscription: { ...this.subscriptionView(row), events } };
   }
 
-  async upsertOrganizationSubscription(
-    orgId: string,
-    dto: UpsertSubscriptionDto,
-    actorId: string,
-  ) {
+  async upsertOrganizationSubscription(orgId: string, dto: UpsertSubscriptionDto, actorId: string) {
     return this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
       const organization = await tx.organization.findFirst({
         where: { id: orgId, deletedAt: null },
@@ -354,7 +350,9 @@ export class BillingService {
           type: 'cancelled',
           fromStatus: existing.status,
           toStatus: updated.status,
-          note: dto.note ?? (dto.immediate ? 'Cancelación inmediata' : 'Cancelación al final del periodo'),
+          note:
+            dto.note ??
+            (dto.immediate ? 'Cancelación inmediata' : 'Cancelación al final del periodo'),
           actorUserId: actorId,
         },
       });
@@ -410,7 +408,11 @@ export class BillingService {
           reference: dto.reference?.trim() || null,
           periodStart: dto.periodStart ? new Date(dto.periodStart) : null,
           periodEnd: dto.periodEnd ? new Date(dto.periodEnd) : null,
-          paidAt: dto.paidAt ? new Date(dto.paidAt) : (dto.status ?? 'paid') === 'paid' ? new Date() : null,
+          paidAt: dto.paidAt
+            ? new Date(dto.paidAt)
+            : (dto.status ?? 'paid') === 'paid'
+              ? new Date()
+              : null,
           createdBy: actorId,
         },
         include: { organization: { select: { id: true, tradeName: true, slug: true } } },
@@ -427,8 +429,7 @@ export class BillingService {
         where: { id },
         data: {
           status: dto.status,
-          paidAt:
-            dto.status === 'paid' ? (existing.paidAt ?? new Date()) : undefined,
+          paidAt: dto.status === 'paid' ? (existing.paidAt ?? new Date()) : undefined,
         },
         include: { organization: { select: { id: true, tradeName: true, slug: true } } },
       });
@@ -449,12 +450,24 @@ export class BillingService {
         },
       });
       const plan = subscription?.plan ?? (await tx.plan.findFirst({ where: { code: 'free' } }));
+      const window = this.reviewWindow(subscription);
       const [members, pendingInvitations, reviews] = await Promise.all([
         tx.organizationMembership.count({ where: { organizationId: orgId, isActive: true } }),
         tx.organizationInvitation.count({
-          where: { organizationId: orgId, acceptedAt: null, revokedAt: null, expiresAt: { gt: new Date() } },
+          where: {
+            organizationId: orgId,
+            acceptedAt: null,
+            revokedAt: null,
+            expiresAt: { gt: new Date() },
+          },
         }),
-        tx.review.count({ where: { organizationId: orgId, deletedAt: null } }),
+        tx.review.count({
+          where: {
+            organizationId: orgId,
+            deletedAt: null,
+            createdAt: { gte: window.from, lte: window.to },
+          },
+        }),
       ]);
       return {
         subscription: subscription ? this.subscriptionView(subscription) : null,
@@ -489,8 +502,6 @@ export class BillingService {
       }
 
       const now = new Date();
-      const periodStart = subscription?.currentPeriodStart ?? now;
-      const periodEnd = subscription?.currentPeriodEnd ?? addMonths(now, 1);
 
       const [members, invitations] = await Promise.all([
         tx.organizationMembership.count({ where: { organizationId: orgId, isActive: true } }),
@@ -511,14 +522,12 @@ export class BillingService {
       }
 
       if (plan.reviewLimit !== null) {
+        const window = this.reviewWindow(subscription, now);
         const reviewCount = await tx.review.count({
           where: {
             organizationId: orgId,
             deletedAt: null,
-            createdAt: {
-              gte: periodStart,
-              lte: periodEnd.getTime() > now.getTime() ? now : periodEnd,
-            },
+            createdAt: { gte: window.from, lte: window.to },
           },
         });
         if (reviewCount > plan.reviewLimit) {
@@ -628,13 +637,17 @@ export class BillingService {
     });
     const plan = subscription?.plan ?? (await tx.plan.findFirst({ where: { code: 'free' } }));
     if (!plan?.reviewLimit) return;
-    const from = subscription?.currentPeriodStart ?? new Date(Date.now() - MONTH_MS);
-    const to = subscription?.currentPeriodEnd ?? new Date();
+
+    // Los planes gratuitos no renuevan su periodo automáticamente. Si el
+    // periodo guardado ya venció, usamos una ventana móvil de 30 días para que
+    // el límite siga aplicándose (antes dejaba de contar reseñas nuevas).
+    const { from, to } = this.reviewWindow(subscription);
+
     const used = await tx.review.count({
       where: {
         organizationId: orgId,
         deletedAt: null,
-        createdAt: { gte: from, lte: to > new Date() ? new Date() : to },
+        createdAt: { gte: from, lte: to },
       },
     });
     if (used >= plan.reviewLimit) {
@@ -683,7 +696,10 @@ export class BillingService {
       const seriesMap = new Map<string, number>();
       for (let i = 0; i < 12; i += 1) {
         const date = new Date(Date.UTC(yearAgo.getUTCFullYear(), yearAgo.getUTCMonth() + i, 1));
-        seriesMap.set(`${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`, 0);
+        seriesMap.set(
+          `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`,
+          0,
+        );
       }
       let last30 = 0;
       const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -718,6 +734,17 @@ export class BillingService {
   // ---------------------------------------------------------------------------
   // Internos
   // ---------------------------------------------------------------------------
+  /** Ventana de conteo de reseñas: periodo de la suscripción o últimos 30 días. */
+  private reviewWindow(
+    subscription: { currentPeriodStart: Date; currentPeriodEnd: Date } | null,
+    now = new Date(),
+  ): { from: Date; to: Date } {
+    if (subscription && subscription.currentPeriodEnd.getTime() > now.getTime()) {
+      return { from: subscription.currentPeriodStart, to: now };
+    }
+    return { from: new Date(now.getTime() - MONTH_MS), to: now };
+  }
+
   private async planFor(tx: Prisma.TransactionClient, orgId: string) {
     const subscription = await tx.subscription.findUnique({
       where: { organizationId: orgId },

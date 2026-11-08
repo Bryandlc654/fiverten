@@ -46,7 +46,11 @@ describe('FIVERTEN membresías, suscripciones y pagos (e2e)', () => {
 
     await http()
       .post(`${AUTH}/register`)
-      .send({ email: 'billing-admin@fiverten.test', password: PASSWORD, companyName: 'Admin Billing' })
+      .send({
+        email: 'billing-admin@fiverten.test',
+        password: PASSWORD,
+        companyName: 'Admin Billing',
+      })
       .expect(201);
     await prisma.user.update({
       where: { email: 'billing-admin@fiverten.test' },
@@ -115,10 +119,7 @@ describe('FIVERTEN membresías, suscripciones y pagos (e2e)', () => {
     const stats = await http().get(`${ADMIN}/billing/stats`).set(auth(adminToken)).expect(200);
     expect(stats.body.subscriptions).toMatchObject({ total: 1, active: 1 });
 
-    const company = await http()
-      .get(`${TENANT}/subscription`)
-      .set(auth(ownerToken))
-      .expect(200);
+    const company = await http().get(`${TENANT}/subscription`).set(auth(ownerToken)).expect(200);
     expect(company.body.plan).toMatchObject({ code: 'free' });
     expect(company.body.usage.users).toBe(1);
   });
@@ -169,6 +170,30 @@ describe('FIVERTEN membresías, suscripciones y pagos (e2e)', () => {
     const blocked = await http()
       .post(`${PUBLIC}/organizations/${slug}/reviews`)
       .send(review('limite2@cliente.test'))
+      .expect(403);
+    expect(blocked.body.message).toContain('límite');
+  });
+
+  it('sigue aplicando el límite de reseñas cuando el periodo de la suscripción ha vencido', async () => {
+    // Los planes gratuitos no renuevan el periodo automáticamente: el límite
+    // debe seguir contando con una ventana móvil en vez de dejar de aplicarse.
+    await prisma.subscription.update({
+      where: { organizationId: orgId },
+      data: {
+        currentPeriodStart: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000),
+        currentPeriodEnd: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    const blocked = await http()
+      .post(`${PUBLIC}/organizations/${slug}/reviews`)
+      .send({
+        name: 'Cliente Límite',
+        email: 'limite3@cliente.test',
+        rating: 5,
+        body: 'Una experiencia correcta para probar el límite del plan.',
+        consent: true,
+      })
       .expect(403);
     expect(blocked.body.message).toContain('límite');
   });
