@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import HomeHeader from '../components/public/HomeHeader';
 import PublicFooter from '../components/public/PublicFooter';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { api, resolveAssetUrl, type PublicOrganizationSummary } from '../lib/api';
 
 const FAQS = [
   {
@@ -98,6 +99,13 @@ export default function HomePage() {
   const [searchMessage, setSearchMessage] = useState('');
   const [copied, setCopied] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [suggestions, setSuggestions] = useState<PublicOrganizationSummary[]>([]);
+  const [suggestionsTotal, setSuggestionsTotal] = useState(0);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState(false);
+  const searchBoxRef = useRef<HTMLDivElement>(null);
+  const query = search.trim();
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -116,6 +124,59 @@ export default function HomePage() {
     return () => observer.disconnect();
   }, []);
 
+  // Sugerencias del directorio mientras se escribe, sin salir de la home.
+  useEffect(() => {
+    if (query.length < 2) {
+      setSuggestions([]);
+      setSuggestionsTotal(0);
+      setSearching(false);
+      setSearchError(false);
+      return;
+    }
+    setSuggestionsOpen(true);
+    setSearching(true);
+    setSearchError(false);
+    let active = true;
+    const timer = window.setTimeout(() => {
+      api
+        .publicOrganizations({ search: query, page: 1, pageSize: 6, sort: 'relevance' })
+        .then((data) => {
+          if (!active) return;
+          setSuggestions(data.items);
+          setSuggestionsTotal(data.total);
+        })
+        .catch(() => {
+          if (!active) return;
+          setSuggestions([]);
+          setSuggestionsTotal(0);
+          setSearchError(true);
+        })
+        .finally(() => {
+          if (active) setSearching(false);
+        });
+    }, 250);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [query]);
+
+  useEffect(() => {
+    function onClick(event: MouseEvent) {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(event.target as Node)) {
+        setSuggestionsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, []);
+
+  function onSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'Escape') {
+      setSuggestionsOpen(false);
+    }
+  }
+
   function onSearch(event: FormEvent) {
     event.preventDefault();
     const value = search.trim();
@@ -123,7 +184,8 @@ export default function HomePage() {
       setSearchMessage('Escribe el nombre de una empresa o un servicio para comenzar.');
       return;
     }
-    setSearchMessage(`Buscando “${value}” en el directorio…`);
+    setSuggestionsOpen(false);
+    setSearchMessage(`Mostrando resultados de “${value}” en el directorio.`);
     router.push(`/empresas?search=${encodeURIComponent(value)}`);
   }
 
@@ -299,37 +361,136 @@ export default function HomePage() {
                 experiencias de clientes.
               </p>
             </div>
-            <form
-              onSubmit={onSearch}
-              className="home-reveal mx-auto mt-10 flex max-w-3xl flex-col gap-2 rounded-2xl border border-slate-200 bg-paper p-2 shadow-card sm:flex-row"
-            >
-              <div className="flex flex-1 items-center gap-3 px-4">
-                <svg
-                  className="h-5 w-5 shrink-0 text-slate-400"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                >
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="m16 16 4 4" />
-                </svg>
-                <input
-                  type="search"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Busca por nombre o servicio…"
-                  className="w-full bg-transparent py-3 text-sm outline-none placeholder:text-slate-400"
-                  aria-label="Buscar empresas"
-                />
-              </div>
-              <button
-                className="rounded-xl bg-ink px-8 py-3 font-semibold text-white transition hover:bg-blue-700"
-                type="submit"
+            <div ref={searchBoxRef} className="home-reveal relative z-20 mx-auto mt-10 max-w-3xl">
+              <form
+                onSubmit={onSearch}
+                className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-paper p-2 shadow-card sm:flex-row"
               >
-                Buscar <span className="ml-2 text-aqua">→</span>
-              </button>
-            </form>
+                <div className="flex flex-1 items-center gap-3 px-4">
+                  <svg
+                    className="h-5 w-5 shrink-0 text-slate-400"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  >
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m16 16 4 4" />
+                  </svg>
+                  <input
+                    type="search"
+                    value={search}
+                    onChange={(event) => {
+                      setSearch(event.target.value);
+                      setSearchMessage('');
+                      setSuggestionsOpen(true);
+                    }}
+                    onFocus={() => {
+                      if (query.length >= 2) setSuggestionsOpen(true);
+                    }}
+                    onKeyDown={onSearchKeyDown}
+                    placeholder="Busca por nombre o servicio…"
+                    className="w-full bg-transparent py-3 text-sm outline-none placeholder:text-slate-400"
+                    aria-label="Buscar empresas"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded={suggestionsOpen && query.length >= 2}
+                    aria-controls="home-search-suggestions"
+                    autoComplete="off"
+                  />
+                </div>
+                <button
+                  className="rounded-xl bg-ink px-8 py-3 font-semibold text-white transition hover:bg-blue-700"
+                  type="submit"
+                >
+                  Buscar <span className="ml-2 text-aqua">→</span>
+                </button>
+              </form>
+
+              {suggestionsOpen && query.length >= 2 && (
+                <div
+                  id="home-search-suggestions"
+                  className="absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-xl"
+                  aria-live="polite"
+                >
+                  {searching && suggestions.length === 0 ? (
+                    <p className="px-4 py-4 text-sm text-slate-500">Buscando empresas…</p>
+                  ) : searchError ? (
+                    <p className="px-4 py-4 text-sm text-red-600">
+                      No se pudo buscar ahora mismo. Inténtalo de nuevo.
+                    </p>
+                  ) : suggestions.length === 0 ? (
+                    <p className="px-4 py-4 text-sm text-slate-500">
+                      No encontramos empresas para “{query}”. Prueba con otro nombre o servicio.
+                    </p>
+                  ) : (
+                    <>
+                      <ul className="divide-y divide-slate-100">
+                        {suggestions.map((item) => (
+                          <li key={item.slug}>
+                            <Link
+                              href={`/empresa/${item.slug}`}
+                              onClick={() => setSuggestionsOpen(false)}
+                              className="flex items-center gap-3 px-4 py-3 transition hover:bg-slate-50"
+                            >
+                              <span className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700">
+                                {item.logoUrl ? (
+                                  <Image
+                                    src={resolveAssetUrl(item.logoUrl) ?? item.logoUrl}
+                                    alt=""
+                                    fill
+                                    sizes="40px"
+                                    className="object-contain p-1"
+                                  />
+                                ) : (
+                                  item.tradeName.slice(0, 2).toUpperCase()
+                                )}
+                              </span>
+                              <span className="min-w-0 flex-1">
+                                <span className="flex items-center gap-1.5">
+                                  <span className="truncate text-sm font-semibold text-slate-900">
+                                    {item.tradeName}
+                                  </span>
+                                  {item.verified && (
+                                    <Image
+                                      src="/sello-fiverten-verificado.png"
+                                      alt="Empresa verificada"
+                                      width={512}
+                                      height={512}
+                                      className="h-4 w-4 shrink-0"
+                                    />
+                                  )}
+                                </span>
+                                <span className="mt-0.5 block truncate text-xs text-slate-500">
+                                  {[item.sector?.name, item.country?.name]
+                                    .filter(Boolean)
+                                    .join(' · ') || 'Perfil público'}
+                                  {item.rating.total > 0 && item.rating.average !== null
+                                    ? ` · ${item.rating.average.toFixed(1)} ★ (${item.rating.total})`
+                                    : ''}
+                                </span>
+                              </span>
+                              <span className="shrink-0 text-xs text-slate-400">Ver perfil →</span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                      <Link
+                        href={`/empresas?search=${encodeURIComponent(query)}`}
+                        onClick={() => setSuggestionsOpen(false)}
+                        className="block border-t border-slate-100 bg-slate-50 px-4 py-3 text-center text-xs font-semibold text-blue-700 transition hover:bg-slate-100"
+                      >
+                        Ver{' '}
+                        {suggestionsTotal === 1
+                          ? 'el resultado en el directorio'
+                          : `los ${suggestionsTotal} resultados en el directorio`}{' '}
+                        →
+                      </Link>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
             <p className="mt-3 min-h-5 text-center text-sm text-slate-500" aria-live="polite">
               {searchMessage}
             </p>
