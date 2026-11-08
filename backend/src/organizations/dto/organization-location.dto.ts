@@ -34,6 +34,11 @@ export class CreateOrganizationLocationDto {
   @IsOptional()
   @IsBoolean()
   isPrimary?: boolean;
+
+  /** Mostrar la ubicación en el perfil público. */
+  @IsOptional()
+  @IsBoolean()
+  isPublic?: boolean;
 }
 
 export class UpdateOrganizationLocationDto {
@@ -71,4 +76,9 @@ export class UpdateOrganizationLocationDto {
   @IsOptional()
   @IsBoolean()
   isPrimary?: boolean;
+
+  /** Mostrar la ubicación en el perfil público. */
+  @IsOptional()
+  @IsBoolean()
+  isPublic?: boolean;
 }

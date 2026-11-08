@@ -38,14 +38,22 @@ describe('FIVERTEN modelo completo (e2e)', () => {
 
     const registered = await request(app.getHttpServer())
       .post(`${AUTH}/register`)
-      .send({ email: 'modelo@fiverten.test', password: PASSWORD, companyName: 'Modelo Completo SL' })
+      .send({
+        email: 'modelo@fiverten.test',
+        password: PASSWORD,
+        companyName: 'Modelo Completo SL',
+      })
       .expect(201);
     companyToken = registered.body.accessToken as string;
     publicId = registered.body.organization.publicId as string;
 
     await request(app.getHttpServer())
       .post(`${AUTH}/register`)
-      .send({ email: 'modelo-admin@fiverten.test', password: PASSWORD, companyName: 'Admin Modelo' })
+      .send({
+        email: 'modelo-admin@fiverten.test',
+        password: PASSWORD,
+        companyName: 'Admin Modelo',
+      })
       .expect(201);
     await prisma.user.update({
       where: { email: 'modelo-admin@fiverten.test' },
@@ -73,9 +81,11 @@ describe('FIVERTEN modelo completo (e2e)', () => {
         region: 'Madrid',
         postalCode: '28001',
         country: 'España',
+        isPublic: true,
       })
       .expect(201);
     expect(created.body.isPrimary).toBe(true);
+    expect(created.body.isPublic).toBe(true);
 
     const second = await request(app.getHttpServer())
       .post(`${ORG}/locations`)
@@ -86,9 +96,12 @@ describe('FIVERTEN modelo completo (e2e)', () => {
 
     const detail = await request(app.getHttpServer()).get(ORG).set(company()).expect(200);
     expect(detail.body.locations).toHaveLength(2);
-    expect(detail.body.locations.filter((item: { isPrimary: boolean }) => item.isPrimary)).toHaveLength(
-      1,
-    );
+    expect(
+      detail.body.locations.filter((item: { isPrimary: boolean }) => item.isPrimary),
+    ).toHaveLength(1);
+    expect(
+      detail.body.locations.filter((item: { isPublic: boolean }) => item.isPublic),
+    ).toHaveLength(1);
 
     await request(app.getHttpServer())
       .delete(`${ORG}/locations/${created.body.id}`)
@@ -218,7 +231,11 @@ describe('FIVERTEN modelo completo (e2e)', () => {
       scope: 'identity,documentation,projects',
       methodologyVersion: 'v2.0',
     });
-    expect(status.body.request.documents.every((doc: { evidence: { status: string } }) => doc.evidence.status === 'verified')).toBe(true);
+    expect(
+      status.body.request.documents.every(
+        (doc: { evidence: { status: string } }) => doc.evidence.status === 'verified',
+      ),
+    ).toBe(true);
     expect(status.body.request.projects[0].evidenceTypes).toEqual(['contract']);
     expect(status.body.request.projects[0].verificationReviewerId).toBeTruthy();
 

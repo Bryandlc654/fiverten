@@ -233,7 +233,11 @@ export default function CompanyPage() {
       if (form.phone.trim()) payload.phone = form.phone.trim();
       if (form.website.trim()) payload.website = form.website.trim();
       payload.description = form.description.trim();
-      payload.presentationUrl = form.presentationUrl.trim() || null;
+      const presentationUrl = form.presentationUrl.trim() || null;
+      // Solo se envía si cambia: evita que un backend sin desplegar la rechace.
+      if (presentationUrl !== (org?.presentationUrl ?? null)) {
+        payload.presentationUrl = presentationUrl;
+      }
       payload.logoUrl = form.logoUrl ? form.logoUrl : null;
       payload.coverUrl = form.coverUrl ? form.coverUrl : null;
       payload.isPublic = form.isPublic;

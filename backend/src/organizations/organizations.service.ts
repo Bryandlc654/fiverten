@@ -84,6 +84,7 @@ export class OrganizationsService {
           postalCode: dto.postalCode?.trim() || null,
           country: dto.country?.trim() || null,
           isPrimary,
+          isPublic: dto.isPublic ?? false,
         },
       });
       return toLocation(location);
@@ -112,6 +113,7 @@ export class OrganizationsService {
           ...(dto.postalCode !== undefined ? { postalCode: dto.postalCode.trim() || null } : {}),
           ...(dto.country !== undefined ? { country: dto.country.trim() || null } : {}),
           ...(dto.isPrimary !== undefined ? { isPrimary: dto.isPrimary } : {}),
+          ...(dto.isPublic !== undefined ? { isPublic: dto.isPublic } : {}),
         },
       });
       return toLocation(location);

@@ -79,6 +79,7 @@ export function toLocation(location: {
   postalCode: string | null;
   country: string | null;
   isPrimary: boolean;
+  isPublic: boolean;
 }) {
   return {
     id: location.id,
@@ -89,6 +90,7 @@ export function toLocation(location: {
     postalCode: location.postalCode,
     country: location.country,
     isPrimary: location.isPrimary,
+    isPublic: location.isPublic,
   };
 }
 

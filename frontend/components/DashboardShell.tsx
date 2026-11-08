@@ -146,6 +146,8 @@ const VERIFIER_NAV: NavItem[] = [
   { key: 'profileEdit', label: 'Mi cuenta', icon: 'account_circle', href: '/app/perfil/cuenta' },
 ];
 
+const SIDEBAR_STORAGE_KEY = 'fiverten.sidebar.collapsed';
+
 export default function DashboardShell({
   active,
   title,
@@ -169,8 +171,32 @@ export default function DashboardShell({
   } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // El estado de la barra en escritorio se recuerda entre visitas.
+  useEffect(() => {
+    setSidebarCollapsed(window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === '1');
+  }, []);
+
+  function toggleSidebar() {
+    setSidebarCollapsed((current) => {
+      const next = !current;
+      window.localStorage.setItem(SIDEBAR_STORAGE_KEY, next ? '1' : '0');
+      return next;
+    });
+  }
+
+  // Escape cierra el menú móvil.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') setMobileOpen(false);
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mobileOpen]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -245,7 +271,7 @@ export default function DashboardShell({
       <aside
         className={`fixed bottom-0 left-0 top-0 z-40 flex w-64 shrink-0 flex-col bg-[#10161C] text-slate-300 transition-transform duration-300 lg:sticky lg:inset-auto lg:top-0 lg:h-screen lg:translate-x-0 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        } ${sidebarCollapsed ? 'lg:hidden' : ''}`}
       >
         <div className="flex shrink-0 items-center justify-between px-6 pt-6 pb-5">
           <Image
@@ -255,14 +281,25 @@ export default function DashboardShell({
             height={347}
             className="h-8 w-auto"
           />
-          <button
-            type="button"
-            onClick={() => setMobileOpen(false)}
-            aria-label="Cerrar menú"
-            className="text-slate-400 transition hover:text-white lg:hidden"
-          >
-            <span className="material-symbols-outlined text-[22px]">close</span>
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              aria-label="Ocultar menú"
+              title="Ocultar menú"
+              className="hidden rounded-md p-1 text-slate-400 transition hover:bg-white/10 hover:text-white lg:inline-flex"
+            >
+              <span className="material-symbols-outlined text-[20px]">left_panel_close</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileOpen(false)}
+              aria-label="Cerrar menú"
+              className="text-slate-400 transition hover:text-white lg:hidden"
+            >
+              <span className="material-symbols-outlined text-[22px]">close</span>
+            </button>
+          </div>
         </div>
 
         <div className="mx-4 shrink-0 rounded-xl border border-white/10 bg-white/5 p-4">
@@ -324,6 +361,17 @@ export default function DashboardShell({
             >
               <span className="material-symbols-outlined text-[20px]">menu</span>
             </button>
+            {sidebarCollapsed && (
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                aria-label="Mostrar menú"
+                title="Mostrar menú"
+                className="hidden shrink-0 rounded-lg border border-slate-200 bg-white p-2 text-slate-500 transition hover:text-slate-900 lg:inline-flex"
+              >
+                <span className="material-symbols-outlined text-[20px]">left_panel_open</span>
+              </button>
+            )}
             <div className="min-w-0">
               <h1 className="truncate text-lg font-bold text-slate-900">{title}</h1>
               {subtitle && <p className="truncate text-xs text-slate-500">{subtitle}</p>}
