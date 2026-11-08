@@ -6,7 +6,11 @@
 
 const DEFAULT_JWT_MARKERS = [/change-?me/i, /placeholder/i, /^secret$/i, /^test-access-secret$/i];
 
-const DEFAULT_DB_CREDENTIALS = [/postgres:postgres@/i, /fiverten_app:fiverten_app@/i, /:CHANGE_ME/i];
+const DEFAULT_DB_CREDENTIALS = [
+  /postgres:postgres@/i,
+  /fiverten_app:fiverten_app@/i,
+  /:CHANGE_ME/i,
+];
 
 const NUMERIC_KEYS = [
   'PORT',
@@ -47,8 +51,29 @@ export function validateEnvironment(config: Record<string, unknown>): Record<str
       }
     }
 
-    if (String(config.DB_RLS_ENABLED ?? '').toLowerCase() !== 'true') {
+    const rlsEnabled = String(config.DB_RLS_ENABLED ?? '').toLowerCase() === 'true';
+    if (!rlsEnabled) {
       errors.push('DB_RLS_ENABLED debe ser true en produccion (aislamiento multi-tenant)');
+    } else {
+      // Con RLS activo Prisma se conecta con el rol de aplicacion, no con el
+      // propietario. Si falta esta URL el arranque falla con un error de auth.
+      const appUrl = String(config.APP_DATABASE_URL ?? '');
+      if (!appUrl) {
+        errors.push(
+          'APP_DATABASE_URL es obligatorio con DB_RLS_ENABLED=true (rol fiverten_app con usuario y contrasena)',
+        );
+      } else {
+        try {
+          const parsed = new URL(appUrl);
+          if (!parsed.username || !parsed.password) {
+            errors.push(
+              'APP_DATABASE_URL debe incluir usuario y contrasena del rol de aplicacion (ej. fiverten_app:<APP_DB_PASSWORD>)',
+            );
+          }
+        } catch {
+          errors.push('APP_DATABASE_URL no es una URL de conexion valida');
+        }
+      }
     }
   }
 

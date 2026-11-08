@@ -22,6 +22,29 @@ function resolveDatasourceUrl(): string | undefined {
   return rlsEnabled && appUrl ? appUrl : undefined;
 }
 
+/** Describe (sin secretos) qué conexión usa Prisma, para los logs de arranque. */
+export function datasourceInfo(): {
+  source: 'APP_DATABASE_URL' | 'DATABASE_URL';
+  host: string;
+  user: string;
+} {
+  const rlsEnabled = (process.env.DB_RLS_ENABLED ?? '').toLowerCase() === 'true';
+  const appUrl = process.env.APP_DATABASE_URL;
+  const useApp = Boolean(rlsEnabled && appUrl);
+  const source = useApp ? 'APP_DATABASE_URL' : 'DATABASE_URL';
+  const raw = (useApp ? appUrl : process.env.DATABASE_URL) ?? '';
+  try {
+    const url = new URL(raw);
+    return {
+      source,
+      host: url.hostname || '(sin host)',
+      user: decodeURIComponent(url.username) || '(sin usuario)',
+    };
+  } catch {
+    return { source, host: '(URL inválida)', user: '(URL inválida)' };
+  }
+}
+
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor() {
