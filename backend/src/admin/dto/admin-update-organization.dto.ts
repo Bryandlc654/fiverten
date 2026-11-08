@@ -1,4 +1,8 @@
 import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import {
+  ORGANIZATION_DESCRIPTION_MAX_LENGTH,
+  ORGANIZATION_DESCRIPTION_MAX_MESSAGE,
+} from '../../organizations/organization.constants';
 
 export const ORGANIZATION_STATUSES = ['pending', 'active', 'suspended', 'inactive'] as const;
 export const VERIFICATION_STATUSES = [
@@ -42,7 +46,9 @@ export class AdminUpdateOrganizationDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(4000)
+  @MaxLength(ORGANIZATION_DESCRIPTION_MAX_LENGTH, {
+    message: ORGANIZATION_DESCRIPTION_MAX_MESSAGE,
+  })
   description?: string;
 
   @IsOptional()

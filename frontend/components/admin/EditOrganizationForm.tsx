@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { ApiError, api, type OrganizationDetail } from '../../lib/api';
+import { ORGANIZATION_DESCRIPTION_MAX_LENGTH } from '../../lib/organization';
 import { ORGANIZATION_STATUSES, VERIFICATION_STATUSES } from '../../lib/roles';
 import { Alert, CheckboxField, Field, inputClass } from '../ui';
 
@@ -125,7 +126,11 @@ export default function EditOrganizationForm({
             <input {...bind('website')} />
           </Field>
           <Field label="Descripción" className="sm:col-span-2">
-            <textarea rows={3} {...bind('description')} />
+            <textarea
+              rows={3}
+              maxLength={ORGANIZATION_DESCRIPTION_MAX_LENGTH}
+              {...bind('description')}
+            />
           </Field>
 
           <Field label="Estado">

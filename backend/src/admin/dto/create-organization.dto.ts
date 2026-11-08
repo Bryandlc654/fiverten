@@ -1,4 +1,8 @@
 import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  ORGANIZATION_DESCRIPTION_MAX_LENGTH,
+  ORGANIZATION_DESCRIPTION_MAX_MESSAGE,
+} from '../../organizations/organization.constants';
 
 export class CreateOrganizationDto {
   @IsString()
@@ -32,7 +36,9 @@ export class CreateOrganizationDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(4000)
+  @MaxLength(ORGANIZATION_DESCRIPTION_MAX_LENGTH, {
+    message: ORGANIZATION_DESCRIPTION_MAX_MESSAGE,
+  })
   description?: string;
 
   // Propietario inicial (opcional): recibe una invitación por correo y es él

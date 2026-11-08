@@ -120,6 +120,21 @@ describe('FIVERTEN modelo completo (e2e)', () => {
       .expect(200);
   });
 
+  it('limita la descripción pública a 1000 caracteres', async () => {
+    await request(app.getHttpServer())
+      .patch(ORG)
+      .set(company())
+      .send({ description: 'x'.repeat(1001) })
+      .expect(400);
+
+    const updated = await request(app.getHttpServer())
+      .patch(ORG)
+      .set(company())
+      .send({ description: 'x'.repeat(1000) })
+      .expect(200);
+    expect(updated.body.description).toHaveLength(1000);
+  });
+
   it('crea evidencia, documento con versión y metadatos, y proyecto verificable', async () => {
     for (const category of ['identity', 'tax', 'address']) {
       await request(app.getHttpServer())

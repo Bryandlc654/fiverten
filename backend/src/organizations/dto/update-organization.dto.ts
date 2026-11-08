@@ -1,4 +1,8 @@
 import { IsBoolean, IsEmail, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import {
+  ORGANIZATION_DESCRIPTION_MAX_LENGTH,
+  ORGANIZATION_DESCRIPTION_MAX_MESSAGE,
+} from '../organization.constants';
 
 /** Campos que un administrador de la empresa puede editar por si mismo. */
 export class UpdateOrganizationDto {
@@ -50,7 +54,9 @@ export class UpdateOrganizationDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(4000)
+  @MaxLength(ORGANIZATION_DESCRIPTION_MAX_LENGTH, {
+    message: ORGANIZATION_DESCRIPTION_MAX_MESSAGE,
+  })
   description?: string;
 
   @IsOptional()

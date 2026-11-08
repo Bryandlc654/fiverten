@@ -14,6 +14,7 @@ import {
 } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
 import { roleAtLeast } from '../../../lib/roles';
+import { ORGANIZATION_DESCRIPTION_MAX_LENGTH } from '../../../lib/organization';
 import { slugify } from '../../../lib/slug';
 
 interface FormState {
@@ -215,6 +216,12 @@ export default function CompanyPage() {
     const nextSlug = slugify(form.slug);
     setError(null);
     setNotice(null);
+    if (form.description.trim().length > ORGANIZATION_DESCRIPTION_MAX_LENGTH) {
+      setError(
+        `La descripción no puede superar los ${ORGANIZATION_DESCRIPTION_MAX_LENGTH} caracteres.`,
+      );
+      return;
+    }
     if (!nextSlug) {
       setError('La URL pública no puede estar vacía.');
       return;
@@ -717,8 +724,20 @@ export default function CompanyPage() {
                   onChange={(e) => update('description', e.target.value)}
                   disabled={!canEdit}
                   rows={3}
+                  maxLength={ORGANIZATION_DESCRIPTION_MAX_LENGTH}
+                  aria-describedby="description-counter"
                   className={INPUT_CLASS}
                 />
+                <span
+                  id="description-counter"
+                  className={`mt-1 block text-right font-mono text-[11px] ${
+                    form.description.length > ORGANIZATION_DESCRIPTION_MAX_LENGTH
+                      ? 'text-red-600'
+                      : 'text-slate-400'
+                  }`}
+                >
+                  {form.description.length}/{ORGANIZATION_DESCRIPTION_MAX_LENGTH}
+                </span>
               </label>
 
               <div className="sm:col-span-2">

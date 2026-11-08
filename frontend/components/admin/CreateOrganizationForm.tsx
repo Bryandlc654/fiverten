@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { ApiError, api } from '../../lib/api';
+import { ORGANIZATION_DESCRIPTION_MAX_LENGTH } from '../../lib/organization';
 import { Alert, Field, inputClass } from '../ui';
 
 interface CreateForm {
@@ -96,7 +97,11 @@ export default function CreateOrganizationForm() {
             <input {...bind('website')} />
           </Field>
           <Field label="Descripción" className="sm:col-span-2">
-            <textarea rows={3} {...bind('description')} />
+            <textarea
+              rows={3}
+              maxLength={ORGANIZATION_DESCRIPTION_MAX_LENGTH}
+              {...bind('description')}
+            />
           </Field>
         </div>
       </section>
