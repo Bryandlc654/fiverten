@@ -66,7 +66,7 @@ describe('FIVERTEN URL pública de la empresa (e2e)', () => {
       .expect(200);
 
     expect(response.body).toMatchObject({ available: false });
-    expect(response.body.suggestion).toMatch(/^slug-demo-sl-\d+$/);
+    expect(response.body.suggestion).toBe(`${slugB}-2`);
     expect(response.body.suggestion).not.toBe(slugB);
 
     const free = await http()
