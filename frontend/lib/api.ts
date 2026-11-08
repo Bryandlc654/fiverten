@@ -1397,18 +1397,44 @@ function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  if (!isSessionless(path)) {
-    await sessionReady;
-  }
-  const headers = new Headers(init.headers);
-  if (!headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json');
-  }
-  if (accessToken) {
-    headers.set('Authorization', `Bearer ${accessToken}`);
-  }
+let sessionRefresh: Promise<boolean> | null = null;
+let redirectingToLogin = false;
 
+/**
+ * Pide un token de acceso nuevo reutilizando el refresh en curso, si lo hay.
+ * Evita dos rotaciones simultáneas del refresh token (la segunda revocaría la
+ * sesión por reutilización).
+ */
+async function refreshSessionOnce(): Promise<boolean> {
+  sessionRefresh ??= (async () => {
+    try {
+      const response = await api.refresh();
+      if (!response.accessToken) return false;
+      setAccessToken(response.accessToken);
+      return true;
+    } catch {
+      return false;
+    }
+  })().finally(() => {
+    sessionRefresh = null;
+  });
+  return sessionRefresh;
+}
+
+/** Si la sesión ya no se puede renovar, vuelve al login conservando el destino. */
+function redirectToLogin(): void {
+  if (typeof window === 'undefined' || redirectingToLogin) return;
+  const { pathname, search } = window.location;
+  if (!/^\/(app|admin|dashboard)(\/|$)/.test(pathname)) return;
+  redirectingToLogin = true;
+  window.location.replace(`/login?next=${encodeURIComponent(`${pathname}${search}`)}`);
+}
+
+async function performRequest(
+  path: string,
+  init: RequestInit,
+  headers: Headers,
+): Promise<Response> {
   const method = (init.method ?? 'GET').toUpperCase();
   const attempts = retriesWhileWakingUp(path, method) ? WAKE_UP_ATTEMPTS : 1;
 
@@ -1425,10 +1451,41 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     }
     await wait(WAKE_UP_DELAY_MS);
   }
-  const final = response as Response;
+  return response as Response;
+}
 
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  if (!isSessionless(path)) {
+    await sessionReady;
+  }
+  const headers = new Headers(init.headers);
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+  if (accessToken) {
+    headers.set('Authorization', `Bearer ${accessToken}`);
+  }
+
+  let final = await performRequest(path, init, headers);
   if (WAKING_UP.has(final.status)) {
     throw new ApiError(final.status, WAKE_UP_MESSAGE);
+  }
+
+  // El token de acceso dura 15 minutos. Si caduca, se renueva y se repite la
+  // petición; solo si el refresh ya no es válido se vuelve al login.
+  if (final.status === 401 && !isSessionless(path)) {
+    const refreshed = await refreshSessionOnce();
+    if (refreshed) {
+      headers.set('Authorization', `Bearer ${accessToken}`);
+      final = await performRequest(path, init, headers);
+      if (WAKING_UP.has(final.status)) {
+        throw new ApiError(final.status, WAKE_UP_MESSAGE);
+      }
+    }
+    if (final.status === 401) {
+      setAccessToken(null);
+      redirectToLogin();
+    }
   }
 
   const data = parseBody(await final.text());
@@ -1447,13 +1504,31 @@ async function requestForm<T>(path: string, body: FormData): Promise<T> {
     headers.set('Authorization', `Bearer ${accessToken}`);
   }
 
-  const response = await send(`${API_URL}${path}`, {
+  let response = await send(`${API_URL}${path}`, {
     method: 'POST',
     headers,
     body,
     credentials: 'include',
     cache: 'no-store',
   });
+
+  if (response.status === 401 && !isSessionless(path)) {
+    const refreshed = await refreshSessionOnce();
+    if (refreshed) {
+      headers.set('Authorization', `Bearer ${accessToken}`);
+      response = await send(`${API_URL}${path}`, {
+        method: 'POST',
+        headers,
+        body,
+        credentials: 'include',
+        cache: 'no-store',
+      });
+    }
+    if (response.status === 401) {
+      setAccessToken(null);
+      redirectToLogin();
+    }
+  }
 
   if (WAKING_UP.has(response.status)) {
     throw new ApiError(response.status, WAKE_UP_MESSAGE);
@@ -1483,16 +1558,30 @@ async function requestBlob(path: string, init: RequestInit = {}): Promise<Blob> 
     credentials: 'include',
     cache: 'no-store',
   });
-  if (WAKING_UP.has(response.status)) {
-    throw new ApiError(response.status, WAKE_UP_MESSAGE);
+  let final = response;
+  if (final.status === 401 && !isSessionless(path)) {
+    const refreshed = await refreshSessionOnce();
+    if (refreshed) {
+      headers.set('Authorization', `Bearer ${accessToken}`);
+      final = await send(`${API_URL}${path}`, {
+        ...init,
+        headers,
+        credentials: 'include',
+        cache: 'no-store',
+      });
+    }
+    if (final.status === 401) {
+      setAccessToken(null);
+      redirectToLogin();
+    }
   }
-  if (!response.ok) {
-    throw new ApiError(
-      response.status,
-      extractMessage(parseBody(await response.text()), response.status),
-    );
+  if (WAKING_UP.has(final.status)) {
+    throw new ApiError(final.status, WAKE_UP_MESSAGE);
   }
-  return response.blob();
+  if (!final.ok) {
+    throw new ApiError(final.status, extractMessage(parseBody(await final.text()), final.status));
+  }
+  return final.blob();
 }
 
 /** Mensaje y evidencias como multipart (campo "files", hasta 5 archivos). */
