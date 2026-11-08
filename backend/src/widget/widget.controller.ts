@@ -87,7 +87,7 @@ export class WidgetController {
       /\/+$/,
       '',
     );
-    const profileUrl = `${baseUrl}/empresa/${encodeURIComponent(org.slug)}`;
+    const profileUrl = `${baseUrl}/empresa/${encodeURIComponent(org.slug)}?utm_source=widget`;
     const verified = effectiveVerificationStatus(org) === 'verified';
     const name = escapeHtml(org.tradeName);
     const idAttr = escapeHtml(org.publicId);

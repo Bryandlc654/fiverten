@@ -72,6 +72,7 @@ describe('FIVERTEN widget embebible (e2e)', () => {
     expect(response.headers['content-type']).toContain('application/javascript');
     expect(response.headers['cross-origin-resource-policy']).toBe('cross-origin');
     expect(response.text).toContain('Widget Dental');
+    expect(response.text).toContain('utm_source=widget');
     expect(response.text).toContain('5.0 / 5');
     expect(response.text).toContain('1 reseña');
     expect(response.text).toContain('data-fiverten-widget');

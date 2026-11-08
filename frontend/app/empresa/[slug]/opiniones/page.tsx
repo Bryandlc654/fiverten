@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import AnalyticsTracker from '../../../../components/public/AnalyticsTracker';
 import HomeHeader from '../../../../components/public/HomeHeader';
 import PublicFooter from '../../../../components/public/PublicFooter';
 import ReportReviewModal from '../../../../components/reviews/ReportReviewModal';
@@ -158,6 +159,7 @@ export default function PublicReviewsPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F4F3EF] font-sans text-slate-800 antialiased">
+      <AnalyticsTracker slug={slug} />
       <HomeHeader />
 
       <section className="relative overflow-hidden border-b border-slate-800 bg-gradient-to-r from-[#0d131f] via-[#111927] to-[#141b2d] text-white">

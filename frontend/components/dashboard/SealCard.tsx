@@ -30,7 +30,9 @@ export default function SealCard({
   const origin = typeof window === 'undefined' ? 'https://fiverten.com' : window.location.origin;
   const sealId = embedToken ?? publicId;
   const widgetUrl = sealId ? `${origin}/api/widget/${sealId}.js` : '';
-  const officialEmbed = `<a href="${publicUrl}" target="_blank" rel="noopener"><img src="${origin}${OFFICIAL_SVG}" alt="Sello FIVERTEN" width="160" height="160"></a>`;
+  // Los clics en el sello insertado en una web se atribuyen a la fuente "seal".
+  const sealProfileUrl = `${publicUrl}${publicUrl.includes('?') ? '&' : '?'}utm_source=seal`;
+  const officialEmbed = `<a href="${sealProfileUrl}" target="_blank" rel="noopener"><img src="${origin}${OFFICIAL_SVG}" alt="Sello FIVERTEN" width="160" height="160"></a>`;
   const widgetEmbed = `<script src="${widgetUrl}" async></script>`;
   const embed =
     activeTab === 'seal' ? officialEmbed : activeTab === 'widget' ? widgetEmbed : publicUrl;
@@ -38,7 +40,9 @@ export default function SealCard({
   useEffect(() => {
     if (activeTab !== 'qr') return;
     let active = true;
-    QRCode.toDataURL(publicUrl, {
+    // La fuente QR permite separar el tráfico del código del resto.
+    const qrTarget = `${publicUrl}${publicUrl.includes('?') ? '&' : '?'}utm_source=qr`;
+    QRCode.toDataURL(qrTarget, {
       width: 512,
       margin: 1,
       color: { dark: '#10161C', light: '#ffffff' },

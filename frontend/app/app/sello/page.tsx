@@ -220,7 +220,9 @@ export default function VerificationPage() {
     : `${origin}/empresa/${data.organization.slug}`;
   const sealSvg = `${origin}/api/seal/${sealToken}.svg`;
   const sealPng = `${origin}/api/seal/${sealToken}.png`;
-  const embed = `<a href="${profileUrl}" target="_blank" rel="noopener"><img src="${sealSvg}" alt="Sello FIVERTEN" width="300" height="104"></a>`;
+  // Atribuye los clics del sello insertado en webs de terceros.
+  const sealProfileUrl = `${profileUrl}${profileUrl.includes('?') ? '&' : '?'}utm_source=seal`;
+  const embed = `<a href="${sealProfileUrl}" target="_blank" rel="noopener"><img src="${sealSvg}" alt="Sello FIVERTEN" width="300" height="104"></a>`;
 
   return (
     <DashboardShell

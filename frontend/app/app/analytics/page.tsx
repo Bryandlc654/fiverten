@@ -34,6 +34,7 @@ const SOURCE_LABELS: Record<string, string> = {
   referral: 'Otros enlaces',
   qr: 'Código QR',
   widget: 'Widget',
+  seal: 'Sello',
   campaign: 'Campaña',
 };
 

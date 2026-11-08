@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import AnalyticsTracker from '../../../../components/public/AnalyticsTracker';
 import CompanyPublicNav from '../../../../components/public/CompanyPublicNav';
 import PublicShell from '../../../../components/public/PublicShell';
 import {
@@ -49,6 +50,7 @@ export default function PublicProjectsPage() {
 
   return (
     <PublicShell>
+      <AnalyticsTracker slug={slug} />
       <div className="space-y-5">
         <header>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
