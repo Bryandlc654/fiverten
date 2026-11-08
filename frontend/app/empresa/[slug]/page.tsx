@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import AnalyticsTracker from '../../../components/public/AnalyticsTracker';
 import CompanyPageSkeleton from '../../../components/public/CompanyPageSkeleton';
+import ZoomableImage from '../../../components/public/ZoomableImage';
 import HomeHeader from '../../../components/public/HomeHeader';
 import PublicFooter from '../../../components/public/PublicFooter';
 import ReviewCard from '../../../components/reviews/ReviewCard';
@@ -262,12 +263,12 @@ export default function PublicProfilePage() {
             <div className="flex items-start space-x-5 sm:items-center">
               <div className="relative flex h-20 w-20 shrink-0 flex-col items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white p-3 text-slate-900 shadow-md sm:h-24 sm:w-24">
                 {profile.logoUrl ? (
-                  <Image
+                  <ZoomableImage
                     src={resolveAssetUrl(profile.logoUrl) ?? profile.logoUrl}
                     alt={`Logo de ${profile.tradeName}`}
-                    fill
                     sizes="96px"
-                    className="object-contain p-2"
+                    containerClassName="absolute inset-0"
+                    imageClassName="object-contain p-2"
                   />
                 ) : (
                   <>
@@ -906,20 +907,13 @@ function PresentationMedia({
   if (safeUrl && isImageUrl(safeUrl)) {
     const src = resolveAssetUrl(safeUrl) ?? safeUrl;
     return (
-      <a
-        href={src}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group relative block aspect-video overflow-hidden rounded-lg border border-slate-200 bg-slate-100 shadow-inner"
-      >
-        <Image
-          src={src}
-          alt={`Imagen de presentación de ${tradeName}`}
-          fill
-          sizes="(max-width: 768px) 100vw, 500px"
-          className="object-cover transition duration-300 group-hover:scale-105"
-        />
-      </a>
+      <ZoomableImage
+        src={src}
+        alt={`Imagen de presentación de ${tradeName}`}
+        sizes="(max-width: 768px) 100vw, 500px"
+        containerClassName="relative block aspect-video w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-100 shadow-inner"
+        imageClassName="object-cover transition duration-300 group-hover:scale-105"
+      />
     );
   }
 
