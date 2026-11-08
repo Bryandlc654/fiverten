@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, type FocusEvent } from 'react';
+import { useAuth } from '../../lib/auth-context';
 
 const NAV_LINKS = [
   { href: '/trust-center', label: 'Trust Center' },
@@ -54,6 +55,16 @@ const MEGA_LINKS = [
 export default function HomeHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
+  const { user, isLoading } = useAuth();
+
+  const displayName = user
+    ? [user.firstName, user.lastName].filter(Boolean).join(' ') || user.username || user.email
+    : '';
+  const initials = user
+    ? (
+        [user.firstName?.[0], user.lastName?.[0]].filter(Boolean).join('') || user.email[0]
+      ).toUpperCase()
+    : '';
 
   function handleMegaBlur(event: FocusEvent<HTMLDivElement>) {
     if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
@@ -186,12 +197,33 @@ export default function HomeHeader() {
           >
             Explorar directorio <span aria-hidden="true">↗</span>
           </Link>
-          <Link
-            href="/login"
-            className="text-sm font-semibold text-white/80 transition hover:text-white"
-          >
-            Iniciar sesión
-          </Link>
+          {isLoading ? (
+            <span className="h-10 w-28 animate-pulse rounded-full bg-white/10" aria-hidden="true" />
+          ) : user ? (
+            <Link
+              href="/app"
+              className="flex items-center gap-2 rounded-full border border-white/15 bg-white/5 py-1.5 pl-1.5 pr-3.5 transition hover:border-aqua/60 hover:bg-white/10"
+              aria-label={`Ir a mi panel (${displayName})`}
+              title="Ir a mi panel"
+            >
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-aqua text-xs font-bold text-ink">
+                {initials}
+              </span>
+              <span className="max-w-[140px] truncate text-sm font-semibold text-white">
+                {displayName}
+              </span>
+              <span aria-hidden="true" className="text-sm text-aqua">
+                →
+              </span>
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="text-sm font-semibold text-white/80 transition hover:text-white"
+            >
+              Iniciar sesión
+            </Link>
+          )}
         </div>
         <button
           type="button"
@@ -248,13 +280,28 @@ export default function HomeHeader() {
         >
           Verificar empresa
         </Link>
-        <Link
-          href="/login"
-          className="rounded-full border border-white/20 px-5 py-3 text-center font-semibold text-white"
-          onClick={() => setMenuOpen(false)}
-        >
-          Iniciar sesión
-        </Link>
+        {isLoading ? (
+          <span className="h-12 animate-pulse rounded-full bg-white/10" aria-hidden="true" />
+        ) : user ? (
+          <Link
+            href="/app"
+            className="flex items-center justify-center gap-2 rounded-full bg-aqua px-5 py-3 text-center font-bold text-ink"
+            onClick={() => setMenuOpen(false)}
+          >
+            <span className="grid h-7 w-7 place-items-center rounded-full bg-ink text-xs font-bold text-white">
+              {initials}
+            </span>
+            Ir a mi panel
+          </Link>
+        ) : (
+          <Link
+            href="/login"
+            className="rounded-full border border-white/20 px-5 py-3 text-center font-semibold text-white"
+            onClick={() => setMenuOpen(false)}
+          >
+            Iniciar sesión
+          </Link>
+        )}
       </nav>
     </header>
   );
