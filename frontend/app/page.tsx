@@ -521,7 +521,6 @@ export default function HomePage() {
           id="como-funciona"
           className="relative overflow-hidden bg-[#EFEEE9] py-24 lg:py-28"
         >
-          <div className="absolute -right-24 top-20 h-80 w-80 rounded-full bg-aqua/20 blur-3xl" />
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="home-reveal flex flex-col justify-between gap-6 md:flex-row md:items-end">
               <div>
