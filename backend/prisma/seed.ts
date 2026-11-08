@@ -252,6 +252,14 @@ async function seedPlatform(): Promise<void> {
         '{{organization}} te ha preparado un enlace personal para valorar tu experiencia. Elige de 1 a 5 estrellas y cuéntanos brevemente qué tal fue. El enlace caduca en {{days}} días y solo puede usarse una vez.',
       action: 'Dejar mi reseña',
     },
+    {
+      code: 'verification_expiry_reminder',
+      subject: 'Tu verificación caduca en {{days}} días · {{site}}',
+      title: 'Renueva el sello de tu empresa',
+      intro:
+        'La verificación de {{organization}} caduca el {{date}}. Puedes solicitar la renovación desde tu panel: vuelve a aportar la documentación obligatoria y al menos un proyecto con evidencia. Si no la renuevas, el sello dejará de mostrarse como verificado.',
+      action: 'Renovar verificación',
+    },
   ];
   for (const template of templates) {
     await prisma.emailTemplate.upsert({

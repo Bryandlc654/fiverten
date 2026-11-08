@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomBytes, randomUUID } from 'crypto';
 import { Prisma } from '@prisma/client';
 import { decryptFile, secureFile } from '../common/file-security';
@@ -159,8 +155,7 @@ export class VerificationService {
     // Respuesta neutra: no se crea nada y el bot no recibe una señal distinta.
     if (dto.honeypot?.trim()) return { received: true };
     const support =
-      (await this.settings.get<string>('general.support_email'))?.trim() ||
-      'soporte@fiverten.com';
+      (await this.settings.get<string>('general.support_email'))?.trim() || 'soporte@fiverten.com';
     await this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
       const inquiry = await tx.verificationInquiry.create({
         data: {
@@ -195,11 +190,7 @@ export class VerificationService {
       )
       .catch(() => undefined);
     this.mail
-      .sendVerificationInquiryConfirmation(
-        email,
-        dto.companyName.trim(),
-        dto.contactName.trim(),
-      )
+      .sendVerificationInquiryConfirmation(email, dto.companyName.trim(), dto.contactName.trim())
       .catch(() => undefined);
     return { received: true };
   }
@@ -208,13 +199,15 @@ export class VerificationService {
   // Empresa
   // ---------------------------------------------------------------------------
   async getCompanyStatus(orgId: string) {
-    const [requiredDocs, minProjects, reviewDays, expiryDays, renewalDays] = await Promise.all([
-      this.settings.get<string[]>('verification.required_documents'),
-      this.settings.get<number>('verification.min_projects'),
-      this.settings.get<number>('verification.review_days'),
-      this.settings.get<number>('verification.expiry_days'),
-      this.settings.get<number>('verification.renewal_days'),
-    ]);
+    const [requiredDocs, minProjects, reviewDays, expiryDays, renewalDays, reminderDaysSetting] =
+      await Promise.all([
+        this.settings.get<string[]>('verification.required_documents'),
+        this.settings.get<number>('verification.min_projects'),
+        this.settings.get<number>('verification.review_days'),
+        this.settings.get<number>('verification.expiry_days'),
+        this.settings.get<number>('verification.renewal_days'),
+        this.settings.get<number>('notifications.reminder_days'),
+      ]);
 
     return this.prisma.withContext({ orgId }, async (tx) => {
       const org = await tx.organization.findFirst({
@@ -324,11 +317,17 @@ export class VerificationService {
         badge,
         canSubmit,
         requirements: {
-          requiredDocuments: Array.isArray(requiredDocs) ? requiredDocs : ['identity', 'tax', 'address'],
+          requiredDocuments: Array.isArray(requiredDocs)
+            ? requiredDocs
+            : ['identity', 'tax', 'address'],
           minProjects: Number(minProjects) || 1,
           reviewDays: Number(reviewDays) || 5,
           expiryDays: Number(expiryDays) || 365,
           renewalDays: Number(renewalDays) || 30,
+          reminderDays: Math.max(
+            1,
+            Math.min(Number(reminderDaysSetting) || 30, Number(renewalDays) || 30),
+          ),
         },
         certifications,
         request: request ? this.requestView(request) : null,
@@ -648,9 +647,7 @@ export class VerificationService {
       const categories = new Set(request.documents.map((document) => document.category));
       const missing = required.filter((category) => !categories.has(category));
       if (missing.length > 0) {
-        throw new BadRequestException(
-          `Faltan documentos obligatorios: ${missing.join(', ')}`,
-        );
+        throw new BadRequestException(`Faltan documentos obligatorios: ${missing.join(', ')}`);
       }
       if (request.projects.length < (Number(minProjects) || 1)) {
         throw new BadRequestException(
@@ -660,9 +657,7 @@ export class VerificationService {
 
       const status = effectiveVerificationStatus(org);
       if (status === 'verified' && org.verificationExpiresAt) {
-        const renewalDays = Number(
-          await this.settings.get<number>('verification.renewal_days'),
-        );
+        const renewalDays = Number(await this.settings.get<number>('verification.renewal_days'));
         if (
           org.verificationExpiresAt.getTime() >
           Date.now() + (Number(renewalDays) || 30) * DAY_MS
@@ -868,14 +863,15 @@ export class VerificationService {
 
   /** Datos configurables que se muestran en las páginas públicas del proceso. */
   async getPublicVerificationInfo() {
-    const [reviewDays, expiryDays, renewalDays, minProjects, requiredDocuments] =
-      await Promise.all([
+    const [reviewDays, expiryDays, renewalDays, minProjects, requiredDocuments] = await Promise.all(
+      [
         this.settings.get<number>('verification.review_days'),
         this.settings.get<number>('verification.expiry_days'),
         this.settings.get<number>('verification.renewal_days'),
         this.settings.get<number>('verification.min_projects'),
         this.settings.get<string[]>('verification.required_documents'),
-      ]);
+      ],
+    );
     return {
       reviewDays: Number(reviewDays) || 5,
       expiryDays: Number(expiryDays) || 365,
@@ -938,9 +934,7 @@ export class VerificationService {
     const pageSize = Math.min(100, Math.max(1, query.pageSize));
     const search = query.search?.trim();
     const where: Prisma.VerificationRequestWhereInput = {
-      ...(query.status
-        ? { status: query.status }
-        : { status: { in: ['submitted', 'in_review'] } }),
+      ...(query.status ? { status: query.status } : { status: { in: ['submitted', 'in_review'] } }),
       ...(search
         ? {
             organization: {
@@ -1147,7 +1141,9 @@ export class VerificationService {
     await this.prisma.withContext({ isPlatformAdmin: true }, async (tx) => {
       const request = await tx.verificationRequest.findUnique({
         where: { id },
-        include: { organization: { select: { verificationStatus: true, verificationExpiresAt: true } } },
+        include: {
+          organization: { select: { verificationStatus: true, verificationExpiresAt: true } },
+        },
       });
       if (!request) throw new NotFoundException('Solicitud no encontrada');
       if (!['submitted', 'in_review'].includes(request.status)) {
@@ -1421,10 +1417,7 @@ export class VerificationService {
     const status = effectiveVerificationStatus(org);
     if (status === 'verified' && org.verificationExpiresAt) {
       const renewalDays = Number(await this.settings.get<number>('verification.renewal_days'));
-      if (
-        org.verificationExpiresAt.getTime() >
-        Date.now() + (Number(renewalDays) || 30) * DAY_MS
-      ) {
+      if (org.verificationExpiresAt.getTime() > Date.now() + (Number(renewalDays) || 30) * DAY_MS) {
         throw new BadRequestException('Tu verificación sigue vigente');
       }
     }

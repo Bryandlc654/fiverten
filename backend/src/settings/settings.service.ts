@@ -2,76 +2,78 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
-export const SETTING_DEFAULTS: Record<string, { value: Prisma.InputJsonValue; description: string }> =
-  {
-    'general.site_name': { value: 'FIVERTEN', description: 'Nombre comercial de la plataforma' },
-    'general.support_email': {
-      value: 'soporte@fiverten.com',
-      description: 'Correo de soporte mostrado a las empresas',
-    },
-    'general.default_locale': { value: 'es', description: 'Idioma por defecto' },
-    'general.default_currency': { value: 'EUR', description: 'Moneda por defecto para precios' },
-    'general.registrations_enabled': {
-      value: true,
-      description: 'Permite el registro público de nuevas empresas',
-    },
-    'general.maintenance_mode': {
-      value: false,
-      description: 'Muestra un aviso de mantenimiento en la plataforma',
-    },
-    'reviews.low_rating_max': {
-      value: 2,
-      description: 'Puntuación máxima considerada reseña de baja valoración',
-    },
-    'reviews.allow_low_rating_resolution': {
-      value: true,
-      description: 'Permite abrir incidencias para reseñas de baja valoración',
-    },
-    'reviews.require_email_confirmation': {
-      value: true,
-      description: 'La reseña se publica solo tras confirmar el correo',
-    },
-    'reviews.max_reviews_per_ip_day': {
-      value: 3,
-      description: 'Máximo de reseñas por IP en 24 horas',
-    },
-    'notifications.email_enabled': {
-      value: true,
-      description: 'Envía avisos por correo además de las notificaciones internas',
-    },
-    'notifications.default_new_reviews': {
-      value: true,
-      description: 'Valor inicial del aviso de reseñas nuevas por empresa',
-    },
-    'notifications.default_negative_reviews': {
-      value: true,
-      description: 'Valor inicial del aviso de reseñas negativas por empresa',
-    },
-    'notifications.reminder_days': {
-      value: 7,
-      description: 'Días antes del vencimiento para recordar la renovación',
-    },
-    'verification.required_documents': {
-      value: ['identity', 'tax', 'address'],
-      description: 'Documentos obligatorios para solicitar la verificación',
-    },
-    'verification.min_projects': {
-      value: 1,
-      description: 'Proyectos o evidencias mínimas para solicitar la verificación',
-    },
-    'verification.review_days': {
-      value: 5,
-      description: 'Días hábiles estimados para revisar una solicitud',
-    },
-    'verification.expiry_days': {
-      value: 365,
-      description: 'Días de validez del sello tras la aprobación',
-    },
-    'verification.renewal_days': {
-      value: 30,
-      description: 'Días antes del vencimiento para solicitar la renovación',
-    },
-  };
+export const SETTING_DEFAULTS: Record<
+  string,
+  { value: Prisma.InputJsonValue; description: string }
+> = {
+  'general.site_name': { value: 'FIVERTEN', description: 'Nombre comercial de la plataforma' },
+  'general.support_email': {
+    value: 'soporte@fiverten.com',
+    description: 'Correo de soporte mostrado a las empresas',
+  },
+  'general.default_locale': { value: 'es', description: 'Idioma por defecto' },
+  'general.default_currency': { value: 'EUR', description: 'Moneda por defecto para precios' },
+  'general.registrations_enabled': {
+    value: true,
+    description: 'Permite el registro público de nuevas empresas',
+  },
+  'general.maintenance_mode': {
+    value: false,
+    description: 'Muestra un aviso de mantenimiento en la plataforma',
+  },
+  'reviews.low_rating_max': {
+    value: 2,
+    description: 'Puntuación máxima considerada reseña de baja valoración',
+  },
+  'reviews.allow_low_rating_resolution': {
+    value: true,
+    description: 'Permite abrir incidencias para reseñas de baja valoración',
+  },
+  'reviews.require_email_confirmation': {
+    value: true,
+    description: 'La reseña se publica solo tras confirmar el correo',
+  },
+  'reviews.max_reviews_per_ip_day': {
+    value: 3,
+    description: 'Máximo de reseñas por IP en 24 horas',
+  },
+  'notifications.email_enabled': {
+    value: true,
+    description: 'Envía avisos por correo además de las notificaciones internas',
+  },
+  'notifications.default_new_reviews': {
+    value: true,
+    description: 'Valor inicial del aviso de reseñas nuevas por empresa',
+  },
+  'notifications.default_negative_reviews': {
+    value: true,
+    description: 'Valor inicial del aviso de reseñas negativas por empresa',
+  },
+  'notifications.reminder_days': {
+    value: 30,
+    description: 'Días antes del vencimiento para enviar el recordatorio de renovación por correo',
+  },
+  'verification.required_documents': {
+    value: ['identity', 'tax', 'address'],
+    description: 'Documentos obligatorios para solicitar la verificación',
+  },
+  'verification.min_projects': {
+    value: 1,
+    description: 'Proyectos o evidencias mínimas para solicitar la verificación',
+  },
+  'verification.review_days': {
+    value: 5,
+    description: 'Días hábiles estimados para revisar una solicitud',
+  },
+  'verification.expiry_days': {
+    value: 365,
+    description: 'Días de validez del sello tras la aprobación',
+  },
+  'verification.renewal_days': {
+    value: 30,
+    description: 'Días antes del vencimiento para solicitar la renovación',
+  },
+};
 
 const CACHE_TTL_MS = 30_000;
 

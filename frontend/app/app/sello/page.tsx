@@ -207,11 +207,12 @@ export default function VerificationPage() {
     data.canSubmit && request?.status === 'draft' && missing.length === 0 && missingProjects === 0;
   const origin = typeof window === 'undefined' ? 'https://fiverten.com' : window.location.origin;
   const renewalDays = data.requirements.renewalDays;
+  const reminderDays = data.requirements.reminderDays ?? renewalDays;
   const daysToExpiry = data.expiresAt
     ? Math.ceil((new Date(data.expiresAt).getTime() - Date.now()) / DAY_MS)
     : null;
   const renewalDue =
-    data.status === 'verified' && daysToExpiry !== null && daysToExpiry <= renewalDays;
+    data.status === 'verified' && daysToExpiry !== null && daysToExpiry <= reminderDays;
   const badge = data.badge;
   const sealToken = badge?.embedToken ?? data.organization.publicId;
   const profileUrl = badge?.currentUrl

@@ -4,6 +4,7 @@ import {
   CompanyVerificationController,
   PublicVerificationController,
 } from './verification.controller';
+import { VerificationRemindersService } from './verification-reminders.service';
 import { VerificationService } from './verification.service';
 
 @Module({
@@ -12,7 +13,7 @@ import { VerificationService } from './verification.service';
     AdminVerificationController,
     PublicVerificationController,
   ],
-  providers: [VerificationService],
+  providers: [VerificationService, VerificationRemindersService],
   exports: [VerificationService],
 })
 export class VerificationModule {}

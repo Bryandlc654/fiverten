@@ -140,12 +140,13 @@ export default function DashboardPage() {
     : organization?.verificationStatus === 'verified';
   const sealVerified = isVerified;
   const renewalDays = verification?.requirements.renewalDays ?? 30;
+  const reminderDays = verification?.requirements.reminderDays ?? renewalDays;
   const expiresAt = verification?.expiresAt ? new Date(verification.expiresAt) : null;
   const daysToExpiry = expiresAt
     ? Math.ceil((expiresAt.getTime() - Date.now()) / 86_400_000)
     : null;
   const renewalDue =
-    verification?.status === 'verified' && daysToExpiry !== null && daysToExpiry <= renewalDays;
+    verification?.status === 'verified' && daysToExpiry !== null && daysToExpiry <= reminderDays;
   const expiryLabel = expiresAt
     ? expiresAt.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
     : '';

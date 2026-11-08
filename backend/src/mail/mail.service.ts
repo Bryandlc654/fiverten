@@ -199,6 +199,32 @@ export class MailService implements OnModuleInit {
     });
   }
 
+  /** Recordatorio para renovar la verificación antes de que caduque. */
+  async sendVerificationExpiryReminder(
+    to: string,
+    organizationName: string,
+    expiresAt: Date,
+    daysLeft: number,
+  ): Promise<void> {
+    const date = expiresAt.toLocaleDateString('es-ES', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+    await this.send({
+      code: 'verification_expiry_reminder',
+      category: 'notification',
+      kind: 'recordatorio de renovación de verificación',
+      vars: { organization: organizationName, date, days: String(daysLeft) },
+      to,
+      subject: `Tu verificación caduca en ${daysLeft} ${daysLeft === 1 ? 'día' : 'días'} - ${BRAND}`,
+      title: 'Renueva el sello de tu empresa',
+      intro: `La verificación de ${organizationName} caduca el ${date}. Puedes solicitar la renovación desde tu panel: vuelve a aportar la documentación obligatoria y al menos un proyecto con evidencia. Si no la renuevas, el sello dejará de mostrarse como verificado.`,
+      action: 'Renovar verificación',
+      link: `${this.frontendUrl}/app/sello`,
+    });
+  }
+
   /** Aviso al equipo de soporte de un ticket nuevo. */
   async sendSupportTicketCreated(
     to: string,
@@ -238,7 +264,9 @@ export class MailService implements OnModuleInit {
       vars: { organization: organizationName, ticket: subject },
       to,
       subject: `Respuesta a tu ticket: ${subject} - ${BRAND}`,
-      title: fromSupport ? 'Tienes una respuesta de soporte' : `Nueva respuesta de ${organizationName}`,
+      title: fromSupport
+        ? 'Tienes una respuesta de soporte'
+        : `Nueva respuesta de ${organizationName}`,
       intro: fromSupport
         ? `El equipo de soporte ha respondido a "${subject}". Entra para leer el mensaje y continuar la conversación.`
         : `${organizationName} ha respondido en el ticket "${subject}". Revísalo desde el panel de soporte.`,

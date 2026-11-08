@@ -1127,6 +1127,8 @@ export interface VerificationStatusResponse {
     reviewDays: number;
     expiryDays: number;
     renewalDays: number;
+    /** Días antes del vencimiento en los que se avisa por correo y en la app. */
+    reminderDays?: number;
   };
   certifications: CompanyCertification[];
   request: VerificationRequest | null;
