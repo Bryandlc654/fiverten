@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import AnalyticsTracker from '../../../components/public/AnalyticsTracker';
+import CompanyPageSkeleton from '../../../components/public/CompanyPageSkeleton';
 import HomeHeader from '../../../components/public/HomeHeader';
 import PublicFooter from '../../../components/public/PublicFooter';
 import ReviewCard from '../../../components/reviews/ReviewCard';
@@ -154,14 +155,7 @@ export default function PublicProfilePage() {
   }
 
   if (!profile) {
-    return (
-      <div className="flex min-h-screen flex-col bg-slate-50">
-        <HomeHeader />
-        <main className="mx-auto flex w-full max-w-7xl flex-1 items-center px-4 pt-24">
-          <p className="text-sm text-slate-500">Cargando perfil…</p>
-        </main>
-      </div>
-    );
+    return <CompanyPageSkeleton />;
   }
 
   const categories = new Set(verification?.categories ?? []);

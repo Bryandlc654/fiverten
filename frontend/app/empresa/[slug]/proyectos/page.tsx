@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import AnalyticsTracker from '../../../../components/public/AnalyticsTracker';
+import CompanyPageSkeleton from '../../../../components/public/CompanyPageSkeleton';
 import CompanyPublicNav from '../../../../components/public/CompanyPublicNav';
 import PublicShell from '../../../../components/public/PublicShell';
 import {
@@ -39,11 +40,7 @@ export default function PublicProjectsPage() {
   }
 
   if (!data) {
-    return (
-      <PublicShell>
-        <p className="text-sm text-slate-500">Cargando proyectos…</p>
-      </PublicShell>
-    );
+    return <CompanyPageSkeleton variant="section" />;
   }
 
   const status = VERIFICATION_STATUS[data.status] ?? VERIFICATION_STATUS.not_verified;
