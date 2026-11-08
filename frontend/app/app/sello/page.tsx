@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import DashboardShell from '../../../components/DashboardShell';
 import { Alert, Badge, Field, inputClass } from '../../../components/ui';
@@ -72,10 +73,6 @@ export default function VerificationPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [category, setCategory] = useState<VerificationDocumentCategory>('identity');
-  const [projectName, setProjectName] = useState('');
-  const [projectDescription, setProjectDescription] = useState('');
-  const [projectUrl, setProjectUrl] = useState('');
-  const [projectFiles, setProjectFiles] = useState<File[]>([]);
   const [copied, setCopied] = useState(false);
   const [certName, setCertName] = useState('');
   const [certIssuer, setCertIssuer] = useState('');
@@ -127,43 +124,6 @@ export default function VerificationPage() {
       () => api.uploadVerificationDocument(category, file),
       'Documento añadido. Recuerda enviar la solicitud cuando esté todo.',
     );
-  }
-
-  async function addProject(event: FormEvent) {
-    event.preventDefault();
-    if (!projectName.trim()) return;
-    if (projectFiles.some((file) => file.size > 10 * 1024 * 1024)) {
-      setError('Cada archivo de evidencia debe pesar como máximo 10 MB');
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    setNotice(null);
-    try {
-      const project = await api.addVerificationProject({
-        name: projectName.trim(),
-        description: projectDescription.trim() || undefined,
-        url: projectUrl.trim() || undefined,
-      });
-      for (const file of projectFiles) {
-        await api.uploadProjectVerificationDocument(project.id, file);
-      }
-      setNotice(
-        projectFiles.length > 0
-          ? `Proyecto añadido con ${projectFiles.length} archivo(s) de evidencia`
-          : 'Proyecto añadido',
-      );
-      setProjectName('');
-      setProjectDescription('');
-      setProjectUrl('');
-      setProjectFiles([]);
-      (event.target as HTMLFormElement).reset();
-      await load();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo añadir el proyecto');
-    } finally {
-      setBusy(false);
-    }
   }
 
   async function addCertification(event: FormEvent) {
@@ -239,11 +199,10 @@ export default function VerificationPage() {
   const missing = required.filter(
     (categoryKey) => !documents.some((document) => document.category === categoryKey),
   );
+  const minProjects = data.requirements.minProjects;
+  const missingProjects = Math.max(0, minProjects - projects.length);
   const canSend =
-    data.canSubmit &&
-    request?.status === 'draft' &&
-    missing.length === 0 &&
-    projects.length >= data.requirements.minProjects;
+    data.canSubmit && request?.status === 'draft' && missing.length === 0 && missingProjects === 0;
   const origin = typeof window === 'undefined' ? 'https://fiverten.com' : window.location.origin;
   const badge = data.badge;
   const sealToken = badge?.embedToken ?? data.organization.publicId;
@@ -331,6 +290,21 @@ export default function VerificationPage() {
             </div>
           )}
         </section>
+
+        {data.canSubmit && missingProjects > 0 && (
+          <Alert tone="warning">
+            <strong>Faltan proyectos.</strong> Necesitas al menos {minProjects}{' '}
+            {minProjects === 1 ? 'proyecto' : 'proyectos'} con evidencia para solicitar la
+            verificación. Añádelos en{' '}
+            <Link
+              href="/app/proyectos"
+              className="font-semibold underline underline-offset-2 hover:text-amber-900"
+            >
+              Proyectos
+            </Link>{' '}
+            y vuelve aquí para enviar la solicitud.
+          </Alert>
+        )}
 
         {data.status === 'verified' && (
           <section className="rounded-xl border border-slate-200 bg-white p-5">
@@ -553,8 +527,8 @@ export default function VerificationPage() {
               {data.status === 'verified' ? 'Solicitar renovación' : 'Solicitar verificación'}
             </h2>
             <p className="mt-1 text-xs text-slate-500">
-              Sube los documentos y añade al menos {data.requirements.minProjects} proyecto o
-              evidencia. Después envía la solicitud.
+              Sube aquí los documentos obligatorios. Los proyectos y sus evidencias se gestionan en
+              el módulo Proyectos; después vuelve para enviar la solicitud.
             </p>
 
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-[220px_1fr]">
@@ -620,92 +594,25 @@ export default function VerificationPage() {
               ))}
             </ul>
 
-            <form onSubmit={addProject} className="mt-4 border-t border-slate-100 pt-4">
-              <h3 className="text-sm font-semibold text-slate-800">Proyectos y evidencias</h3>
-              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                <input
-                  required
-                  value={projectName}
-                  onChange={(event) => setProjectName(event.target.value)}
-                  placeholder="Nombre del proyecto"
-                  aria-label="Nombre del proyecto"
-                  className={inputClass}
-                />
-                <input
-                  value={projectUrl}
-                  onChange={(event) => setProjectUrl(event.target.value)}
-                  placeholder="URL (opcional)"
-                  aria-label="URL del proyecto"
-                  className={inputClass}
-                />
-                <button
-                  type="submit"
-                  disabled={busy || !projectName.trim()}
-                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                >
-                  Añadir proyecto
-                </button>
-              </div>
-              <textarea
-                rows={2}
-                value={projectDescription}
-                onChange={(event) => setProjectDescription(event.target.value)}
-                placeholder="Descripción breve"
-                aria-label="Descripción del proyecto"
-                className={`${inputClass} mt-2`}
-              />
-              <div className="mt-2">
-                <label className="block text-xs font-semibold text-slate-600">
-                  Archivos de evidencia (imágenes o PDF, máx. 10 MB cada uno)
-                  <input
-                    type="file"
-                    multiple
-                    accept="application/pdf,image/jpeg,image/png,image/webp,image/avif"
-                    onChange={(event) => setProjectFiles(Array.from(event.target.files ?? []))}
-                    className={`${inputClass} mt-1`}
-                  />
-                </label>
-                {projectFiles.length > 0 && (
-                  <p className="mt-1 text-[11px] text-slate-500">
-                    {projectFiles.map((file) => file.name).join(' · ')}
+            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-800">Proyectos y evidencias</h3>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    {projects.length} de {minProjects} proyecto(s) registrados.
+                    {missingProjects > 0
+                      ? ' Los proyectos se añaden desde el módulo Proyectos.'
+                      : ' Todo listo en este apartado.'}
                   </p>
-                )}
-              </div>
-            </form>
-
-            <ul className="mt-3 divide-y divide-slate-100">
-              {projects.map((project) => (
-                <li
-                  key={project.id}
-                  className="flex items-center justify-between gap-2 py-2 text-sm"
+                </div>
+                <Link
+                  href="/app/proyectos"
+                  className="text-xs font-semibold text-blue-700 hover:underline"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-slate-900">{project.name}</p>
-                    {project.description && (
-                      <p className="truncate text-xs text-slate-500">{project.description}</p>
-                    )}
-                    {project.documents.length > 0 && (
-                      <p className="mt-0.5 truncate text-[11px] text-slate-400">
-                        Evidencias: {project.documents.map((file) => file.filename).join(' · ')}
-                      </p>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      void run(
-                        () => api.deleteVerificationProject(project.id),
-                        'Proyecto eliminado',
-                      )
-                    }
-                    disabled={busy}
-                    className="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
-                  >
-                    Quitar
-                  </button>
-                </li>
-              ))}
-            </ul>
+                  {missingProjects > 0 ? 'Añadir proyectos →' : 'Gestionar proyectos →'}
+                </Link>
+              </div>
+            </div>
 
             <div className="mt-4 border-t border-slate-100 pt-4">
               <button
@@ -718,7 +625,11 @@ export default function VerificationPage() {
               </button>
               {!canSend && (
                 <span className="ml-3 text-xs text-slate-500">
-                  Completa los documentos y proyectos obligatorios.
+                  {missingProjects > 0
+                    ? `Añade al menos ${minProjects} proyecto(s) en Proyectos para poder enviar.`
+                    : missing.length > 0
+                      ? 'Sube los documentos obligatorios que faltan.'
+                      : 'Completa los requisitos para poder enviar la solicitud.'}
                 </span>
               )}
             </div>

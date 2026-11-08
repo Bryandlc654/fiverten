@@ -8,7 +8,7 @@ const PDF = {
 };
 
 test.describe('Sello y verificación', () => {
-  test('la empresa sube documentación, proyectos y envía la solicitud', async ({
+  test('documentos en Sello, proyectos en Proyectos y envío de la solicitud', async ({
     page,
     request,
   }) => {
@@ -25,15 +25,26 @@ test.describe('Sello y verificación', () => {
       await expect(page.getByText('Documento añadido', { exact: false })).toBeVisible();
     }
 
+    // Sin proyectos no se puede enviar y no hay formulario de alta aquí.
+    await expect(page.getByText('Faltan proyectos.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Enviar solicitud a FIVERTEN' })).toBeDisabled();
+    await expect(page.getByLabel('Nombre del proyecto')).toHaveCount(0);
+
+    await page.getByRole('link', { name: /Añadir proyectos/ }).click();
+    await expect(page).toHaveURL(/\/app\/proyectos$/);
+
     await page.getByLabel('Nombre del proyecto').fill('Proyecto E2E');
-    await page.getByLabel('URL del proyecto').fill('https://example.com/e2e');
-    await page.getByLabel('Descripción del proyecto').fill('Evidencia del servicio');
+    await page.getByLabel('URL (opcional)').fill('https://example.com/e2e');
+    await page.getByLabel('Descripción (opcional)').fill('Evidencia del servicio');
     await page
       .getByLabel(/Archivos de evidencia/)
       .setInputFiles({ name: 'evidencia.pdf', mimeType: 'application/pdf', buffer: PDF.buffer });
     await page.getByRole('button', { name: 'Añadir proyecto' }).click();
     await expect(page.getByText('Proyecto añadido', { exact: false })).toBeVisible();
-    await expect(page.getByText(/Evidencias: evidencia\.pdf/)).toBeVisible();
+
+    await page.goto('/app/sello');
+    await expect(page.getByText('Faltan proyectos.')).toHaveCount(0);
+    await expect(page.getByText(/de \d+ proyecto\(s\) registrados/)).toBeVisible();
 
     page.on('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', { name: 'Enviar solicitud a FIVERTEN' }).click();
